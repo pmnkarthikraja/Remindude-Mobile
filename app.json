@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "testExpoApp",
+    "slug": "remindude",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "remindude",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": null,
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+        },
+    "backgroundColor": "#000000" ,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.testExpoApp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.anonymous.testExpoApp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b610624d-be02-4de4-adbb-57dcfe9a269a"
+      }
+    },
+    "owner": "karthikraja"
+  }
+}
