@@ -59,7 +59,6 @@ export default function TabLayout() {
         tabBarShowLabel:false
       }}>
         <Tabs.Screen name='index' options={{href:null, headerShown:false}} />
-        <Tabs.Screen name='add' options={{href:null, headerShown:false}} />
       <Tabs.Screen
         name="category"
         options={{
@@ -78,7 +77,7 @@ export default function TabLayout() {
         }}
       />
             <Tabs.Screen
-        name='add2'
+        name='add'
         options={{
           title: 'Add',
           tabBarShowLabel:false,
@@ -105,7 +104,7 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
             <Text style={{
               fontSize:10,
               color:color
