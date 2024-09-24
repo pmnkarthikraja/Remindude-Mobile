@@ -72,6 +72,8 @@ Agreements: Agreements;
 "Insurance Renewals": InsuranceRenewals;
 };
 
+export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingConsultant | InsuranceRenewals;
+
 
 export interface CategoryFormData<T extends Category> {
     category: T; 

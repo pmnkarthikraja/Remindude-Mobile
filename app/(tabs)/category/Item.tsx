@@ -1,13 +1,12 @@
 // app/category/Item.tsx
 import { ThemedText } from '@/components/ThemedText';
-import { Category } from '@/utils/category';
+import { Category, FormData } from '@/utils/category';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
 import { Card } from 'tamagui';
-import { FormData } from '../add';
 
 const Item = ({ item }: { item: FormData}) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Initial opacity
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
 
   useEffect(() => {
     Animated.timing(fadeAnim, {

@@ -1,14 +1,16 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { Agreements, Category, InsuranceRenewals, OnboardingConsultant, PurchaseOrder, VisaDetails } from '@/utils/category';
+import { Agreements, Category, FormData, InsuranceRenewals, OnboardingConsultant, PurchaseOrder, VisaDetails } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
-import { StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { Button, H3, H4, Image, ScrollView, Sheet, TextArea,Input, View, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
+import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import { router } from 'expo-router';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -18,12 +20,11 @@ const categories: { label: string; value: Category }[] = [
   { label: 'Insurance Renewals', value: 'Insurance Renewals' },
 ];
 
-
-
-export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingConsultant | InsuranceRenewals;
 type AcceptedDateFields = 'startDate' | 'endDate' | 'poIssueDate' | 'poEndDate' | 'entryDate' | 'visaEndDate' | 'visaEntryDate' | 'expiryDate' | 'insuranceStartDate' | 'insuranceEndDate'
 
 const DynamicForm: React.FC = () => {
+  const {formdata,setFormData} = useCategoryDataContext()
+  const [isLoading,setLoading]=useState(false)
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
     defaultValues: {
       category: 'Agreements',
@@ -110,6 +111,13 @@ const DynamicForm: React.FC = () => {
 
   const colorScheme = useColorScheme()
   const onSubmit = (data: FormData) => {
+    setFormData([...formdata,data])
+    setLoading(true)
+    setTimeout(()=>{
+      reset()
+      router.navigate('/')
+      setLoading(false)
+    },2000)
     console.log('Formatted Data for API:', data);
   };
 
@@ -297,6 +305,8 @@ const DynamicForm: React.FC = () => {
               <H3 theme={'alt2'} size={'$8'} color={'$accentColor'}>{data.category}</H3>
             </> : <ThemedText>Select a Category</ThemedText>}
           </Button>
+         {isLoading && <ActivityIndicator size={'large'} color={Colors.light.tint}/>}
+
 
           <Sheet
             modal

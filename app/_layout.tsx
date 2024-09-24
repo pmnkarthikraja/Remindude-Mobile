@@ -9,6 +9,7 @@ import { config } from '@tamagui/config/v3';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreenComponent from '@/components/SplashScreen';
+import { CategoryDataProvider } from '@/hooks/useCategoryData';
 
 
 const tamaguiConfig = createTamagui(config);
@@ -53,6 +54,7 @@ export default function RootLayout() {
   }
 
   return (
+    <CategoryDataProvider>
     <TamaguiProvider config={tamaguiConfig}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <QueryClientProvider client={queryClient}>
@@ -63,5 +65,6 @@ export default function RootLayout() {
         </QueryClientProvider>
       </ThemeProvider>
     </TamaguiProvider>
+    </CategoryDataProvider>
   );
 }
