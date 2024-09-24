@@ -1,35 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import {  TextInput, Text, View, Alert, useColorScheme,StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { useForm, Controller, FieldPath, Control, FieldPathValue } from 'react-hook-form';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker'; 
-import { Agreements, PurchaseOrder, VisaDetails, Onboarding, InsuranceRenewals, Category } from '@/utils/category';
-import { Button, H3, Image, Sheet, YStack } from 'tamagui';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import { Agreements, Category, InsuranceRenewals, OnboardingConsultant, PurchaseOrder, VisaDetails } from '@/utils/category';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
+import { StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { Button, H3, H4, Image, ScrollView, Sheet, TextArea,Input, View, YStack } from 'tamagui';
+import { categoryImagePaths } from './category';
 
 const categories: { label: string; value: Category }[] = [
-    { label: 'Agreements', value: 'Agreements' },
-    { label: 'Purchase Order', value: 'Purchase Order' },
-    { label: 'Visa Details', value: 'Visa Details' },
-    { label: 'Onboarding', value: 'Onboarding' },
-    { label: 'Insurance Renewals', value: 'Insurance Renewals' },
-  ];
-  
+  { label: 'Agreements', value: 'Agreements' },
+  { label: 'Purchase Order', value: 'Purchase Order' },
+  { label: 'Visa Details', value: 'Visa Details' },
+  { label: 'Onboarding Consultant', value: 'Onboarding Consultant' },
+  { label: 'Insurance Renewals', value: 'Insurance Renewals' },
+];
 
 
-type FormData = Agreements | PurchaseOrder | VisaDetails | Onboarding | InsuranceRenewals;
+
+export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingConsultant | InsuranceRenewals;
 type AcceptedDateFields = 'startDate' | 'endDate' | 'poIssueDate' | 'poEndDate' | 'entryDate' | 'visaEndDate' | 'visaEntryDate' | 'expiryDate' | 'insuranceStartDate' | 'insuranceEndDate'
 
 const DynamicForm: React.FC = () => {
-  const { control, handleSubmit, setValue, watch ,reset } = useForm<FormData>({
-    defaultValues:{
-      category:'Agreements',
-      clientName:'',
-      endDate:new Date(),
-      startDate:new Date(),
-      vendorCode:''
+  const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
+    defaultValues: {
+      category: 'Agreements',
+      clientName: '',
+      endDate: new Date(),
+      startDate: new Date(),
+      vendorCode: ''
     }
   });
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -54,62 +55,62 @@ const DynamicForm: React.FC = () => {
   };
 
 
-  const data=watch()
+  const data = watch()
 
   useEffect(() => {
     if (data.category) {
-      if (data.category=='Agreements'){
+      if (data.category == 'Agreements') {
         reset({
-          category:'Agreements',
-          clientName:'',
-          endDate:new Date(),
-          startDate:new Date(),
-          vendorCode:''
+          category: 'Agreements',
+          clientName: '',
+          endDate: new Date(),
+          startDate: new Date(),
+          vendorCode: ''
         })
-      }else if (data.category=='Insurance Renewals'){
+      } else if (data.category == 'Insurance Renewals') {
         reset({
-          category:'Insurance Renewals',
-          employeeName:'',
-          insuranceCompany:'',
-          insuranceEndDate:new Date(),
-          insuranceStartDate:new Date(),
-          value:''
+          category: 'Insurance Renewals',
+          employeeName: '',
+          insuranceCompany: '',
+          insuranceEndDate: new Date(),
+          insuranceStartDate: new Date(),
+          value: ''
         })
-      }else if (data.category=='Onboarding'){
+      } else if (data.category == 'Onboarding Consultant') {
         reset({
-          category:'Onboarding',
-          employeeName:'',
-          expiryDate:new Date(),
-          iqamaNumber:''
+          category: 'Onboarding Consultant',
+          employeeName: '',
+          expiryDate: new Date(),
+          iqamaNumber: ''
         })
-      }else if(data.category=='Purchase Order'){
+      } else if (data.category == 'Purchase Order') {
         reset({
-        category:'Purchase Order',
-        clientName:'',
-        consultant:'',
-        entryDate:new Date(),
-        poEndDate:new Date(),
-        poIssueDate:new Date(),
-        poNumber:''
+          category: 'Purchase Order',
+          clientName: '',
+          consultant: '',
+          entryDate: new Date(),
+          poEndDate: new Date(),
+          poIssueDate: new Date(),
+          poNumber: ''
         })
-      }else{
+      } else {
         reset({
-          category:'Visa Details',
-          clientName:'',
-          consultantName:'',
-          sponsor:'',
-          visaEndDate:new Date(),
-          visaEntryDate:new Date(),
-          visaNumber:''
+          category: 'Visa Details',
+          clientName: '',
+          consultantName: '',
+          sponsor: '',
+          visaEndDate: new Date(),
+          visaEntryDate: new Date(),
+          visaNumber: ''
         })
       }
 
     }
-  }, [data.category, reset]); 
+  }, [data.category, reset]);
 
-const colorScheme = useColorScheme()
+  const colorScheme = useColorScheme()
   const onSubmit = (data: FormData) => {
-  console.log('Formatted Data for API:', data);
+    console.log('Formatted Data for API:', data);
   };
 
   const formatDate = (date: Date): string => {
@@ -119,128 +120,170 @@ const colorScheme = useColorScheme()
     return `${day}-${month}-${year}`;
   };
 
- type fieldName = FieldPath<FormData>
+  type fieldName = FieldPath<FormData>
 
- const renderTextInput = (
-  name: fieldName,
-  control: Control<FormData>,
-  label: string,
-  placeholder: string,
-  rules?: object
-) => {
-  return (
-    <>
-      <ThemedText style={styles.label}>{label}</ThemedText>
-    <Controller
-        control={control}
-        name={name}
-        rules={rules}
-        render={({ field: { onChange, onBlur, value } }) => (
-          <>
-         { (typeof value=='string' || typeof value=='undefined')&& <TextInput
-            style={styles.input}
-            placeholder={placeholder}
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-          />}
-          </>
-        )}
-      />
-    </>
-  );
-};
+  const renderTextInput = (
+    name: fieldName,
+    control: Control<FormData>,
+    label: string,
+    placeholder: string,
+    rules?: object
+  ) => {
+    return (
+      <>
+        <ThemedText style={styles.label}>{label}</ThemedText>
+        <Controller
+          control={control}
+          name={name}
+          rules={rules}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <>
+              {(typeof value == 'string' || typeof value == 'undefined') && <Input
+                style={styles.input}
+                placeholder={placeholder}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />}
+            </>
+          )}
+        />
+      </>
+    );
+  };
 
-const renderDatePicker1= (selectedDate:Date, fieldName:AcceptedDateFields)=>{
-  return <>
-   <TouchableOpacity onPress={() => toggleDatePickerVisibility(fieldName,true)}>
-          <ThemedText style={styles.dateDisplay}>
-            {formatDate(selectedDate || new Date())}
-          </ThemedText>
-        </TouchableOpacity>
-        {datePickerVisibility[fieldName] && (
+  const renderTextBoxInput = (
+    name: fieldName,
+    control: Control<FormData>,
+    label: string,
+    placeholder: string,
+    rules?: object
+  ) => {
+    return (
+      < >
+        <ThemedText style={styles.label}>{label}</ThemedText>
+        <Controller
+          control={control}
+          name={name}
+          rules={rules}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <>
+              {(typeof value == 'string' || typeof value == 'undefined') && <TextArea
+                style={styles.textAreaInput}
+                placeholder={placeholder}
+                rows={4}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />}
+            </>
+          )}
+        />
+      </>
+    );
+  };
+
+
+  const renderDatePicker = (selectedDate: Date, fieldName: AcceptedDateFields) => {
+    return <>
+      <TouchableOpacity onPress={() => toggleDatePickerVisibility(fieldName, true)}>
+        <ThemedText style={styles.dateDisplay}>
+          {formatDate(selectedDate || new Date())}
+        </ThemedText>
+      </TouchableOpacity>
+      {datePickerVisibility[fieldName] && (
         <DateTimePicker
           value={selectedDate || new Date()}
           mode="date"
           display="default"
-          onChange={(e,date)=>{
-            if (date){
-              setValue(fieldName,date)
-              toggleDatePickerVisibility(fieldName,false);
+          onChange={(e, date) => {
+            if (date) {
+              setValue(fieldName, date)
+              toggleDatePickerVisibility(fieldName, false);
             }
-            toggleDatePickerVisibility(fieldName,false);
+            toggleDatePickerVisibility(fieldName, false);
           }}
         />
       )}
-  </>
-}
+    </>
+  }
 
   const renderFormFields = () => {
-    switch (data.category){
+    switch (data.category) {
       case 'Agreements':
         return <>
-        {renderTextInput('clientName',control,'Client Name','Enter Client Name')}
-        {renderTextInput('vendorCode',control,'Vendor Code','Enter Vendor Code')}
-        <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
-        <ThemedView style={styles.dateDisplayContainer}>
-        {renderDatePicker1(data.startDate, 'startDate' )} 
-        <ThemedText style={styles.dateDisplay}> - </ThemedText>
-        {renderDatePicker1(data.endDate, 'endDate')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
+          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code')}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+
+          <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
+
+          <ThemedView style={styles.dateDisplayContainer}>
+            {renderDatePicker(data.startDate, 'startDate')}
+            <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            {renderDatePicker(data.endDate, 'endDate')}
           </ThemedView>
 
         </>
       case 'Purchase Order':
         return <>
-        {renderTextInput('clientName',control,'Client Name','Enter Client Name')}
-        {renderTextInput('consultant',control,'Consultant','Enter Consultant Name')}
-        {renderTextInput('poNumber',control,'PO Number','Enter PO Number')}
-        <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
-        <ThemedView style={styles.dateDisplayContainer}>
-        {renderDatePicker1(data.poIssueDate, 'poIssueDate' )} 
-        <ThemedText style={styles.dateDisplay}> - </ThemedText>
-        {renderDatePicker1(data.poEndDate, 'poEndDate')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
+          {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name')}
+          {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number')}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
+          <ThemedView style={styles.dateDisplayContainer}>
+            {renderDatePicker(data.poIssueDate, 'poIssueDate')}
+            <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            {renderDatePicker(data.poEndDate, 'poEndDate')}
           </ThemedView>
-      </>
-      case 'Onboarding':
+        </>
+      case 'Onboarding Consultant':
         return <>
-        {renderTextInput('employeeName',control,'Employee Name','Enter Employee Name')}
-        {renderTextInput('iqamaNumber',control,'IQAMA Number','Enter IQAMA Number')}
-        <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
-        {renderDatePicker1(data.expiryDate,'expiryDate' )} 
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
+          {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number')}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
+          {renderDatePicker(data.expiryDate, 'expiryDate')}
         </>
       case 'Visa Details':
         return <>
-        {renderTextInput('clientName',control,'Client Name','Enter Client Name')}
-        {renderTextInput('visaNumber',control,'Visa Number','Enter Visa Number')}
-        {renderTextInput('sponsor',control,'Sponsor','Enter Sponsor')}
-        {renderTextInput('consultantName',control,'Consultant Name','Enter Consultant Name')}
-        <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
-        <ThemedView style={styles.dateDisplayContainer}>
-        {renderDatePicker1(data.visaEntryDate, 'visaEntryDate' )} 
-        <ThemedText style={styles.dateDisplay}> - </ThemedText>
-        {renderDatePicker1(data.visaEndDate, 'visaEndDate')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
+          {renderTextInput('visaNumber', control, 'Visa Number', 'Enter Visa Number')}
+          {renderTextInput('sponsor', control, 'Sponsor', 'Enter Sponsor')}
+          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name')}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
+          <ThemedView style={styles.dateDisplayContainer}>
+            {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
+            <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            {renderDatePicker(data.visaEndDate, 'visaEndDate')}
           </ThemedView>
         </>
       case 'Insurance Renewals':
         return <>
-        {renderTextInput('employeeName',control,'Employee Name','Enter Employee Name')}
-        {renderTextInput('insuranceCompany',control,'Insurance Company','Enter Insurance Company')}
-        {renderTextInput('value',control,'Insurance Value','Enter Insurance Value')}
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
+          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company')}
+          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category')}
+          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value')}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
-        <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
-        <ThemedView style={styles.dateDisplayContainer}>
-        {renderDatePicker1(data.insuranceStartDate, 'insuranceStartDate' )} 
-        <ThemedText style={styles.dateDisplay}> - </ThemedText>
-        {renderDatePicker1(data.insuranceEndDate, 'insuranceEndDate')}
+          <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
+          <ThemedView style={styles.dateDisplayContainer}>
+            {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
+            <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            {renderDatePicker(data.insuranceEndDate, 'insuranceEndDate')}
           </ThemedView>
         </>
     }
   }
 
   return (
-    <>
-    <View style={{padding:30,marginVertical:20}}>
-      <YStack space="$4" alignItems="center" justifyContent="center">
+    <LinearGradient
+      colors={[colorScheme == 'light' ? '#a1c4fd' : 'transparent', 'transparent']}
+    >
+      <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom:150 }}>
+        <YStack space="$4" alignItems="center" justifyContent="center">
           <ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>
           <Button
             size="$6"
@@ -248,32 +291,33 @@ const renderDatePicker1= (selectedDate:Date, fieldName:AcceptedDateFields)=>{
           >
             {data.category ? <>
               <Image
-                source={require('../../assets/images/categories/Visa.png')}
+                source={categoryImagePaths[data.category]}
                 style={styles.cardHeadImg}
               />
-              <H3 theme={'alt2'} size={'$8'} >{data.category}</H3>
-            </> : 'Select a Category'}
+              <H3 theme={'alt2'} size={'$8'} color={'$accentColor'}>{data.category}</H3>
+            </> : <ThemedText>Select a Category</ThemedText>}
           </Button>
 
           <Sheet
             modal
             open={isSheetOpen}
             onOpenChange={(open: boolean) => setIsSheetOpen(open)}
-            snapPoints={[80, 100]}
+            snapPoints={[50, 100]}
           >
-            <Sheet.Frame padding="$4" backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+            <Sheet.Frame padding="$4" 
+            backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
               <Sheet.Handle />
               <YStack space>
                 {categories.map((item) => (
                   <Button
                     key={item.value}
                     onPress={() => {
-                      setValue('category',item.value)
+                      setValue('category', item.value)
                       setIsSheetOpen(false);
                     }}
                     borderRadius="$3"
                   >
-                    {item.label}
+                    <H4 theme={'alt2'}  color={'$accentColor'}>{item.label}</H4>
                   </Button>
                 ))}
               </YStack>
@@ -281,80 +325,91 @@ const renderDatePicker1= (selectedDate:Date, fieldName:AcceptedDateFields)=>{
           </Sheet>
         </YStack>
 
-      {data.category && renderFormFields()}
-      <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >Submit</Button>
-    </View>
-          </>
+        {data.category && renderFormFields()}
+        <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
+          Submit</Button>
+          <View style={{height:200}}></View>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 export default DynamicForm;
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      marginVertical: 50
-    },
-    input: {
-      height: 40,
-      borderColor: 'gray',
-      borderWidth: 1,
-      marginBottom: 20,
-      paddingLeft: 10,
-      borderRadius: 8,
-      backgroundColor: 'white'
-    },
-    label: {
-      marginBottom: 5,
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    errorText: {
-      color: 'red',
-      marginBottom: 10,
-    },
-    datePickerButton: {
-      backgroundColor: '#007BFF',
-      padding: 10,
-      borderRadius: 8,
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    buttonText: {
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    dateDisplayContainer: {
-      backgroundColor: '#f0f0f0',
-      padding: 10,
-      borderRadius: 8,
-      marginBottom: 20,
-      flexDirection:'row'
-    },
-    dateDisplayLabel: {
-      fontWeight: 'bold',
-      color: '#333',
-    },
-    dateDisplay: {
-      fontSize: 16,
-      color: '#555',
-      marginTop: 5,
-      fontWeight:'bold',
-    },
-    cardHeadImg: {
-      width: 35,
-      height: 35,
-      borderRadius: 25,
-      marginRight: 10,
-    },
-    submit:{
-      // position:'absolute',
-      // bottom:150,
-      alignSelf:'center',
-      // width:150,
-      color:'white'
-    }
-  });
-  
+  container: {
+    flex: 1,
+    padding: 20,
+    marginVertical: 50,
+    color:'black'
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingLeft: 10,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    color:'black',
+  },
+  textAreaInput: {
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingLeft: 10,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    color:'black'
+  },
+  label: {
+    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+  },
+  datePickerButton: {
+    // backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    // color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  dateDisplayContainer: {
+    // backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    flexDirection: 'row'
+  },
+  dateDisplayLabel: {
+    fontWeight: 'bold',
+  },
+  dateDisplay: {
+    fontSize: 16,
+    // color: '#555',
+    marginTop: 5,
+    fontWeight: 'bold',
+  },
+  cardHeadImg: {
+    width: 35,
+    height: 35,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  submit: {
+    // position:'absolute',
+    // bottom:150,
+    alignSelf: 'center',
+    // width:150,
+    color: 'white'
+  }
+});

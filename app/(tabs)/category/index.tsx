@@ -1,4 +1,4 @@
-import { FlatList, Image, Switch, useColorScheme, View } from 'react-native';
+import { FlatList, Image, Platform, Switch, useColorScheme, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import React, { FunctionComponent, useEffect, useState } from 'react';
@@ -44,13 +44,13 @@ const categoriesImportant=[
   "Insurance Renewal"
 ]
 
-const categoryImagePaths: Record<string, any> = {
+export const categoryImagePaths: Record<string, any> = {
   Agreements: require('../../../assets/images/categories/Agreement.png'),
   Reimbursements: require('../../../assets/images/categories/Reimbursements.png'),
   Deduction: require('../../../assets/images/categories/Deduction.png'),
   "Purchase Order": require('../../../assets/images/categories/Purchase Order.png'),
   "Visa Details": require('../../../assets/images/categories/Visa.png'),
-  "Onboarding Consultant": require('../../../assets/images/categories/Onboard Consultation.png'),
+  "Onboarding Consultant" : require('../../../assets/images/categories/Onboard Consultation.png'),
   "Interview Schedule": require('../../../assets/images/categories/Interview Schedule.png'),
   "VAT Submission": require('../../../assets/images/categories/VAT Submission.png'),
   "IQAMA Renewals": require('../../../assets/images/categories/IQAMA Renewal.png'),
@@ -94,7 +94,7 @@ export function CategoryCard(props: CategoryCardProps) {
   const colorscheme = useColorScheme()
    const image = categoryImagePaths[props.category]
   return (
-    <Card style={{backgroundColor:'transparent',borderColor:'transparent'}} onPress={()=>router.navigate(`/category/${props.category}`)} elevate size="$7" bordered {...props}>
+    <Card style={{backgroundColor:'transparent',borderColor:'transparent'}} onPress={()=>router.navigate(`/category/${props.category}`)} elevate size="$7"  {...props}>
 
       <Card.Header padded>
 
@@ -121,7 +121,8 @@ export function CategoryCard(props: CategoryCardProps) {
 
       </Card.Footer>
 
-      <Card.Background theme={'alt2'} borderRadius={10} backgroundColor={colorscheme=='light'?'white':'$accentColor'}> 
+      <Card.Background theme={'alt2'} 
+       borderRadius={10} backgroundColor={colorscheme=='light'?'white': Platform.OS=='ios' ? '$accentBackground' : '$accentColor'}> 
 
         <Image
         style={{

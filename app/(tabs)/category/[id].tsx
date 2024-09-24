@@ -24,7 +24,7 @@ const CategoryPage = () => {
       <FlatList
         data={data}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <Item item={item} category={category} />}
+        renderItem={({ item }) => <Item item={item} />}
                 contentContainerStyle={styles.listContent}
       />
     </ThemedView>

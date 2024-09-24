@@ -28,23 +28,23 @@ const CustomTabButton:FunctionComponent<{children:any,onPress:any,color:string}>
 
 
 export default function TabLayout() {
-  const [auth,setAuth]=useState(false)
+  const [auth,setAuth]=useState(true)
   const [loading,setloading]=useState(false)
   const colorScheme = useColorScheme();
 
-  useEffect(()=>{
-    const verify = async () =>{
-      setloading(true)
-      const token = await AsyncStorage.getItem('token')
-      if (token!=null){
-        setAuth(true)
-      }else{
-        router.replace('/login')
-      }
-      setloading(false)
-    }
-    verify()
-  },[])
+  // useEffect(()=>{
+  //   const verify = async () =>{
+  //     setloading(true)
+  //     const token = await AsyncStorage.getItem('token')
+  //     if (token!=null){
+  //       setAuth(true)
+  //     }else{
+  //       router.replace('/login')
+  //     }
+  //     setloading(false)
+  //   }
+  //   verify()
+  // },[])
 
    return (<>
     {loading && <View><ActivityIndicator size="large" color="#007BFF" /></View>}
@@ -126,7 +126,6 @@ const styles = StyleSheet.create({
     bottom:10,
     left:20,
     right:20,
-    elevation:0,
     borderRadius:15,
     height:60,
   },

@@ -11,6 +11,7 @@ export interface Agreements {
   category:"Agreements"
   clientName: string;
   vendorCode: string;
+  remarks:string;
   startDate: Date; 
   endDate: Date;
 }
@@ -19,6 +20,7 @@ export interface PurchaseOrder {
   category:"Purchase Order"
   clientName: string;
   consultant: string;
+  remarks:string;
   poNumber: string;
   poIssueDate: Date;
   poEndDate: Date;
@@ -31,14 +33,16 @@ export interface VisaDetails {
   visaNumber: string;
   sponsor: string;
   consultantName: string;
+  remarks:string;
   visaEndDate: Date;
   visaEntryDate: Date;
 }
 
-export interface Onboarding {
-  category:"Onboarding"
+export interface OnboardingConsultant {
+  category:"Onboarding Consultant"
   employeeName: string;
   iqamaNumber: string;
+  remarks:string;
   expiryDate: Date;
 }
 
@@ -48,6 +52,8 @@ export interface InsuranceRenewals {
   insuranceStartDate: Date;
   insuranceEndDate: Date;
   insuranceCompany: string;
+  insuranceCategory:string;
+  remarks:string;
   value: string; 
 }
 
@@ -55,14 +61,14 @@ export type Category =
   | "Agreements"
   | "Purchase Order"
   | "Visa Details"
-  | "Onboarding"
+  | "Onboarding Consultant"
   | "Insurance Renewals";
 
 type CategoryFields = {
 Agreements: Agreements;
 "Purchase Order": PurchaseOrder;
 "Visa Details": VisaDetails;
-Onboarding: Onboarding;
+"Onboarding Consultant": OnboardingConsultant;
 "Insurance Renewals": InsuranceRenewals;
 };
 

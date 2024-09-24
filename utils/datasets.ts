@@ -1,192 +1,242 @@
-import { Agreements, CategoryFormData, InsuranceRenewals, Onboarding, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
+import { Agreements, CategoryFormData, InsuranceRenewals, OnboardingConsultant, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
 
 export const agreementsData: Agreements[] = [
     {
+      category:'Agreements',
       clientName: "Client A",
       vendorCode: "V123",
-      startDate: "2023-01-01",
-      endDate: "2023-12-31",
+      remarks:'',
+      startDate: new Date(),
+      endDate: new Date(new Date().getDate()+10)
     },
     {
+      category:'Agreements',
       clientName: "Client B",
       vendorCode: "V456",
-      startDate: "2023-03-15",
-      endDate: "2024-03-15",
+      remarks:'',
+      startDate: new Date(),
+      endDate: new Date(new Date().getDate()+30)
     },
     {
+      category:'Agreements',
       clientName: "Client C",
       vendorCode: "V789",
-      startDate: "2023-06-01",
-      endDate: "2024-05-31",
+      remarks:'',
+      startDate: new Date(),
+      endDate: new Date(new Date().getDate()+19)
     },
     {
+      category:'Agreements',
       clientName: "Client D",
       vendorCode: "V321",
-      startDate: "2023-02-20",
-      endDate: "2023-11-20",
+      remarks:'',
+      startDate: new Date(),
+      endDate: new Date(new Date().getDate()+20)
     },
     {
+      category:'Agreements',
       clientName: "Client E",
       vendorCode: "V654",
-      startDate: "2023-05-10",
-      endDate: "2024-05-10",
+      remarks:'',
+      startDate: new Date(),
+      endDate: new Date(new Date().getDate()+90)
     },
   ];
   
   export const purchaseOrderData: PurchaseOrder[] = [
     {
+      category:'Purchase Order',
       clientName: "Client A",
       consultant: "Consultant 1",
       poNumber: "PO-001",
-      poIssueDate: "2023-01-10",
-      poEndDate: "2023-02-10",
-      entryDate: "2023-01-05",
+      remarks:'',
+      poIssueDate: new Date(),
+      poEndDate:  new Date(new Date().getDate()+90),
+      entryDate: new Date(),
     },
     {
+      category:'Purchase Order',
       clientName: "Client B",
       consultant: "Consultant 2",
       poNumber: "PO-002",
-      poIssueDate: "2023-02-15",
-      poEndDate: "2023-03-15",
-      entryDate: "2023-02-10",
+      remarks:'',
+      poIssueDate: new Date(),
+      poEndDate:  new Date(new Date().getDate()+90),
+      entryDate: new Date(),
     },
     {
+      category:'Purchase Order',
       clientName: "Client C",
       consultant: "Consultant 3",
       poNumber: "PO-003",
-      poIssueDate: "2023-03-20",
-      poEndDate: "2023-04-20",
-      entryDate: "2023-03-15",
+      remarks:'',
+      poIssueDate: new Date(),
+      poEndDate:  new Date(new Date().getDate()+40),
+      entryDate: new Date(),
     },
     {
+      category:'Purchase Order',
       clientName: "Client D",
       consultant: "Consultant 4",
       poNumber: "PO-004",
-      poIssueDate: "2023-04-25",
-      poEndDate: "2023-05-25",
-      entryDate: "2023-04-20",
+      remarks:'',
+      poIssueDate: new Date(),
+      poEndDate:  new Date(new Date().getDate()+55),
+      entryDate: new Date(),
     },
     {
+      category:'Purchase Order',
       clientName: "Client E",
       consultant: "Consultant 5",
       poNumber: "PO-005",
-      poIssueDate: "2023-05-30",
-      poEndDate: "2023-06-30",
-      entryDate: "2023-05-25",
+      remarks:'',
+      poIssueDate: new Date(),
+      poEndDate:  new Date(new Date().getDate()+20),
+      entryDate: new Date(),
     },
   ];
   
   export const visaDetailsData: VisaDetails[] = [
     {
+      category:'Visa Details',
       clientName: "Client A",
       visaNumber: "VN-001",
       sponsor: "Sponsor A",
       consultantName: "Consultant 1",
-      visaEndDate: "2024-01-01",
-      visaEntryDate: "2023-01-01",
+      remarks:'',
+      visaEndDate: new Date(),
+      visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      category:'Visa Details',
       clientName: "Client B",
       visaNumber: "VN-002",
       sponsor: "Sponsor B",
       consultantName: "Consultant 2",
-      visaEndDate: "2024-02-01",
-      visaEntryDate: "2023-02-01",
+      remarks:'',
+      visaEndDate: new Date(),
+      visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      category:'Visa Details',
       clientName: "Client C",
       visaNumber: "VN-003",
       sponsor: "Sponsor C",
       consultantName: "Consultant 3",
-      visaEndDate: "2024-03-01",
-      visaEntryDate: "2023-03-01",
+      remarks:'',
+      visaEndDate: new Date(),
+      visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      category:'Visa Details',
       clientName: "Client D",
       visaNumber: "VN-004",
       sponsor: "Sponsor D",
       consultantName: "Consultant 4",
-      visaEndDate: "2024-04-01",
-      visaEntryDate: "2023-04-01",
+      remarks:'',
+      visaEndDate: new Date(),
+      visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      category:'Visa Details',
       clientName: "Client E",
       visaNumber: "VN-005",
       sponsor: "Sponsor E",
       consultantName: "Consultant 5",
-      visaEndDate: "2024-05-01",
-      visaEntryDate: "2023-05-01",
+      remarks:'',
+      visaEndDate: new Date(),
+      visaEntryDate: new Date(new Date().getDate()+1),
     },
   ];
   
-  export const onboardingData: Onboarding[] = [
+  export const onboardingData: OnboardingConsultant[] = [
     {
+      category:'Onboarding Consultant',
       employeeName: "John Doe",
       iqamaNumber: "IQ-001",
-      expiryDate: "2024-01-01",
+      remarks:'',
+      expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      category:'Onboarding Consultant',
       employeeName: "Jane Smith",
       iqamaNumber: "IQ-002",
-      expiryDate: "2024-02-01",
+      remarks:'',
+      expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      category:'Onboarding Consultant',
       employeeName: "Alice Johnson",
       iqamaNumber: "IQ-003",
-      expiryDate: "2024-03-01",
+      remarks:'',
+      expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      category:'Onboarding Consultant',
       employeeName: "Bob Brown",
       iqamaNumber: "IQ-004",
-      expiryDate: "2024-04-01",
+      remarks:'',
+      expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      category:'Onboarding Consultant',
       employeeName: "Charlie White",
       iqamaNumber: "IQ-005",
-      expiryDate: "2024-05-01",
+      remarks:'',
+      expiryDate: new Date(new Date().getDate()+11),
     },
   ];
   
   export const insuranceRenewalData: InsuranceRenewals[] = [
     {
+      category: 'Insurance Renewals',
       employeeName: "John Doe",
-      insuranceStartDate: "2023-01-01",
-      insuranceEndDate: "2024-01-01",
+      insuranceStartDate: new Date(),
+      insuranceEndDate: new Date(new Date().getDate()+91),
       insuranceCompany: "Insurance Co A",
-      category: "Health",
-      value: 1000,
+      value: "1000",
+      insuranceCategory:'Bajaj',
+      remarks:''
     },
     {
+      category: 'Insurance Renewals',
       employeeName: "Jane Smith",
-      insuranceStartDate: "2023-02-01",
-      insuranceEndDate: "2024-02-01",
+      insuranceStartDate: new Date(),
+      insuranceEndDate: new Date(new Date().getDate()+91),
       insuranceCompany: "Insurance Co B",
-      category: "Life",
-      value: 2000,
+      value: "1000",
+      insuranceCategory:'Bajaj',
+      remarks:''
     },
     {
+      category: 'Insurance Renewals',
       employeeName: "Alice Johnson",
-      insuranceStartDate: "2023-03-01",
-      insuranceEndDate: "2024-03-01",
+      insuranceStartDate: new Date(),
+      insuranceEndDate: new Date(new Date().getDate()+41),
       insuranceCompany: "Insurance Co C",
-      category: "Dental",
-      value: 3000,
+      value: "1000",
+      insuranceCategory:'Bajaj',
+      remarks:''
     },
     {
+      category: 'Insurance Renewals',
       employeeName: "Bob Brown",
-      insuranceStartDate: "2023-04-01",
-      insuranceEndDate: "2024-04-01",
+      insuranceStartDate: new Date(),
+      insuranceEndDate: new Date(new Date().getDate()+21),
       insuranceCompany: "Insurance Co D",
-      category: "Vision",
-      value: 1500,
+      value: "1000",
+      insuranceCategory:'Bajaj',
+      remarks:''
     },
     {
+      category: 'Insurance Renewals',
       employeeName: "Charlie White",
-      insuranceStartDate: "2023-05-01",
-      insuranceEndDate: "2024-05-01",
+      insuranceStartDate: new Date(),
+      insuranceEndDate: new Date(new Date().getDate()+41),
       insuranceCompany: "Insurance Co E",
-      category: "Health",
-      value: 2500,
+      value: "1000",
+      insuranceCategory:'Bajaj',
+      remarks:''
     },
   ];
   
@@ -218,14 +268,3 @@ export const agreementsData: Agreements[] = [
       endDate: "2024-05-10",
     },
   ];
-  
-
- const data:CategoryFormData<'Agreements'>={
-    category:'Agreements',
-    fields:{
-        clientName:'Rajesh',
-        endDate:'12-09-1019',
-        startDate:'22-11-2011',
-        vendorCode:'23223'
-    }
- }
