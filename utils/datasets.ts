@@ -1,7 +1,10 @@
 import { Agreements, CategoryFormData, InsuranceRenewals, OnboardingConsultant, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
+import uuid from 'react-native-uuid';
+
 
 export const agreementsData: Agreements[] = [
     {
+      id:uuid.v4().toString(),
       category:'Agreements',
       clientName: "Client A",
       vendorCode: "V123",
@@ -10,6 +13,7 @@ export const agreementsData: Agreements[] = [
       endDate: new Date(new Date().getDate()+10)
     },
     {
+      id:uuid.v4().toString(),
       category:'Agreements',
       clientName: "Client B",
       vendorCode: "V456",
@@ -18,6 +22,7 @@ export const agreementsData: Agreements[] = [
       endDate: new Date(new Date().getDate()+30)
     },
     {
+      id:uuid.v4().toString(),
       category:'Agreements',
       clientName: "Client C",
       vendorCode: "V789",
@@ -26,6 +31,7 @@ export const agreementsData: Agreements[] = [
       endDate: new Date(new Date().getDate()+19)
     },
     {
+      id:uuid.v4().toString(),
       category:'Agreements',
       clientName: "Client D",
       vendorCode: "V321",
@@ -34,6 +40,7 @@ export const agreementsData: Agreements[] = [
       endDate: new Date(new Date().getDate()+20)
     },
     {
+      id:uuid.v4().toString(),
       category:'Agreements',
       clientName: "Client E",
       vendorCode: "V654",
@@ -45,6 +52,7 @@ export const agreementsData: Agreements[] = [
   
   export const purchaseOrderData: PurchaseOrder[] = [
     {
+      id:uuid.v4().toString(),
       category:'Purchase Order',
       clientName: "Client A",
       consultant: "Consultant 1",
@@ -55,6 +63,7 @@ export const agreementsData: Agreements[] = [
       entryDate: new Date(),
     },
     {
+      id:uuid.v4().toString(),
       category:'Purchase Order',
       clientName: "Client B",
       consultant: "Consultant 2",
@@ -65,6 +74,7 @@ export const agreementsData: Agreements[] = [
       entryDate: new Date(),
     },
     {
+      id:uuid.v4().toString(),
       category:'Purchase Order',
       clientName: "Client C",
       consultant: "Consultant 3",
@@ -75,6 +85,7 @@ export const agreementsData: Agreements[] = [
       entryDate: new Date(),
     },
     {
+      id:uuid.v4().toString(),
       category:'Purchase Order',
       clientName: "Client D",
       consultant: "Consultant 4",
@@ -85,6 +96,7 @@ export const agreementsData: Agreements[] = [
       entryDate: new Date(),
     },
     {
+      id:uuid.v4().toString(),
       category:'Purchase Order',
       clientName: "Client E",
       consultant: "Consultant 5",
@@ -98,6 +110,7 @@ export const agreementsData: Agreements[] = [
   
   export const visaDetailsData: VisaDetails[] = [
     {
+      id:uuid.v4().toString(),
       category:'Visa Details',
       clientName: "Client A",
       visaNumber: "VN-001",
@@ -108,6 +121,7 @@ export const agreementsData: Agreements[] = [
       visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      id:uuid.v4().toString(),
       category:'Visa Details',
       clientName: "Client B",
       visaNumber: "VN-002",
@@ -118,6 +132,7 @@ export const agreementsData: Agreements[] = [
       visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      id:uuid.v4().toString(),
       category:'Visa Details',
       clientName: "Client C",
       visaNumber: "VN-003",
@@ -128,6 +143,7 @@ export const agreementsData: Agreements[] = [
       visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      id:uuid.v4().toString(),
       category:'Visa Details',
       clientName: "Client D",
       visaNumber: "VN-004",
@@ -138,6 +154,7 @@ export const agreementsData: Agreements[] = [
       visaEntryDate: new Date(new Date().getDate()+1),
     },
     {
+      id:uuid.v4().toString(),
       category:'Visa Details',
       clientName: "Client E",
       visaNumber: "VN-005",
@@ -151,6 +168,7 @@ export const agreementsData: Agreements[] = [
   
   export const onboardingData: OnboardingConsultant[] = [
     {
+      id:uuid.v4().toString(),
       category:'Onboarding Consultant',
       employeeName: "John Doe",
       iqamaNumber: "IQ-001",
@@ -158,6 +176,7 @@ export const agreementsData: Agreements[] = [
       expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      id:uuid.v4().toString(),
       category:'Onboarding Consultant',
       employeeName: "Jane Smith",
       iqamaNumber: "IQ-002",
@@ -165,6 +184,7 @@ export const agreementsData: Agreements[] = [
       expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      id:uuid.v4().toString(),
       category:'Onboarding Consultant',
       employeeName: "Alice Johnson",
       iqamaNumber: "IQ-003",
@@ -172,6 +192,7 @@ export const agreementsData: Agreements[] = [
       expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      id:uuid.v4().toString(),
       category:'Onboarding Consultant',
       employeeName: "Bob Brown",
       iqamaNumber: "IQ-004",
@@ -179,6 +200,7 @@ export const agreementsData: Agreements[] = [
       expiryDate: new Date(new Date().getDate()+11),
     },
     {
+      id:uuid.v4().toString(),
       category:'Onboarding Consultant',
       employeeName: "Charlie White",
       iqamaNumber: "IQ-005",
@@ -189,6 +211,7 @@ export const agreementsData: Agreements[] = [
   
   export const insuranceRenewalData: InsuranceRenewals[] = [
     {
+      id:uuid.v4().toString(),
       category: 'Insurance Renewals',
       employeeName: "John Doe",
       insuranceStartDate: new Date(),
@@ -199,6 +222,7 @@ export const agreementsData: Agreements[] = [
       remarks:''
     },
     {
+      id:uuid.v4().toString(),
       category: 'Insurance Renewals',
       employeeName: "Jane Smith",
       insuranceStartDate: new Date(),
@@ -209,6 +233,7 @@ export const agreementsData: Agreements[] = [
       remarks:''
     },
     {
+      id:uuid.v4().toString(),
       category: 'Insurance Renewals',
       employeeName: "Alice Johnson",
       insuranceStartDate: new Date(),
@@ -219,6 +244,7 @@ export const agreementsData: Agreements[] = [
       remarks:''
     },
     {
+      id:uuid.v4().toString(),
       category: 'Insurance Renewals',
       employeeName: "Bob Brown",
       insuranceStartDate: new Date(),
@@ -229,6 +255,7 @@ export const agreementsData: Agreements[] = [
       remarks:''
     },
     {
+      id:uuid.v4().toString(),
       category: 'Insurance Renewals',
       employeeName: "Charlie White",
       insuranceStartDate: new Date(),

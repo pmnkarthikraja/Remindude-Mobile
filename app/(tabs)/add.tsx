@@ -11,6 +11,7 @@ import { Button, H3, H4, Image, ScrollView, Sheet, TextArea,Input, View, YStack 
 import { categoryImagePaths } from './category';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { router } from 'expo-router';
+import uuid from 'react-native-uuid';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -22,11 +23,18 @@ const categories: { label: string; value: Category }[] = [
 
 type AcceptedDateFields = 'startDate' | 'endDate' | 'poIssueDate' | 'poEndDate' | 'entryDate' | 'visaEndDate' | 'visaEntryDate' | 'expiryDate' | 'insuranceStartDate' | 'insuranceEndDate'
 
-const DynamicForm: React.FC = () => {
+export interface DynamicFormProps{
+  isEdit?:boolean,
+  editItem?:FormData
+}
+const DynamicForm: React.FC<DynamicFormProps> = ({
+  isEdit,
+  editItem
+}) => {
   const {formdata,setFormData} = useCategoryDataContext()
   const [isLoading,setLoading]=useState(false)
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
-    defaultValues: {
+    defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
       endDate: new Date(),
@@ -59,7 +67,7 @@ const DynamicForm: React.FC = () => {
   const data = watch()
 
   useEffect(() => {
-    if (data.category) {
+    if (data.category && !isEdit) {
       if (data.category == 'Agreements') {
         reset({
           category: 'Agreements',
@@ -111,7 +119,16 @@ const DynamicForm: React.FC = () => {
 
   const colorScheme = useColorScheme()
   const onSubmit = (data: FormData) => {
-    setFormData([...formdata,data])
+    console.log("submitiing")
+    if (!isEdit){
+    const id = uuid.v4().toString()
+    const withId:FormData = {...data,id}
+    setFormData([...formdata,withId])
+    }else{
+    console.log("updating...")
+    const newData = formdata.map(item=>item.id==data.id ? data:item)
+    setFormData(newData)
+    }
     setLoading(true)
     setTimeout(()=>{
       reset()
@@ -190,7 +207,6 @@ const DynamicForm: React.FC = () => {
       </>
     );
   };
-
 
   const renderDatePicker = (selectedDate: Date, fieldName: AcceptedDateFields) => {
     return <>
@@ -292,8 +308,9 @@ const DynamicForm: React.FC = () => {
     >
       <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom:150 }}>
         <YStack space="$4" alignItems="center" justifyContent="center">
-          <ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>
+          {!isEdit &&<ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>}
           <Button
+          disabled={!!isEdit}
             size="$6"
             onPress={() => setIsSheetOpen(true)}
           >
@@ -337,7 +354,8 @@ const DynamicForm: React.FC = () => {
 
         {data.category && renderFormFields()}
         <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
-          Submit</Button>
+          {isEdit ? 'Update':'Add'}
+          </Button>
           <View style={{height:200}}></View>
       </ScrollView>
     </LinearGradient>

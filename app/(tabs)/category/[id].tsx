@@ -1,9 +1,9 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { agreementsData, insuranceRenewalData, onboardingData, purchaseOrderData, visaDetailsData } from '@/utils/datasets';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, useColorScheme } from 'react-native';
+import { FlatList, StyleSheet, TouchableHighlight, TouchableOpacity, useColorScheme } from 'react-native';
 import Item from './Item';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
 
@@ -31,18 +31,20 @@ const CategoryPage = () => {
   } = categorizeData(data);
 
   const categories = [
-    {title:'Renewal Pending', data:renewal},
+    { title: 'Renewal Pending', data:renewal },
     { title: 'Next 30 days', data: next30Days },
     { title: 'Next 30 - 60 days', data: next30to60Days },
     { title: 'Next 60 - 90 days', data: next60to90Days },
     { title: 'Later 90 days', data: laterThan90Days },
   ];
 
-  const renderCategoryList = (title: string, data: any[],index:number) => (
+  const renderCategoryList = (title: string, data: FormData[],index:number) => (
     <ThemedView key={index}>
       <ThemedText style={[styles.category, title=='Renewal Pending' ? {color:'red'}:[]]}>{title}</ThemedText>
       {data.map((item, index) => (
+      <TouchableOpacity key={item.id} activeOpacity={0.8} onPress={()=>router.navigate(`/(tabs)/category/edit/${item.id}`)}>
         <Item key={index} item={item} />
+        </TouchableOpacity>
       ))}
     </ThemedView>
   );

@@ -1,9 +1,8 @@
 // app/category/Item.tsx
 import { ThemedText } from '@/components/ThemedText';
-import { Category, FormData } from '@/utils/category';
+import { FormData } from '@/utils/category';
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
-import { Card } from 'tamagui';
+import { Animated, StyleSheet } from 'react-native';
 
 const Item = ({ item }: { item: FormData}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current; 
@@ -20,12 +19,12 @@ const Item = ({ item }: { item: FormData}) => {
     switch (item.category) {
       case 'Agreements':
         return (
-          <Card theme={'dark'} backgroundColor={'white'}>
+          <>
             <ThemedText style={styles.itemText}>Client Name: {item.clientName}</ThemedText>
             <ThemedText style={styles.itemText}>Vendor Code: {item.vendorCode}</ThemedText>
             <ThemedText style={styles.itemText}>Start Date: {item.startDate.toLocaleDateString()}</ThemedText>
             <ThemedText style={styles.itemText}>End Date: {item.endDate.toLocaleDateString()}</ThemedText>
-          </Card>
+          </>
         );
       case 'Purchase Order':
         return (

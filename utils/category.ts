@@ -8,6 +8,7 @@ export interface OtherCategoryData {
   
 
 export interface Agreements {
+  id:string,
   category:"Agreements"
   clientName: string;
   vendorCode: string;
@@ -17,6 +18,7 @@ export interface Agreements {
 }
 
 export interface PurchaseOrder {
+  id:string,
   category:"Purchase Order"
   clientName: string;
   consultant: string;
@@ -28,6 +30,7 @@ export interface PurchaseOrder {
 }
 
 export interface VisaDetails {
+  id:string,
   category:"Visa Details"
   clientName: string;
   visaNumber: string;
@@ -39,6 +42,7 @@ export interface VisaDetails {
 }
 
 export interface OnboardingConsultant {
+  id:string,
   category:"Onboarding Consultant"
   employeeName: string;
   iqamaNumber: string;
@@ -47,6 +51,7 @@ export interface OnboardingConsultant {
 }
 
 export interface InsuranceRenewals {
+  id:string,
   category: 'Insurance Renewals';
   employeeName: string;
   insuranceStartDate: Date;
@@ -62,7 +67,20 @@ export type Category =
   | "Purchase Order"
   | "Visa Details"
   | "Onboarding Consultant"
-  | "Insurance Renewals";
+  | "Insurance Renewals"
+  | "Interview Schedule"
+  | "VAT Submission"
+  | "IQAMA Renewals"
+  | "Bills Payments"
+  | "Room Rent Collection"
+  | "Room Rent Pay"
+  | "Saudi Salary Processing"
+  | "WithHolding Tax"
+  | "Reimbursements"
+  | "Deduction"
+  | "GOSI Payments"
+  | "Saudization Payment collection"
+  | "Employee Issue Tracking"
 
 type CategoryFields = {
 Agreements: Agreements;
@@ -75,10 +93,10 @@ Agreements: Agreements;
 export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingConsultant | InsuranceRenewals;
 
 
-export interface CategoryFormData<T extends Category> {
-    category: T; 
-    fields: CategoryFields[T]; 
-  }
+// export interface CategoryFormData<T extends Category> {
+//     category: T; 
+//     fields: CategoryFields[T]; 
+//   }
 
 
   
