@@ -1,53 +1,63 @@
-import { Agreements, CategoryFormData, InsuranceRenewals, OnboardingConsultant, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
+import { Agreements, InsuranceRenewals, OnboardingConsultant, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
 import uuid from 'react-native-uuid';
 
+const enddate = (days:number) => new Date(new Date().setDate(new Date().getDate()+days))
 
 export const agreementsData: Agreements[] = [
-    {
-      id:uuid.v4().toString(),
-      category:'Agreements',
-      clientName: "Client A",
-      vendorCode: "V123",
-      remarks:'',
-      startDate: new Date(),
-      endDate: new Date(new Date().getDate()+10)
-    },
-    {
-      id:uuid.v4().toString(),
-      category:'Agreements',
-      clientName: "Client B",
-      vendorCode: "V456",
-      remarks:'',
-      startDate: new Date(),
-      endDate: new Date(new Date().getDate()+30)
-    },
-    {
-      id:uuid.v4().toString(),
-      category:'Agreements',
-      clientName: "Client C",
-      vendorCode: "V789",
-      remarks:'',
-      startDate: new Date(),
-      endDate: new Date(new Date().getDate()+19)
-    },
-    {
-      id:uuid.v4().toString(),
-      category:'Agreements',
-      clientName: "Client D",
-      vendorCode: "V321",
-      remarks:'',
-      startDate: new Date(),
-      endDate: new Date(new Date().getDate()+20)
-    },
-    {
-      id:uuid.v4().toString(),
-      category:'Agreements',
-      clientName: "Client E",
-      vendorCode: "V654",
-      remarks:'',
-      startDate: new Date(),
-      endDate: new Date(new Date().getDate()+90)
-    },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Karthikraja",
+    vendorCode: "V143",
+    remarks:'',
+    startDate: enddate(-60),
+    endDate: enddate(-10)
+  },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Deepika",
+    vendorCode: "V123",
+    remarks:'',
+    startDate: new Date(),
+    endDate: enddate(3)
+  },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Client B",
+    vendorCode: "V456",
+    remarks:'',
+    startDate: new Date(),
+    endDate: enddate(90)
+  },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Client C",
+    vendorCode: "V789",
+    remarks:'',
+    startDate: new Date(),
+    endDate: enddate(32)
+  },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Client D",
+    vendorCode: "V321",
+    remarks:'',
+    startDate: new Date(),
+    endDate: enddate(64)
+  },
+  {
+    id:uuid.v4().toString(),
+    category:'Agreements',
+    clientName: "Client E",
+    vendorCode: "V654",
+    remarks:'',
+    startDate: new Date(),
+    endDate: enddate(100)
+  },
   ];
   
   export const purchaseOrderData: PurchaseOrder[] = [
@@ -118,7 +128,7 @@ export const agreementsData: Agreements[] = [
       consultantName: "Consultant 1",
       remarks:'',
       visaEndDate: new Date(),
-      visaEntryDate: new Date(new Date().getDate()+1),
+      visaEntryDate: enddate(29),
     },
     {
       id:uuid.v4().toString(),
@@ -129,7 +139,7 @@ export const agreementsData: Agreements[] = [
       consultantName: "Consultant 2",
       remarks:'',
       visaEndDate: new Date(),
-      visaEntryDate: new Date(new Date().getDate()+1),
+      visaEntryDate: enddate(99),
     },
     {
       id:uuid.v4().toString(),
@@ -140,7 +150,7 @@ export const agreementsData: Agreements[] = [
       consultantName: "Consultant 3",
       remarks:'',
       visaEndDate: new Date(),
-      visaEntryDate: new Date(new Date().getDate()+1),
+      visaEntryDate: enddate(59),
     },
     {
       id:uuid.v4().toString(),
@@ -151,7 +161,7 @@ export const agreementsData: Agreements[] = [
       consultantName: "Consultant 4",
       remarks:'',
       visaEndDate: new Date(),
-      visaEntryDate: new Date(new Date().getDate()+1),
+      visaEntryDate: enddate(49),
     },
     {
       id:uuid.v4().toString(),
@@ -162,7 +172,7 @@ export const agreementsData: Agreements[] = [
       consultantName: "Consultant 5",
       remarks:'',
       visaEndDate: new Date(),
-      visaEntryDate: new Date(new Date().getDate()+1),
+      visaEntryDate: enddate(19),
     },
   ];
   
@@ -173,7 +183,7 @@ export const agreementsData: Agreements[] = [
       employeeName: "John Doe",
       iqamaNumber: "IQ-001",
       remarks:'',
-      expiryDate: new Date(new Date().getDate()+11),
+      expiryDate: enddate(30),
     },
     {
       id:uuid.v4().toString(),
@@ -181,7 +191,7 @@ export const agreementsData: Agreements[] = [
       employeeName: "Jane Smith",
       iqamaNumber: "IQ-002",
       remarks:'',
-      expiryDate: new Date(new Date().getDate()+11),
+      expiryDate: enddate(80),
     },
     {
       id:uuid.v4().toString(),
@@ -189,7 +199,7 @@ export const agreementsData: Agreements[] = [
       employeeName: "Alice Johnson",
       iqamaNumber: "IQ-003",
       remarks:'',
-      expiryDate: new Date(new Date().getDate()+11),
+      expiryDate: enddate(34),
     },
     {
       id:uuid.v4().toString(),
@@ -197,7 +207,7 @@ export const agreementsData: Agreements[] = [
       employeeName: "Bob Brown",
       iqamaNumber: "IQ-004",
       remarks:'',
-      expiryDate: new Date(new Date().getDate()+11),
+      expiryDate: enddate(12),
     },
     {
       id:uuid.v4().toString(),
@@ -205,7 +215,7 @@ export const agreementsData: Agreements[] = [
       employeeName: "Charlie White",
       iqamaNumber: "IQ-005",
       remarks:'',
-      expiryDate: new Date(new Date().getDate()+11),
+      expiryDate: enddate(56),
     },
   ];
   
@@ -215,7 +225,7 @@ export const agreementsData: Agreements[] = [
       category: 'Insurance Renewals',
       employeeName: "John Doe",
       insuranceStartDate: new Date(),
-      insuranceEndDate: new Date(new Date().getDate()+91),
+      insuranceEndDate: enddate(45),
       insuranceCompany: "Insurance Co A",
       value: "1000",
       insuranceCategory:'Bajaj',
@@ -226,7 +236,7 @@ export const agreementsData: Agreements[] = [
       category: 'Insurance Renewals',
       employeeName: "Jane Smith",
       insuranceStartDate: new Date(),
-      insuranceEndDate: new Date(new Date().getDate()+91),
+      insuranceEndDate: enddate(25),
       insuranceCompany: "Insurance Co B",
       value: "1000",
       insuranceCategory:'Bajaj',
@@ -237,7 +247,7 @@ export const agreementsData: Agreements[] = [
       category: 'Insurance Renewals',
       employeeName: "Alice Johnson",
       insuranceStartDate: new Date(),
-      insuranceEndDate: new Date(new Date().getDate()+41),
+      insuranceEndDate: enddate(22),
       insuranceCompany: "Insurance Co C",
       value: "1000",
       insuranceCategory:'Bajaj',
@@ -248,7 +258,7 @@ export const agreementsData: Agreements[] = [
       category: 'Insurance Renewals',
       employeeName: "Bob Brown",
       insuranceStartDate: new Date(),
-      insuranceEndDate: new Date(new Date().getDate()+21),
+      insuranceEndDate: enddate(88),
       insuranceCompany: "Insurance Co D",
       value: "1000",
       insuranceCategory:'Bajaj',
@@ -259,7 +269,7 @@ export const agreementsData: Agreements[] = [
       category: 'Insurance Renewals',
       employeeName: "Charlie White",
       insuranceStartDate: new Date(),
-      insuranceEndDate: new Date(new Date().getDate()+41),
+      insuranceEndDate: enddate(32),
       insuranceCompany: "Insurance Co E",
       value: "1000",
       insuranceCategory:'Bajaj',
@@ -267,31 +277,3 @@ export const agreementsData: Agreements[] = [
     },
   ];
   
-
-  export const otheCategoriesData: OtherCategoryData[] = [
-    {
-      clientName: "Client A",
-      startDate: "2023-01-01",
-      endDate: "2023-12-31",
-    },
-    {
-      clientName: "Client B",
-      startDate: "2023-03-15",
-      endDate: "2024-03-15",
-    },
-    {
-      clientName: "Client C",
-      startDate: "2023-06-01",
-      endDate: "2024-05-31",
-    },
-    {
-      clientName: "Client D",
-      startDate: "2023-02-20",
-      endDate: "2023-11-20",
-    },
-    {
-      clientName: "Client E",
-      startDate: "2023-05-10",
-      endDate: "2024-05-10",
-    },
-  ];

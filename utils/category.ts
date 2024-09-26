@@ -1,9 +1,19 @@
 type DateString = string;
 
 export interface OtherCategoryData {
-    clientName: string;
-    startDate: DateString; 
-    endDate: DateString;
+   id:string,
+   category:string,
+   clientName: string;
+   remarks:string,
+   startDate:Date,
+   endDate:Date,
+   poIssueDate: Date;
+  poEndDate: Date;
+  visaEndDate: Date;
+  visaEntryDate: Date;
+  expiryDate: Date;
+  insuranceStartDate: Date;
+  insuranceEndDate: Date;
   }
   
 
@@ -68,19 +78,19 @@ export type Category =
   | "Visa Details"
   | "Onboarding Consultant"
   | "Insurance Renewals"
-  | "Interview Schedule"
-  | "VAT Submission"
-  | "IQAMA Renewals"
-  | "Bills Payments"
-  | "Room Rent Collection"
-  | "Room Rent Pay"
-  | "Saudi Salary Processing"
-  | "WithHolding Tax"
-  | "Reimbursements"
-  | "Deduction"
-  | "GOSI Payments"
-  | "Saudization Payment collection"
-  | "Employee Issue Tracking"
+  // | "IQAMA Renewals"
+  // | "Interview Schedule"
+  // | "VAT Submission"
+  // | "Bills Payments"
+  // | "Room Rent Collection"
+  // | "Room Rent Pay"
+  // | "Saudi Salary Processing"
+  // | "WithHolding Tax"
+  // | "Reimbursements"
+  // | "Deduction"
+  // | "GOSI Payments"
+  // | "Saudization Payment collection"
+  // | "Employee Issue Tracking"
 
 type CategoryFields = {
 Agreements: Agreements;

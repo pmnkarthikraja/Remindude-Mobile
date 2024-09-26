@@ -16,26 +16,29 @@ import {Svg, Path, Circle, Line , Text as SVGText} from 'react-native-svg'
 
 import { ThemedText } from '@/components/ThemedText';
 import { Category } from '@/utils/category';
+import { Moon, MoonStar, Sun, Sunrise } from '@tamagui/lucide-icons';
+import Animated from 'react-native-reanimated';
+import { useProfileContext } from '@/hooks/useProfile';
 
 const categories:Category[]=[
   "Agreements",
   "Purchase Order",
   "Visa Details",
   "Onboarding Consultant",
-  "Interview Schedule",
-  "VAT Submission",
-  "IQAMA Renewals",
+  // "Interview Schedule",
+  // "VAT Submission",
+  // "IQAMA Renewals",
   "Insurance Renewals",
-  "Bills Payments",
-  "Room Rent Collection",
-  "Room Rent Pay",
-  "Saudi Salary Processing",
-  "WithHolding Tax",
-  "Reimbursements",
-  "Deduction",
-  "GOSI Payments",
-  "Saudization Payment collection",
-  "Employee Issue Tracking"
+  // "Bills Payments",
+  // "Room Rent Collection",
+  // "Room Rent Pay",
+  // "Saudi Salary Processing",
+  // "WithHolding Tax",
+  // "Reimbursements",
+  // "Deduction",
+  // "GOSI Payments",
+  // "Saudization Payment collection",
+  // "Employee Issue Tracking"
 ]
 
 const benefits=[
@@ -234,9 +237,6 @@ export function CategoryCard(props: CategoryCardProps) {
   </SVGText>}
 </Svg>
 
-
-
-
   <Svg
       height="200"
       width="400"
@@ -249,7 +249,7 @@ export function CategoryCard(props: CategoryCardProps) {
     >
       <Path
         d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
-        fill="blue" 
+        fill={colorscheme=='light' ? "blue":'#CCE3F3'} 
       />
     </Svg>
 
@@ -266,7 +266,7 @@ export function CategoryCard(props: CategoryCardProps) {
     >
       <Path
         d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z" 
-        fill="purple" 
+        fill={colorscheme=='light' ? "purple" :'transparent'} 
       />
     </Svg>
            <Image
@@ -287,45 +287,37 @@ export function CategoryCard(props: CategoryCardProps) {
   );
 }
 
-
-
 const Header = () => {
   const systemTheme = Appearance.getColorScheme();
-  const [isDarkTheme, setIsDarkTheme] = useState(systemTheme === 'dark');
-
-  useEffect(() => {
-    Appearance.setColorScheme(isDarkTheme ? 'dark' : 'light');
-  }, [isDarkTheme]);
-
-  useEffect(() => {
-    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      console.log("color schemd:",colorScheme)
-      setIsDarkTheme(colorScheme === 'dark');
-    });
-  
-    return () => {
-      subscription.remove(); 
-    };
-  }, []);
+  const {profile,userName} = useProfileContext()
 
   const toggleTheme = () => {
-    setIsDarkTheme(previousState => !previousState);
+    const theme = systemTheme=='dark'?'light':'dark'
+    Appearance.setColorScheme(theme)
   };
 
   return (
     <View style={styles.header}>
       <Image
-        source={{ uri: 'https://imgs.search.brave.com/dsRxX9MNxgZMT4qHcqsl6IqedqonJa9yA2Ds1s3Brl8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/cHJlbWl1bS1waG90/by9hdmF0YXItcmVz/b3VyY2luZy1jb21w/YW55XzEyNTQ5Njct/NjY1My5qcGc_c2l6/ZT02MjYmZXh0PWpw/Zw' }} 
+        source={{ uri:profile }} 
         style={styles.profilePic}
       />
-      <ThemedText style={styles.greeting}>Hello, Karthikraja!</ThemedText>
+      <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
       <Switch
-        value={isDarkTheme}
+        value={systemTheme=='dark'}
         onValueChange={toggleTheme}
         trackColor={{ false: '#767577', true: '#81b0ff' }}
-        thumbColor={isDarkTheme ? '#f5dd4b' : '#f4f3f4'}
+        thumbColor={systemTheme=='dark' ? '#f5dd4b' : '#f4f3f4'}
+        style={styles.switch}
       />
-      <ThemedText style={styles.themeSwitch}>{isDarkTheme ? 'Dark':'Light'}</ThemedText>
+       <Animated.View>
+          {systemTheme=='dark' ? (
+            <MoonStar fill={'white'} color="white" size={20} />
+          ) : 
+          (
+            <Sun fill={'yellow'} color="yellow" size={20} />
+          )}
+        </Animated.View>
           </View>
   );
 };
@@ -335,11 +327,11 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient 
-      colors={[ colorscheme =='light' ? '#a1c4fd':'transparent', 'transparent']}
+      colors={[ colorscheme =='light' ? '#a1c4fd':'#252C39', colorscheme=='light'?'white':'transparent']}
       style={{ flex: 1 }}
       >
       <Header />
-      
+        
       <FlatList
         ListFooterComponent={() => <View style={{ height: 150 }} />}
         ListHeaderComponentStyle={{
@@ -348,17 +340,23 @@ export default function HomeScreen() {
         ListHeaderComponent={() => (
           <>
           <Lottie
+        source={require('../../../assets/Animation/Animation2.json')} 
+         autoPlay
+        loop
+        style={styles.animation2}
+      />
+          <Lottie
  source={require('../../../assets/Animation/Animation.json')} 
          autoPlay
         loop
         style={styles.animation}
       />
-       {/* <Lottie
+       <Lottie
         source={require('../../../assets/Animation/Animation2.json')} 
          autoPlay
         loop
         style={styles.animation2}
-      /> */}
+      />
       </>
         )}
         
@@ -405,7 +403,7 @@ const styles = StyleSheet.create({
   },
   animation: {
     width: 'auto', 
-    height: 200, 
+    height: 150, 
   },
   animation2:{
     width:'auto',
@@ -445,6 +443,10 @@ const styles = StyleSheet.create({
   highlightedText: {
     fontWeight: 'bold',
     fontSize:23
+  },
+  switch: {
+    width: 60,
+    height: 30,
   },
 });
 

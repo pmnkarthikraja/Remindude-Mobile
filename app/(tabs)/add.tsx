@@ -1,17 +1,18 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { Agreements, Category, FormData, InsuranceRenewals, OnboardingConsultant, PurchaseOrder, VisaDetails } from '@/utils/category';
+import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import { Category, FormData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router, Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { Button, H3, H4, Image, ScrollView, Sheet, TextArea,Input, View, YStack } from 'tamagui';
-import { categoryImagePaths } from './category';
-import { useCategoryDataContext } from '@/hooks/useCategoryData';
-import { router } from 'expo-router';
+import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
+import { Button, H3, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { categoryImagePaths } from './category';
+import { ArrowBigLeft, ArrowLeft } from '@tamagui/lucide-icons';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -119,7 +120,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const colorScheme = useColorScheme()
   const onSubmit = (data: FormData) => {
-    console.log("submitiing")
     if (!isEdit){
     const id = uuid.v4().toString()
     const withId:FormData = {...data,id}
@@ -164,7 +164,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           render={({ field: { onChange, onBlur, value } }) => (
             <>
               {(typeof value == 'string' || typeof value == 'undefined') && <Input
-                style={styles.input}
+                style={[styles.input, {backgroundColor: colorScheme=='light' ?'white':'transparent', color:colorScheme=='light'?'black':'white'}]}
                 placeholder={placeholder}
                 onBlur={onBlur}
                 onChangeText={onChange}
@@ -194,7 +194,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           render={({ field: { onChange, onBlur, value } }) => (
             <>
               {(typeof value == 'string' || typeof value == 'undefined') && <TextArea
-                style={styles.textAreaInput}
+                style={[styles.textAreaInput, {backgroundColor: colorScheme=='light' ?'white':'transparent', color:colorScheme=='light'?'black':'white'}]}
                 placeholder={placeholder}
                 rows={4}
                 onBlur={onBlur}
@@ -302,29 +302,66 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
+  console.log(Platform.OS=='ios')
+
   return (
     <LinearGradient
-      colors={[colorScheme == 'light' ? '#a1c4fd' : 'transparent', 'transparent']}
+      colors={[colorScheme == 'light' ? '#a1c4fd' : '#252C39',colorScheme=='light'?'white': 'transparent']}
     >
+      <Stack.Screen  options={{
+        headerShown:false
+      }}/>
       <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom:150 }}>
+        <XStack style={{alignItems:'center'}}  onPress={()=>router.back()}>
+          <ArrowLeft color={colorScheme=='light'?'black' :'white'} size={25}/>
+            <ThemedText>Back</ThemedText>
+        </XStack>
         <YStack space="$4" alignItems="center" justifyContent="center">
           {!isEdit &&<ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>}
-          <Button
-          disabled={!!isEdit}
-            size="$6"
-            onPress={() => setIsSheetOpen(true)}
-          >
-            {data.category ? <>
-              <Image
-                source={categoryImagePaths[data.category]}
-                style={styles.cardHeadImg}
-              />
-              <H3 theme={'alt2'} size={'$8'} color={'$accentColor'}>{data.category}</H3>
-            </> : <ThemedText>Select a Category</ThemedText>}
-          </Button>
+           <XStack
+      ai="center"
+      jc="space-between"
+      backgroundColor={Platform.OS=='ios' ? colorScheme=='light'?'$accentColor':'$accentBackground' : '$accentColor'}
+      borderRadius="$4"
+      padding="$3"
+      // shadowColor="#000"
+      // shadowOpacity={0.25}
+      // shadowOffset={{ width: 0, height: 4 }}
+      // shadowRadius={6}
+      // elevation={5}
+      hoverStyle={{
+        backgroundColor: '$accentColorHover',
+        transform: [{ scale: 1.03 }],
+      }}
+      pressStyle={{
+        transform: [{ scale: 1.03 }],
+      }}
+      onPress={()=>!isEdit && setIsSheetOpen(true)}
+    >
+      {data.category ? (
+        <XStack ai="center" space="$4">
+            <Image
+              source={categoryImagePaths[data.category]}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                // borderWidth: 2,
+              }}
+            />
+          <YStack>
+            <H6 theme="alt2" color="white" >
+              {data.category}
+            </H6>
+          </YStack>
+        </XStack>
+      ) : (
+        <Text  color="white" ai="center">
+          Select a Category
+        </Text>
+      )}
+    </XStack>
          {isLoading && <ActivityIndicator size={'large'} color={Colors.light.tint}/>}
-
-
           <Sheet
             modal
             open={isSheetOpen}
@@ -337,6 +374,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               <YStack space>
                 {categories.map((item) => (
                   <Button
+                    backgroundColor={Platform.OS=='ios' ? colorScheme=='light'?'$accentColor':'$accentBackground' : '$accentColor'}
                     key={item.value}
                     onPress={() => {
                       setValue('category', item.value)
@@ -344,7 +382,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     }}
                     borderRadius="$3"
                   >
-                    <H4 theme={'alt2'}  color={'$accentColor'}>{item.label}</H4>
+                    <H4 theme={'alt2'}  color={'white'}>{item.label}</H4>
                   </Button>
                 ))}
               </YStack>
@@ -378,8 +416,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingLeft: 10,
     borderRadius: 8,
-    backgroundColor: 'white',
-    color:'black',
+    backgroundColor: 'transparent',
+    color:'white',
   },
   textAreaInput: {
     borderColor: 'gray',

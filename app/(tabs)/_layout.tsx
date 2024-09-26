@@ -59,6 +59,7 @@ export default function TabLayout() {
         tabBarShowLabel:false
       }}>
         <Tabs.Screen name='index' options={{href:null, headerShown:false}} />
+        <Tabs.Screen name='profile' options={{href:null, headerShown:false}} />
       <Tabs.Screen
         name="category"
         options={{
@@ -98,7 +99,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="settings"
         options={{
           title: 'Explore',
           tabBarActiveTintColor:Colors.light.tint,
@@ -113,7 +114,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
     </Tabs>:<Login  onlogin={()=>setAuth(true)}/>}
     </>}
     </>
