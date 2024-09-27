@@ -12,7 +12,7 @@ import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorSche
 import uuid from 'react-native-uuid';
 import { Button, H3, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
-import { ArrowBigLeft, ArrowLeft } from '@tamagui/lucide-icons';
+import { ArrowBigLeft, ArrowLeft, CalendarRange } from '@tamagui/lucide-icons';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -248,8 +248,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
-
           <ThemedView style={styles.dateDisplayContainer}>
+          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
             {renderDatePicker(data.startDate, 'startDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.endDate, 'endDate')}
@@ -264,6 +264,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
+            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
             {renderDatePicker(data.poIssueDate, 'poIssueDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.poEndDate, 'poEndDate')}
@@ -274,6 +275,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
           {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number')}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
           {renderDatePicker(data.expiryDate, 'expiryDate')}
         </>
@@ -286,6 +288,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
+          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
             {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.visaEndDate, 'visaEndDate')}
@@ -301,6 +304,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
+          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
             {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.insuranceEndDate, 'insuranceEndDate')}
@@ -308,8 +312,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </>
     }
   }
-
-  console.log(Platform.OS=='ios')
 
   return (
     <LinearGradient

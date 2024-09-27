@@ -1,4 +1,4 @@
-import { FlatList, Image, Platform, Switch, Text, useColorScheme, View } from 'react-native';
+import { Dimensions, FlatList, Image, Platform, Switch, Text, useColorScheme, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import React, { FunctionComponent, useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ import { Appearance } from 'react-native';
 
 import { StyleSheet } from 'react-native';
 import Lottie from 'lottie-react-native'; 
-import { Path, Circle, Line , Text as SVGText} from 'react-native-svg'
+import { Path, Circle, Line , Text as SVGText, Polygon, Ellipse} from 'react-native-svg'
 
 import { ThemedText } from '@/components/ThemedText';
 import { Category } from '@/utils/category';
@@ -231,27 +231,96 @@ export function CategoryCard(props: CategoryCardProps) {
   );
 }
 
+const { width } = Dimensions.get('window');
+
+const createStarPath = (cx:number, cy:number, spikes:number, outerRadius:number, innerRadius:number) => {
+  let path = '';
+  let angle = Math.PI / spikes;
+
+  for (let i = 0; i < 2 * spikes; i++) {
+    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+    const x = cx + Math.cos(i * angle) * radius;
+    const y = cy - Math.sin(i * angle) * radius;
+    path += `${x},${y} `;
+  }
+  return path.trim();
+};
+
+
+const generateRandomStars = (count:number) => {
+  let stars = [];
+  for (let i = 0; i < count; i++) {
+    const size = Math.random() * 2 +2; 
+    stars.push({
+      id: i,
+      x: Math.random() * width, 
+      y: Math.random() * 100,  
+      size,
+      path: createStarPath(0, 0, 5, size, size / 2),
+    });
+  }
+  return stars;
+};
+
 const Header = () => {
+  const [stars] = useState(() => generateRandomStars(25)); 
   const systemTheme = Appearance.getColorScheme();
   const {profile,userName,email} = useProfileContext()
+  const translateX = useSharedValue(-150);
+  const [switchOn,setSwitchOn]=useState(systemTheme=='dark')
+
+  React.useEffect(() => {
+    translateX.value = withRepeat(
+      withTiming(width, { duration: 15000 }), 
+      -1,
+      false 
+    );
+  }, [translateX]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }], 
+  }));
 
   const toggleTheme = () => {
     const theme = systemTheme=='dark'?'light':'dark'
+    setSwitchOn(theme=='dark')
     Appearance.setColorScheme(theme)
   };
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header]}>
+       {systemTheme=='dark'&&<Svg height={100} width={width} style={styles.starsContainer}>
+        {stars.map((star) => (
+          <Polygon
+            key={star.id}
+            points={star.path}
+            fill="white"
+            opacity={Math.random() * 0.8 + 0.2} 
+            translateX={star.x} 
+            translateY={star.y} 
+          />
+        ))}
+      </Svg>}
+
+      {systemTheme === 'light' && (
+        <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
+        <Image
+          source={require('../clouds.png')} 
+          style={styles.cloud}
+          resizeMode="contain"
+        />
+      </Animated.View>
+      )}
       <Image
         source={{ uri:profile }} 
         style={styles.profilePic}
       />
        <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
       <Switch
-        value={systemTheme=='dark'}
+        value={switchOn}
         onValueChange={toggleTheme}
         trackColor={{ false: '#767577', true: '#81b0ff' }}
-        thumbColor={systemTheme=='dark' ? '#f5dd4b' : '#f4f3f4'}
+        thumbColor={switchOn ? '#f5dd4b' : '#f4f3f4'}
         style={styles.switch}
       />
        <Animated.View>
@@ -314,6 +383,22 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  starsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  cloudContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  cloud: {
+    position: 'absolute',
+    width: 150, 
+    height: 100, 
+    top: 50, 
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -393,50 +478,3 @@ const styles = StyleSheet.create({
     height: 30,
   },
 });
-
-
-
-
-
-const ShakeBox = () => {
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    translateY.value = withRepeat(
-      withSequence(
-        withTiming(-10, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }),
-        withDelay(1000, withTiming(0))
-      ),
-      -1, 
-      false 
-    );
-  }, []);
-  
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateY: translateY.value }, 
-      ],
-    };
-  });
-
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center'}}>
-      <Animated.View style={animatedStyle}>
-        <Svg height="50" width="200">
-          <Rect
-            x="10"
-            y="10"
-            width="150"
-            height="20"
-            rx="15"
-            ry="15"
-            fill="#FFD700" 
-          />
-        </Svg>
-      </Animated.View>
-      </View>
-  );
-};

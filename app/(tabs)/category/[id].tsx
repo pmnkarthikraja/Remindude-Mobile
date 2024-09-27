@@ -172,16 +172,14 @@ const CategoryPage = () => {
           <ThemedView style={styles.datePickerRow}>
             <CalendarRange />
             <Button onPress={() => setShowStartPicker(true)}>
-              From Date: {startDate ? startDate.toLocaleDateString(): <Text>-</Text>}
+              From: {startDate ? startDate.toLocaleDateString(): <Text>-</Text>}
             </Button>
-          </ThemedView>
-          <ThemedView style={styles.datePickerRow}>
-            <CalendarRange />
+            <Text>-</Text>
             <Button onPress={() =>setShowEndPicker(true)}>
-              To Date: {endDate ? endDate.toLocaleDateString(): <Text>-</Text>}
+              To: {endDate ? endDate.toLocaleDateString(): <Text>-</Text>}
             </Button>
           </ThemedView>
-
+          
           <Button onPress={() => handleFilter(startDate, endDate)} style={styles.clearButton}>
             Apply Filter
           </Button>
@@ -266,7 +264,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 10,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    gap:10
   },
   clearButton: {
     marginVertical: 10,
