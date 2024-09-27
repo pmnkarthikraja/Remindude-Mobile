@@ -69,7 +69,7 @@ export const agreementsData: Agreements[] = [
       poNumber: "PO-001",
       remarks:'',
       poIssueDate: new Date(),
-      poEndDate:  new Date(new Date().getDate()+90),
+      poEndDate:  enddate(90),
       entryDate: new Date(),
     },
     {
@@ -80,7 +80,7 @@ export const agreementsData: Agreements[] = [
       poNumber: "PO-002",
       remarks:'',
       poIssueDate: new Date(),
-      poEndDate:  new Date(new Date().getDate()+90),
+      poEndDate:  enddate(90),
       entryDate: new Date(),
     },
     {
@@ -91,7 +91,7 @@ export const agreementsData: Agreements[] = [
       poNumber: "PO-003",
       remarks:'',
       poIssueDate: new Date(),
-      poEndDate:  new Date(new Date().getDate()+40),
+      poEndDate:  enddate(40),
       entryDate: new Date(),
     },
     {
@@ -102,7 +102,7 @@ export const agreementsData: Agreements[] = [
       poNumber: "PO-004",
       remarks:'',
       poIssueDate: new Date(),
-      poEndDate:  new Date(new Date().getDate()+55),
+      poEndDate:  enddate(23),
       entryDate: new Date(),
     },
     {
@@ -113,7 +113,7 @@ export const agreementsData: Agreements[] = [
       poNumber: "PO-005",
       remarks:'',
       poIssueDate: new Date(),
-      poEndDate:  new Date(new Date().getDate()+20),
+      poEndDate:  enddate(10),
       entryDate: new Date(),
     },
   ];

@@ -5,7 +5,7 @@ import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { Category, FormData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useNavigation } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
@@ -43,7 +43,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       vendorCode: ''
     }
   });
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && true);
+  const navigation= useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
     startDate: false,
     endDate: false,
@@ -56,6 +57,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     insuranceStartDate: false,
     insuranceEndDate: false,
   });
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+          setIsSheetOpen(!isEdit && true)
+    });
+    return unsubscribe;
+ }, [navigation]);
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -125,7 +133,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     const withId:FormData = {...data,id}
     setFormData([...formdata,withId])
     }else{
-    console.log("updating...")
     const newData = formdata.map(item=>item.id==data.id ? data:item)
     setFormData(newData)
     }
@@ -366,7 +373,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             modal
             open={isSheetOpen}
             onOpenChange={(open: boolean) => setIsSheetOpen(open)}
-            snapPoints={[50, 100]}
+            snapPoints={[90, 100]}
           >
             <Sheet.Frame padding="$4" 
             backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
@@ -385,6 +392,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     <H4 theme={'alt2'}  color={'white'}>{item.label}</H4>
                   </Button>
                 ))}
+                
               </YStack>
             </Sheet.Frame>
           </Sheet>

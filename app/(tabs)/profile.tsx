@@ -10,10 +10,7 @@ import { router } from 'expo-router';
 import { useProfileContext } from '@/hooks/useProfile';
 
 export default function ProfileUpdateScreen() {
-    // const [image, setImage] = useState<string | null>(null);
-    // const [name, setName] = useState('Karthik Raja');
-    const [email, setEmail] = useState('datasack@gmail.com');
-    const {profile,setProfile,userName,setUserName}=useProfileContext()
+    const {profile,setProfile,userName,setUserName,email,setEmail}=useProfileContext()
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({

@@ -9,7 +9,7 @@ import { Avatar, Button, Label, ListItem, Separator, SizeTokens, Stack as StackT
 
 export default function SettingsScreen() {
   const colorscheme = useColorScheme()
-  const {profile,userName}= useProfileContext()
+  const {profile,userName,email}= useProfileContext()
 
   return (
     <LinearGradient 
@@ -28,7 +28,7 @@ export default function SettingsScreen() {
             </Avatar>
             <YStack ml="$3">
               <Text color={colorscheme=='light'?'black':'white'}  fontWeight="bold">{userName}</Text>
-              <Text  color="$gray9">datasack@gmail.com</Text>
+              <Text  color="$gray9">{email}</Text>
             </YStack>
           </XStack>
           <Button

@@ -149,8 +149,8 @@ const CategoryPage = () => {
           shouldShowHintSearchIcon: true,
           placement: 'stacked',
           onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
-
         },
+        // headerStyle:{backgroundColor:'#a1c4fd'},
         headerRight: () => <Button
           onPress={() => setModalVisible(true)}
           icon={
