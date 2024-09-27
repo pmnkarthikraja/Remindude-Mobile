@@ -11,7 +11,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V143",
     remarks:'',
     startDate: enddate(-60),
-    endDate: enddate(-10)
+    endDate: enddate(-10),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   {
     id:uuid.v4().toString(),
@@ -20,7 +25,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V123",
     remarks:'',
     startDate: new Date(),
-    endDate: enddate(3)
+    endDate: enddate(3),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   {
     id:uuid.v4().toString(),
@@ -29,7 +39,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V456",
     remarks:'',
     startDate: new Date(),
-    endDate: enddate(90)
+    endDate: enddate(90),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   {
     id:uuid.v4().toString(),
@@ -38,7 +53,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V789",
     remarks:'',
     startDate: new Date(),
-    endDate: enddate(32)
+    endDate: enddate(32),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   {
     id:uuid.v4().toString(),
@@ -47,7 +67,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V321",
     remarks:'',
     startDate: new Date(),
-    endDate: enddate(64)
+    endDate: enddate(64),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   {
     id:uuid.v4().toString(),
@@ -56,7 +81,12 @@ export const agreementsData: Agreements[] = [
     vendorCode: "V654",
     remarks:'',
     startDate: new Date(),
-    endDate: enddate(100)
+    endDate: enddate(100),
+    wantsCustomReminders:true,
+    customReminderDates:[
+      enddate(10),
+      enddate(40)
+    ]
   },
   ];
   
@@ -71,6 +101,11 @@ export const agreementsData: Agreements[] = [
       poIssueDate: new Date(),
       poEndDate:  enddate(90),
       entryDate: new Date(),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -82,6 +117,11 @@ export const agreementsData: Agreements[] = [
       poIssueDate: new Date(),
       poEndDate:  enddate(90),
       entryDate: new Date(),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -93,6 +133,11 @@ export const agreementsData: Agreements[] = [
       poIssueDate: new Date(),
       poEndDate:  enddate(40),
       entryDate: new Date(),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -104,6 +149,11 @@ export const agreementsData: Agreements[] = [
       poIssueDate: new Date(),
       poEndDate:  enddate(23),
       entryDate: new Date(),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -115,6 +165,11 @@ export const agreementsData: Agreements[] = [
       poIssueDate: new Date(),
       poEndDate:  enddate(10),
       entryDate: new Date(),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
   ];
   
@@ -129,6 +184,11 @@ export const agreementsData: Agreements[] = [
       remarks:'',
       visaEndDate: new Date(),
       visaEntryDate: enddate(29),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -140,6 +200,11 @@ export const agreementsData: Agreements[] = [
       remarks:'',
       visaEndDate: new Date(),
       visaEntryDate: enddate(99),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -151,6 +216,11 @@ export const agreementsData: Agreements[] = [
       remarks:'',
       visaEndDate: new Date(),
       visaEntryDate: enddate(59),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -162,6 +232,11 @@ export const agreementsData: Agreements[] = [
       remarks:'',
       visaEndDate: new Date(),
       visaEntryDate: enddate(49),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -173,6 +248,11 @@ export const agreementsData: Agreements[] = [
       remarks:'',
       visaEndDate: new Date(),
       visaEntryDate: enddate(19),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
   ];
   
@@ -184,6 +264,11 @@ export const agreementsData: Agreements[] = [
       iqamaNumber: "IQ-001",
       remarks:'',
       expiryDate: enddate(30),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -192,6 +277,11 @@ export const agreementsData: Agreements[] = [
       iqamaNumber: "IQ-002",
       remarks:'',
       expiryDate: enddate(80),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -200,6 +290,11 @@ export const agreementsData: Agreements[] = [
       iqamaNumber: "IQ-003",
       remarks:'',
       expiryDate: enddate(34),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -208,6 +303,11 @@ export const agreementsData: Agreements[] = [
       iqamaNumber: "IQ-004",
       remarks:'',
       expiryDate: enddate(12),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -216,6 +316,11 @@ export const agreementsData: Agreements[] = [
       iqamaNumber: "IQ-005",
       remarks:'',
       expiryDate: enddate(56),
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
   ];
   
@@ -229,7 +334,12 @@ export const agreementsData: Agreements[] = [
       insuranceCompany: "Insurance Co A",
       value: "1000",
       insuranceCategory:'Bajaj',
-      remarks:''
+      remarks:'',
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -240,7 +350,12 @@ export const agreementsData: Agreements[] = [
       insuranceCompany: "Insurance Co B",
       value: "1000",
       insuranceCategory:'Bajaj',
-      remarks:''
+      remarks:'',
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -251,7 +366,12 @@ export const agreementsData: Agreements[] = [
       insuranceCompany: "Insurance Co C",
       value: "1000",
       insuranceCategory:'Bajaj',
-      remarks:''
+      remarks:'',
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -262,7 +382,12 @@ export const agreementsData: Agreements[] = [
       insuranceCompany: "Insurance Co D",
       value: "1000",
       insuranceCategory:'Bajaj',
-      remarks:''
+      remarks:'',
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
     {
       id:uuid.v4().toString(),
@@ -273,7 +398,12 @@ export const agreementsData: Agreements[] = [
       insuranceCompany: "Insurance Co E",
       value: "1000",
       insuranceCategory:'Bajaj',
-      remarks:''
+      remarks:'',
+      wantsCustomReminders:true,
+      customReminderDates:[
+        enddate(10),
+        enddate(40)
+      ]
     },
   ];
   

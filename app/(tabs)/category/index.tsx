@@ -71,7 +71,7 @@ export const categoryImagePaths: Record<string, any> = {
   "Employee Issue Tracking": require('../../../assets/images/categories/Employment Issue.png')
 };
 
-export const CardDemo: FunctionComponent<{ category: Category }> = ({
+export const CategoryCardWrapper: FunctionComponent<{ category: Category }> = ({
   category,
 }) => {
   return (
@@ -250,7 +250,7 @@ const createStarPath = (cx:number, cy:number, spikes:number, outerRadius:number,
 const generateRandomStars = (count:number) => {
   let stars = [];
   for (let i = 0; i < count; i++) {
-    const size = Math.random() * 2 +2; 
+    const size = Math.random() * 2 +3; 
     stars.push({
       id: i,
       x: Math.random() * width, 
@@ -263,7 +263,7 @@ const generateRandomStars = (count:number) => {
 };
 
 const Header = () => {
-  const [stars] = useState(() => generateRandomStars(25)); 
+  const [stars] = useState(() => generateRandomStars(15)); 
   const systemTheme = Appearance.getColorScheme();
   const {profile,userName,email} = useProfileContext()
   const translateX = useSharedValue(-150);
@@ -375,7 +375,7 @@ export default function HomeScreen() {
         
         data={categories}
         contentContainerStyle={styles.listContainer}
-        renderItem={({ item }) => <CardDemo category={item} />}
+        renderItem={({ item }) => <CategoryCardWrapper category={item} />}
       />
       </LinearGradient>
     </View>

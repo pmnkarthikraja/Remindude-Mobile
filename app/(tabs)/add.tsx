@@ -10,9 +10,9 @@ import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
-import { Button, H3, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, H3, H4, H6, Image, Input, Label, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
-import { ArrowBigLeft, ArrowLeft, CalendarRange } from '@tamagui/lucide-icons';
+import { ArrowBigLeft, ArrowLeft, CalendarRange, Check, Check as CheckIcon, Cross, Plus, X } from '@tamagui/lucide-icons';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -22,29 +22,31 @@ const categories: { label: string; value: Category }[] = [
   { label: 'Insurance Renewals', value: 'Insurance Renewals' },
 ];
 
-type AcceptedDateFields = 'startDate' | 'endDate' | 'poIssueDate' | 'poEndDate' | 'entryDate' | 'visaEndDate' | 'visaEntryDate' | 'expiryDate' | 'insuranceStartDate' | 'insuranceEndDate'
+type AcceptedDateFields = 'startDate' | 'endDate' | 'poIssueDate' | 'poEndDate' | 'entryDate' | 'visaEndDate' | 'visaEntryDate' | 'expiryDate' | 'insuranceStartDate' | 'insuranceEndDate' | 'customReminderDate'
 
-export interface DynamicFormProps{
-  isEdit?:boolean,
-  editItem?:FormData
+export interface DynamicFormProps {
+  isEdit?: boolean,
+  editItem?: FormData
 }
 const DynamicForm: React.FC<DynamicFormProps> = ({
   isEdit,
   editItem
 }) => {
-  const {formdata,setFormData} = useCategoryDataContext()
-  const [isLoading,setLoading]=useState(false)
+  const { formdata, setFormData } = useCategoryDataContext()
+  const [isLoading, setLoading] = useState(false)
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
       endDate: new Date(),
       startDate: new Date(),
-      vendorCode: ''
+      vendorCode: '',
+      wantsCustomReminders: false,
+      customReminderDates: []
     }
   });
   const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && true);
-  const navigation= useNavigation()
+  const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
     startDate: false,
     endDate: false,
@@ -56,14 +58,21 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     expiryDate: false,
     insuranceStartDate: false,
     insuranceEndDate: false,
+    customReminderDate: false,
   });
+  const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
+  const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
+
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-          setIsSheetOpen(!isEdit && true)
+      if (!isEdit) {
+        setIsSheetOpen(true)
+        setManualReminders(false)
+      }
     });
     return unsubscribe;
- }, [navigation]);
+  }, [navigation]);
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -71,7 +80,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       [fieldName]: isOpen,
     }));
   };
-
 
   const data = watch()
 
@@ -83,7 +91,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           clientName: '',
           endDate: new Date(),
           startDate: new Date(),
-          vendorCode: ''
+          vendorCode: '',
+          wantsCustomReminders: false,
+          customReminderDates: []
         })
       } else if (data.category == 'Insurance Renewals') {
         reset({
@@ -92,14 +102,18 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           insuranceCompany: '',
           insuranceEndDate: new Date(),
           insuranceStartDate: new Date(),
-          value: ''
+          value: '',
+          wantsCustomReminders: false,
+          customReminderDates: []
         })
       } else if (data.category == 'Onboarding Consultant') {
         reset({
           category: 'Onboarding Consultant',
           employeeName: '',
           expiryDate: new Date(),
-          iqamaNumber: ''
+          iqamaNumber: '',
+          wantsCustomReminders: false,
+          customReminderDates: []
         })
       } else if (data.category == 'Purchase Order') {
         reset({
@@ -109,7 +123,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           entryDate: new Date(),
           poEndDate: new Date(),
           poIssueDate: new Date(),
-          poNumber: ''
+          poNumber: '',
+          wantsCustomReminders: false,
+          customReminderDates: []
         })
       } else {
         reset({
@@ -119,29 +135,30 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           sponsor: '',
           visaEndDate: new Date(),
           visaEntryDate: new Date(),
-          visaNumber: ''
+          visaNumber: '',
+          wantsCustomReminders: false,
+          customReminderDates: []
         })
       }
-
     }
   }, [data.category, reset]);
 
   const colorScheme = useColorScheme()
   const onSubmit = (data: FormData) => {
-    if (!isEdit){
-    const id = uuid.v4().toString()
-    const withId:FormData = {...data,id}
-    setFormData([...formdata,withId])
-    }else{
-    const newData = formdata.map(item=>item.id==data.id ? data:item)
-    setFormData(newData)
+    if (!isEdit) {
+      const id = uuid.v4().toString()
+      const withId: FormData = { ...data, id }
+      setFormData([...formdata, withId])
+    } else {
+      const newData = formdata.map(item => item.id == data.id ? data : item)
+      setFormData(newData)
     }
     setLoading(true)
-    setTimeout(()=>{
+    setTimeout(() => {
       reset()
       router.navigate('/')
       setLoading(false)
-    },2000)
+    }, 2000)
     console.log('Formatted Data for API:', data);
   };
 
@@ -171,7 +188,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           render={({ field: { onChange, onBlur, value } }) => (
             <>
               {(typeof value == 'string' || typeof value == 'undefined') && <Input
-                style={[styles.input, {backgroundColor: colorScheme=='light' ?'white':'transparent', color:colorScheme=='light'?'black':'white'}]}
+                style={[styles.input, { backgroundColor: colorScheme == 'light' ? 'white' : 'transparent', color: colorScheme == 'light' ? 'black' : 'white' }]}
                 placeholder={placeholder}
                 onBlur={onBlur}
                 onChangeText={onChange}
@@ -201,7 +218,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           render={({ field: { onChange, onBlur, value } }) => (
             <>
               {(typeof value == 'string' || typeof value == 'undefined') && <TextArea
-                style={[styles.textAreaInput, {backgroundColor: colorScheme=='light' ?'white':'transparent', color:colorScheme=='light'?'black':'white'}]}
+                style={[styles.textAreaInput, { backgroundColor: colorScheme == 'light' ? 'white' : 'transparent', color: colorScheme == 'light' ? 'black' : 'white' }]}
                 placeholder={placeholder}
                 rows={4}
                 onBlur={onBlur}
@@ -215,31 +232,201 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
+  const confirmIosDate = (fieldName: AcceptedDateFields) => {
+    if (fieldName !== 'customReminderDate' && iosDate) {
+      setValue(fieldName, iosDate)
+      toggleDatePickerVisibility(fieldName, false)
+    }
+  }
+
+  const confirmCustomIosDate = () => {
+    if (iosDate){
+      toggleDatePickerVisibility('customReminderDate', false);
+      const dates = data.customReminderDates || []
+      dates.push(iosDate)
+      setValue('customReminderDates', dates)
+      setIosDate(undefined)
+    }
+  }
+
   const renderDatePicker = (selectedDate: Date, fieldName: AcceptedDateFields) => {
     return <>
       <TouchableOpacity onPress={() => toggleDatePickerVisibility(fieldName, true)}>
         <ThemedText style={styles.dateDisplay}>
           {formatDate(selectedDate || new Date())}
         </ThemedText>
+
+        {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && Platform.OS == 'ios' && (
+            <Sheet
+              modal
+              dismissOnOverlayPress
+              dismissOnSnapToBottom
+              open={datePickerVisibility[fieldName]}
+              onOpenChange={(open: boolean) => toggleDatePickerVisibility(fieldName, false)}
+              snapPoints={[50, 100]}
+            >
+              <Sheet.Frame padding="$4"
+                backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+                <Sheet.Handle />
+                <YStack space>
+                  <DateTimePicker
+                    value={selectedDate || new Date()}
+                    mode='date'
+                    display='spinner'
+                    onChange={(e, date) => {
+                      if (Platform.OS == 'ios' && date) {
+                        setIosDate(date)
+                      } else {
+                        if (date) {
+                          toggleDatePickerVisibility(fieldName, false);
+                          setValue(fieldName, date)
+                        }
+                        toggleDatePickerVisibility(fieldName, false);
+                      }
+                    }}
+                  />
+
+                  <Button style={{backgroundColor:Colors.light.tint}} onPress={() => confirmIosDate(fieldName)}>Confirm</Button>
+                </YStack>
+              </Sheet.Frame>
+            </Sheet>
+        )}
+         {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && (
+             <DateTimePicker
+             value={selectedDate || new Date()}
+             mode='date'
+             display='spinner'
+             onChange={(e, date) => {
+                 if (date) {
+                   toggleDatePickerVisibility(fieldName, false);
+                   setValue(fieldName, date)
+                 }
+                 toggleDatePickerVisibility(fieldName, false);
+             }}
+           />
+        )}
       </TouchableOpacity>
-      {datePickerVisibility[fieldName] && (
-        <DateTimePicker
-          value={selectedDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={(e, date) => {
-            if (date) {
-              setValue(fieldName, date)
-              toggleDatePickerVisibility(fieldName, false);
+    </>
+  }
+
+  const buildMaxDate = (currentFormData: FormData): Date | undefined => {
+    switch (currentFormData.category) {
+      case 'Agreements':
+        console.log("agreement end date:",currentFormData.endDate)
+        return currentFormData.endDate
+      case 'Insurance Renewals':
+        return currentFormData.insuranceEndDate
+      case 'Onboarding Consultant':
+        return currentFormData.expiryDate
+      case 'Purchase Order':
+        return currentFormData.poEndDate
+      case 'Visa Details':
+        return currentFormData.visaEndDate
+      default:
+        return undefined
+    }
+
+  }
+
+  const renderCustomReminderDates = () => {
+    return <>
+      <XStack alignItems="center" gap={'$2'} marginBottom={10}>
+        <Checkbox size="$4" backgroundColor={Colors.light.tint}
+          checked={manualReminders}
+          onCheckedChange={e => {
+            setManualReminders(e => !e);
+            if (data.wantsCustomReminders && isEdit) {
+              setValue('customReminderDates', [])
+              setValue('wantsCustomReminders', !data.wantsCustomReminders)
+            }else{
+              setValue('wantsCustomReminders',true)
             }
-            toggleDatePickerVisibility(fieldName, false);
-          }}
-        />
-      )}
+          }}>
+          <Checkbox.Indicator >
+            <Check color={'white'} />
+          </Checkbox.Indicator>
+        </Checkbox>
+        <ThemedText  >
+          would you like to recieve manual reminders?
+        </ThemedText>
+      </XStack>
+
+      {manualReminders && <>
+        <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
+        <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'} 
+        onPress={() => setDatePickerVisibility((prev) => ({
+          ...prev,
+          ['customReminderDate']: true,
+        }))} />
+
+        {Platform.OS!=='ios'&& datePickerVisibility['customReminderDate'] && (
+          <DateTimePicker
+          id='customReminderDate'
+            value={new Date()}
+            mode="date"
+            display="default"
+            maximumDate={buildMaxDate(data)}
+            minimumDate={new Date()}
+            onChange={(e, date) => {
+              if (date) {
+                toggleDatePickerVisibility('customReminderDate', false);
+                const dates = data.customReminderDates || []
+                dates.push(date)
+                setValue('customReminderDates', dates)
+              }
+              toggleDatePickerVisibility('customReminderDate', false);
+            }}
+          />
+        )}
+
+{Platform.OS=='ios'&& datePickerVisibility['customReminderDate'] && (
+  <>
+
+<Sheet
+              modal
+              dismissOnSnapToBottom
+              open={datePickerVisibility['customReminderDate']}
+              onOpenChange={(open: boolean) => toggleDatePickerVisibility('customReminderDate', open)}
+              snapPoints={[50, 100]}
+            >
+              <Sheet.Frame padding="$4"
+                backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+                <Sheet.Handle />
+                <YStack space>
+                
+                <DateTimePicker
+                id='customReminderDateIos'
+            value={iosDate || new Date()}
+            mode="date"
+            display="spinner"
+            maximumDate={buildMaxDate(data)}
+            minimumDate={new Date()}
+            onChange={(e, date) => {
+              if (date && Platform.OS=='ios') {
+                setIosDate(date)
+              }
+            }}
+          />
+                  <Button style={{backgroundColor:Colors.light.tint}} onPress={confirmCustomIosDate}>Confirm</Button>
+                </YStack>
+              </Sheet.Frame>
+            </Sheet>
+  </>)}
+        {data.customReminderDates?.length > 0 && data.customReminderDates.map((date, idx) =>
+          <XStack alignItems='center' key={idx}><CalendarRange size={20} color={Colors.light.tint} marginHorizontal={10} />
+            <ThemedText key={idx}>{date.toLocaleDateString()}</ThemedText>
+            <X size={20} color={'orange'} onPress={() => {
+              const dates = data.customReminderDates
+              setValue('customReminderDates', dates.filter((date, index) => index != idx))
+            }} />
+          </XStack>)}
+      </>}
     </>
   }
 
   const renderFormFields = () => {
+    const id = `checkbox-${(10 || '').toString().slice(1)}`
+
     switch (data.category) {
       case 'Agreements':
         return <>
@@ -249,11 +436,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
+            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.startDate, 'startDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.endDate, 'endDate')}
           </ThemedView>
+
+          {renderCustomReminderDates()}
+
 
         </>
       case 'Purchase Order':
@@ -264,20 +454,22 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
+            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.poIssueDate, 'poIssueDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.poEndDate, 'poEndDate')}
           </ThemedView>
+          {renderCustomReminderDates()}
         </>
       case 'Onboarding Consultant':
         return <>
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
           {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number')}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
+          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
           {renderDatePicker(data.expiryDate, 'expiryDate')}
+          {renderCustomReminderDates()}
         </>
       case 'Visa Details':
         return <>
@@ -288,11 +480,12 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
+            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.visaEndDate, 'visaEndDate')}
           </ThemedView>
+          {renderCustomReminderDates()}
         </>
       case 'Insurance Renewals':
         return <>
@@ -304,86 +497,82 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint}/>
+            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.insuranceEndDate, 'insuranceEndDate')}
           </ThemedView>
+          {renderCustomReminderDates()}
         </>
     }
   }
 
   return (
     <LinearGradient
-      colors={[colorScheme == 'light' ? '#a1c4fd' : '#252C39',colorScheme=='light'?'white': 'transparent']}
+      colors={[colorScheme == 'light' ? '#a1c4fd' : '#252C39', colorScheme == 'light' ? 'white' : 'transparent']}
     >
-      <Stack.Screen  options={{
-        headerShown:false
-      }}/>
-      <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom:150 }}>
-        <XStack style={{alignItems:'center'}}  onPress={()=>router.back()}>
-          <ArrowLeft color={colorScheme=='light'?'black' :'white'} size={25}/>
-            <ThemedText>Back</ThemedText>
+      <Stack.Screen options={{
+        headerShown: false
+      }} />
+      <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom: 150 }}>
+        <XStack style={{ alignItems: 'center' }} onPress={() => router.back()}>
+          <ArrowLeft color={colorScheme == 'light' ? 'black' : 'white'} size={25} />
+          <ThemedText>Back</ThemedText>
         </XStack>
         <YStack space="$4" alignItems="center" justifyContent="center">
-          {!isEdit &&<ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>}
-           <XStack
-      ai="center"
-      jc="space-between"
-      backgroundColor={Platform.OS=='ios' ? colorScheme=='light'?'$accentColor':'$accentBackground' : '$accentColor'}
-      borderRadius="$4"
-      padding="$3"
-      // shadowColor="#000"
-      // shadowOpacity={0.25}
-      // shadowOffset={{ width: 0, height: 4 }}
-      // shadowRadius={6}
-      // elevation={5}
-      hoverStyle={{
-        backgroundColor: '$accentColorHover',
-        transform: [{ scale: 1.03 }],
-      }}
-      pressStyle={{
-        transform: [{ scale: 1.03 }],
-      }}
-      onPress={()=>!isEdit && setIsSheetOpen(true)}
-    >
-      {data.category ? (
-        <XStack ai="center" space="$4">
-            <Image
-              source={categoryImagePaths[data.category]}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                // borderWidth: 2,
-              }}
-            />
-          <YStack>
-            <H6 theme="alt2" color="white" >
-              {data.category}
-            </H6>
-          </YStack>
-        </XStack>
-      ) : (
-        <Text  color="white" ai="center">
-          Select a Category
-        </Text>
-      )}
-    </XStack>
-         {isLoading && <ActivityIndicator size={'large'} color={Colors.light.tint}/>}
+          {!isEdit && <ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>}
+          <XStack
+            ai="center"
+            jc="space-between"
+            backgroundColor={Platform.OS == 'ios' ? colorScheme == 'light' ? '$accentColor' : '$accentBackground' : '$accentColor'}
+            borderRadius="$4"
+            padding="$3"
+            hoverStyle={{
+              backgroundColor: '$accentColorHover',
+              transform: [{ scale: 1.03 }],
+            }}
+            pressStyle={{
+              transform: [{ scale: 1.03 }],
+            }}
+            onPress={() => !isEdit && setIsSheetOpen(true)}
+          >
+            {data.category ? (
+              <XStack ai="center" space="$4">
+                <Image
+                  source={categoryImagePaths[data.category]}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    // borderWidth: 2,
+                  }}
+                />
+                <YStack>
+                  <H6 theme="alt2" color="white" >
+                    {data.category}
+                  </H6>
+                </YStack>
+              </XStack>
+            ) : (
+              <Text color="white" ai="center">
+                Select a Category
+              </Text>
+            )}
+          </XStack>
+          {isLoading && <ActivityIndicator size={'large'} color={Colors.light.tint} />}
           <Sheet
             modal
             open={isSheetOpen}
             onOpenChange={(open: boolean) => setIsSheetOpen(open)}
             snapPoints={[90, 100]}
           >
-            <Sheet.Frame padding="$4" 
-            backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+            <Sheet.Frame padding="$4"
+              backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
               <Sheet.Handle />
               <YStack space>
                 {categories.map((item) => (
                   <Button
-                    backgroundColor={Platform.OS=='ios' ? colorScheme=='light'?'$accentColor':'$accentBackground' : '$accentColor'}
+                    backgroundColor={Platform.OS == 'ios' ? colorScheme == 'light' ? '$accentColor' : '$accentBackground' : '$accentColor'}
                     key={item.value}
                     onPress={() => {
                       setValue('category', item.value)
@@ -391,10 +580,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     }}
                     borderRadius="$3"
                   >
-                    <H4 theme={'alt2'}  color={'white'}>{item.label}</H4>
+                    <H4 theme={'alt2'} color={'white'}>{item.label}</H4>
                   </Button>
                 ))}
-                
+
               </YStack>
             </Sheet.Frame>
           </Sheet>
@@ -402,9 +591,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
         {data.category && renderFormFields()}
         <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
-          {isEdit ? 'Update':'Add'}
-          </Button>
-          <View style={{height:200}}></View>
+          {isEdit ? 'Update' : 'Add'}
+        </Button>
+        <View style={{ height: 200 }}></View>
       </ScrollView>
     </LinearGradient>
   );
@@ -417,7 +606,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     marginVertical: 50,
-    color:'black'
+    color: 'black'
   },
   input: {
     height: 40,
@@ -427,7 +616,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     borderRadius: 8,
     backgroundColor: 'transparent',
-    color:'white',
+    color: 'white',
   },
   textAreaInput: {
     borderColor: 'gray',
@@ -436,7 +625,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     borderRadius: 8,
     backgroundColor: 'white',
-    color:'black'
+    color: 'black'
   },
   label: {
     marginBottom: 5,
@@ -448,31 +637,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   datePickerButton: {
-    // backgroundColor: '#007BFF',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
   },
   buttonText: {
-    // color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
   dateDisplayContainer: {
-    // backgroundColor: '#f0f0f0',
     padding: 10,
     borderRadius: 8,
     marginBottom: 20,
     flexDirection: 'row'
   },
   dateDisplayLabel: {
-    fontWeight: 'bold',
-  },
-  dateDisplay: {
-    fontSize: 16,
-    // color: '#555',
-    marginTop: 5,
     fontWeight: 'bold',
   },
   cardHeadImg: {
@@ -482,10 +662,25 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   submit: {
-    // position:'absolute',
-    // bottom:150,
+    marginTop: 40,
     alignSelf: 'center',
-    // width:150,
     color: 'white'
-  }
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  dateDisplay: {
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
 });

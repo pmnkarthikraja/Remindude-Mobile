@@ -14,6 +14,8 @@ export interface OtherCategoryData {
   expiryDate: Date;
   insuranceStartDate: Date;
   insuranceEndDate: Date;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
   }
   
 
@@ -25,6 +27,8 @@ export interface Agreements {
   remarks:string;
   startDate: Date; 
   endDate: Date;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
 }
 
 export interface PurchaseOrder {
@@ -37,6 +41,8 @@ export interface PurchaseOrder {
   poIssueDate: Date;
   poEndDate: Date;
   entryDate: Date;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
 }
 
 export interface VisaDetails {
@@ -49,6 +55,8 @@ export interface VisaDetails {
   remarks:string;
   visaEndDate: Date;
   visaEntryDate: Date;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
 }
 
 export interface OnboardingConsultant {
@@ -58,6 +66,8 @@ export interface OnboardingConsultant {
   iqamaNumber: string;
   remarks:string;
   expiryDate: Date;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
 }
 
 export interface InsuranceRenewals {
@@ -70,6 +80,8 @@ export interface InsuranceRenewals {
   insuranceCategory:string;
   remarks:string;
   value: string; 
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
 }
 
 export type Category =
