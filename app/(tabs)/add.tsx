@@ -295,7 +295,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
              <DateTimePicker
              value={selectedDate || new Date()}
              mode='date'
-             display='spinner'
+             display='default'
              onChange={(e, date) => {
                  if (date) {
                    toggleDatePickerVisibility(fieldName, false);
@@ -436,7 +436,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.startDate, 'startDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.endDate, 'endDate')}
@@ -454,7 +454,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.poIssueDate, 'poIssueDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.poEndDate, 'poEndDate')}
@@ -466,9 +466,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
           {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number')}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-          <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
+
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
+          <ThemedView style={styles.dateDisplayContainer}>
+          <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
           {renderDatePicker(data.expiryDate, 'expiryDate')}
+          </ThemedView>
+
           {renderCustomReminderDates()}
         </>
       case 'Visa Details':
@@ -480,7 +484,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.visaEndDate, 'visaEndDate')}
@@ -497,7 +501,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={6} paddingHorizontal={20} color={Colors.light.tint} />
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
             {renderDatePicker(data.insuranceEndDate, 'insuranceEndDate')}
