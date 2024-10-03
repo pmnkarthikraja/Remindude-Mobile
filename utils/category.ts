@@ -1,5 +1,3 @@
-type DateString = string;
-
 export interface OtherCategoryData {
    id:string,
    category:string,
@@ -29,6 +27,7 @@ export interface Agreements {
   endDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
+  reminderDates:Date[]
 }
 
 export interface PurchaseOrder {
@@ -43,6 +42,7 @@ export interface PurchaseOrder {
   entryDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
+  reminderDates:Date[]
 }
 
 export interface VisaDetails {
@@ -57,17 +57,19 @@ export interface VisaDetails {
   visaEntryDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
+  reminderDates:Date[]
 }
 
-export interface OnboardingConsultant {
+export interface IQAMARenewals {
   id:string,
-  category:"Onboarding Consultant"
+  category:"IQAMA Renewals"
   employeeName: string;
   iqamaNumber: string;
   remarks:string;
   expiryDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
+  reminderDates:Date[]
 }
 
 export interface InsuranceRenewals {
@@ -82,13 +84,14 @@ export interface InsuranceRenewals {
   value: string; 
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
+  reminderDates:Date[]
 }
 
 export type Category =
   | "Agreements"
   | "Purchase Order"
   | "Visa Details"
-  | "Onboarding Consultant"
+  | "IQAMA Renewals"
   | "Insurance Renewals"
   // | "IQAMA Renewals"
   // | "Interview Schedule"
@@ -108,11 +111,11 @@ type CategoryFields = {
 Agreements: Agreements;
 "Purchase Order": PurchaseOrder;
 "Visa Details": VisaDetails;
-"Onboarding Consultant": OnboardingConsultant;
+"IQAMA Renewals": IQAMARenewals;
 "Insurance Renewals": InsuranceRenewals;
 };
 
-export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingConsultant | InsuranceRenewals;
+export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals;
 
 
 // export interface CategoryFormData<T extends Category> {
@@ -121,4 +124,79 @@ export type FormData = Agreements | PurchaseOrder | VisaDetails | OnboardingCons
 //   }
 
 
-  
+import { differenceInDays } from 'date-fns';
+
+
+export const categorizeData = (data: FormData[]): {
+  next30Days: FormData[],
+  next30to60Days: FormData[],
+  next60to90Days: FormData[],
+  laterThan90Days: FormData[],
+  renewal: FormData[]
+} => {
+  const today = new Date();
+
+  const renewal = data.filter(item => {
+    const endDate = getEndDate(item);
+    return endDate && differenceInDays(endDate, today) < 1
+  })
+
+  const next30Days = data.filter(item => {
+    const endDate = getEndDate(item);
+    return endDate && differenceInDays(endDate, today) > 1 && endDate && differenceInDays(endDate, today) <= 30;
+  });
+
+  const next30to60Days = data.filter(item => {
+    const endDate = getEndDate(item);
+    return endDate && differenceInDays(endDate, today) > 30 && differenceInDays(endDate, today) <= 60;
+  });
+
+  const next60to90Days = data.filter(item => {
+    const endDate = getEndDate(item);
+    return endDate && differenceInDays(endDate, today) > 60 && differenceInDays(endDate, today) <= 90;
+  });
+
+  const laterThan90Days = data.filter(item => {
+    const endDate = getEndDate(item);
+    return endDate && differenceInDays(endDate, today) > 90;
+  });
+
+  return { next30Days, next30to60Days, next60to90Days, laterThan90Days, renewal };
+};
+
+
+type SortType = 'newest' | 'oldest' | 'renewal';
+
+const sortData = (data: FormData[], sortBy: SortType): FormData[] => {
+  switch (sortBy) {
+    case 'newest':
+      return [...data].sort((a, b) => {
+        const endDateA = getEndDate(a)?.getTime() || 0;
+        const endDateB = getEndDate(b)?.getTime() || 0;
+        return endDateB - endDateA;
+      });
+    case 'oldest':
+      return [...data].sort((a, b) => {
+        const endDateA = getEndDate(a)?.getTime() || 0;
+        const endDateB = getEndDate(b)?.getTime() || 0;
+        return endDateA - endDateB;
+      });
+    case 'renewal':
+      return data.filter(item => {
+        const endDate = getEndDate(item);
+        return endDate && differenceInDays(endDate, new Date()) < 0;
+      });
+    default:
+      return data;
+  }
+};
+
+
+export const getEndDate = (item: FormData): Date | null => {
+  if ('endDate' in item) return item.endDate;
+  if ('poEndDate' in item) return item.poEndDate;
+  if ('visaEndDate' in item) return item.visaEndDate;
+  if ('expiryDate' in item) return item.expiryDate;
+  if ('insuranceEndDate' in item) return item.insuranceEndDate;
+  return null;
+};

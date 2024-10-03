@@ -7,11 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "remindude",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": null,
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-        },
     "backgroundColor": "#000000" ,
     "ios": {
       "supportsTablet": true,

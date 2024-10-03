@@ -8,6 +8,7 @@ import {useForm,Controller} from 'react-hook-form'
 import { User } from '@/utils/user';
 import * as WebBrowser from 'expo-web-browser'
 import * as Google from 'expo-auth-session/providers/google'
+import {makeRedirectUri} from 'expo-auth-session'
 import { useEmailSigninMutation } from '@/hooks/userHooks';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
@@ -31,42 +32,46 @@ const Login:FunctionComponent<LoginProps>=({
       "profile",
       "email"
     ],
+    redirectUri:makeRedirectUri({
+      scheme: 'remindude',  
+    }),
   })
 const { handleSubmit, watch,formState: { errors },control } = useForm<User>();
-
-// devdatasack@gmail.com
 
 const triggerForgotModal=()=>{
   setForgotModal(r=>!r)
 }
 
 useEffect(()=>{
-  console.log("response: ",response)
-  console.log("requesting..",request)
   setUserInfo(null)
   handleSigninWithGoogle()
 },[response])
 
 async function handleSigninWithGoogle(){
-  const user = await AsyncStorage.getItem('@user')
-  if (!user){
+  // const user = await AsyncStorage.getItem('@user')
+  // if (!user){
     if (response?.type==='success'){
       await getUserInfo(response.authentication?.accessToken || '')
     }
-  }else{
-    setUserInfo(JSON.parse(user))
-  }
+  // }else{
+  //   setUserInfo(JSON.parse(user))
+  // }
 }
 
 const getUserInfo = async (token:string)=>{
   if (!token)return
   try{
-    const response = await fetch("https://www.googleapis.com/userinfo/v2/me",{
-      headers:{Authorization:`Bearer ${token}`}
-    })
-    const user  =await  response.json()
+    // const response = await fetch("https://www.googleapis.com/userinfo/v2/me",{
+    //   headers:{Authorization:`Bearer ${token}`}
+    // })
+    // const user  =await  response.json()
+    const res = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const user = await res.json();
     await AsyncStorage.setItem('@user',JSON.stringify(user))
     setUserInfo(user)
+    router.navigate('/(tabs)/')
   }catch(e){
     console.log("error on getting profile on google.",e)
   }
@@ -77,16 +82,6 @@ const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
     setForgotModal(true)
   };
 
-  const handleLogin = (user:User) => {
-    const setToken = async () =>{
-      await AsyncStorage.setItem('token','authenticatedtoken')
-    }
-    setToken()
-    if(typeof onlogin=='function'){
-      onlogin()
-    }
-    router.navigate('/')
-  };
 
   const signInQuery = async () => {
     const data = watch()
@@ -96,6 +91,36 @@ const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
   const handleSignUp = () => {
     router.push('/signup')
   };
+
+
+  // const signIn = async () => {
+  //   try {
+  //     await GoogleSignin.hasPlayServices();
+  //     const response = await GoogleSignin.signIn();
+  //     console.log({response})
+  //     // if (isSuccessResponse(response)) {
+  //     //   setState({ userInfo: response.data });
+  //     // } else {
+  //     //   // sign in was cancelled by user
+  //     // }
+  //   } catch (error) {
+  //     console.log("error on signin: ",error)
+  //     // if (isErrorWithCode(error)) {
+  //     //   switch (error.code) {
+  //     //     case statusCodes.IN_PROGRESS:
+  //     //       // operation (eg. sign in) already in progress
+  //     //       break;
+  //     //     case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+  //     //       // Android only, play services not available or outdated
+  //     //       break;
+  //     //     default:
+  //     //     // some other error happened
+  //     //   }
+  //     // } else {
+  //     //   // an error that's not related to google sign in occurred
+  //     }
+  //   }
+  
 
   return (
     <ImageBackground source={{uri:image}} style={styles.backgroundImage}>
@@ -156,10 +181,27 @@ const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
 
         <View style={styles.signInOptionsContainer}>
           <Text style={styles.note}>Or sign in using</Text>
+
           <TouchableOpacity onPress={async ()=>await promptAsync()} style={styles.googleButton}>
             <Image source={{uri:'https://cdn-icons-png.flaticon.com/128/281/281764.png'}} style={styles.googleIcon} />
             <Text  style={styles.googleButtonText}>Google</Text>
           </TouchableOpacity>
+
+          <View style={{height:20}}></View>
+
+          <TouchableOpacity onPress={async ()=>{
+            await AsyncStorage.setItem('token','dummytoken')
+            router.navigate('/(tabs)/')}} style={styles.googleButton}>
+            <Text  style={styles.googleButtonText}>Go to home</Text>
+          </TouchableOpacity>
+
+          {/* <GoogleSigninButton size={GoogleSigninButton. Size.Wide} /> */}
+
+          {/* <TouchableOpacity onPress={signIn} style={styles.googleButton}>
+            <Text  style={styles.googleButtonText}>Google Signin</Text>
+          </TouchableOpacity> */}
+
+
         </View>
 
         <View style={styles.signUpContainer}>

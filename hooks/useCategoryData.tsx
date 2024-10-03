@@ -1,5 +1,5 @@
 import { FormData } from '@/utils/category';
-import { agreementsData, insuranceRenewalData, onboardingData, purchaseOrderData, visaDetailsData } from '@/utils/datasets';
+import { agreementsData, insuranceRenewalData, iqamaRenewals, purchaseOrderData, visaDetailsData } from '@/utils/datasets';
 import React, { createContext, useContext, useState, ReactNode, FunctionComponent } from 'react';
 import uuid from 'react-native-uuid';
 
@@ -16,7 +16,7 @@ const [formdata,setFormData]=useState<FormData[]>([
  ...agreementsData,
  ...purchaseOrderData,
  ...visaDetailsData,
- ...onboardingData,
+ ...iqamaRenewals,
  ...insuranceRenewalData
 ])
 

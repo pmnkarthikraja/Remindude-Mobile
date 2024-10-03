@@ -2,23 +2,25 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import { calculateReminderDates } from '@/utils/calculateReminder';
 import { Category, FormData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { ArrowLeft, CalendarRange, Check, Plus, X } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Control, Controller, FieldPath, useForm } from 'react-hook-form';
+import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
-import { Button, Checkbox, H3, H4, H6, Image, Input, Label, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
-import { ArrowBigLeft, ArrowLeft, CalendarRange, Check, Check as CheckIcon, Cross, Plus, X } from '@tamagui/lucide-icons';
+import { buildNotifications } from '@/utils/pushNotifications';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
   { label: 'Purchase Order', value: 'Purchase Order' },
   { label: 'Visa Details', value: 'Visa Details' },
-  { label: 'Onboarding Consultant', value: 'Onboarding Consultant' },
+  { label: 'IQAMA Renewals', value: 'IQAMA Renewals' },
   { label: 'Insurance Renewals', value: 'Insurance Renewals' },
 ];
 
@@ -34,7 +36,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 }) => {
   const { formdata, setFormData } = useCategoryDataContext()
   const [isLoading, setLoading] = useState(false)
-  const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
+  const { control, handleSubmit, setValue, watch, reset, formState:{errors} } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
@@ -45,6 +47,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       customReminderDates: []
     }
   });
+  
   const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && true);
   const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
@@ -62,7 +65,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -93,7 +95,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           startDate: new Date(),
           vendorCode: '',
           wantsCustomReminders: false,
-          customReminderDates: []
+          customReminderDates: [],
+          reminderDates:[],
+          remarks:''
         })
       } else if (data.category == 'Insurance Renewals') {
         reset({
@@ -104,16 +108,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           insuranceStartDate: new Date(),
           value: '',
           wantsCustomReminders: false,
-          customReminderDates: []
+          customReminderDates: [],
+            reminderDates:[],
+          remarks:''
         })
-      } else if (data.category == 'Onboarding Consultant') {
+      } else if (data.category == 'IQAMA Renewals') {
         reset({
-          category: 'Onboarding Consultant',
+          category: 'IQAMA Renewals',
           employeeName: '',
           expiryDate: new Date(),
           iqamaNumber: '',
           wantsCustomReminders: false,
-          customReminderDates: []
+          customReminderDates: [],
+            reminderDates:[],
+          remarks:''
         })
       } else if (data.category == 'Purchase Order') {
         reset({
@@ -125,7 +133,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           poIssueDate: new Date(),
           poNumber: '',
           wantsCustomReminders: false,
-          customReminderDates: []
+          customReminderDates: [],
+            reminderDates:[],
+          remarks:''
         })
       } else {
         reset({
@@ -137,20 +147,28 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           visaEntryDate: new Date(),
           visaNumber: '',
           wantsCustomReminders: false,
-          customReminderDates: []
+          customReminderDates: [],
+            reminderDates:[],
+          remarks:''
         })
       }
     }
   }, [data.category, reset]);
 
   const colorScheme = useColorScheme()
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     if (!isEdit) {
       const id = uuid.v4().toString()
       const withId: FormData = { ...data, id }
-      setFormData([...formdata, withId])
+      const withReminderDates = calculateReminderDates(withId)
+      console.log('Formatted Data for API:', withReminderDates);
+      console.log("scheduling push notifications...")
+      await buildNotifications(withReminderDates,'Add')
+      setFormData([...formdata, withReminderDates])
     } else {
-      const newData = formdata.map(item => item.id == data.id ? data : item)
+      const withReminderDates = calculateReminderDates(data)
+      const newData = formdata.map(item => item.id == data.id ? withReminderDates : item)
+      await buildNotifications(withReminderDates,'Update')
       setFormData(newData)
     }
     setLoading(true)
@@ -159,7 +177,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       router.navigate('/')
       setLoading(false)
     }, 2000)
-    console.log('Formatted Data for API:', data);
   };
 
   const formatDate = (date: Date): string => {
@@ -169,13 +186,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     return `${day}-${month}-${year}`;
   };
 
-  type fieldName = FieldPath<FormData>
+  type FieldName = FieldPath<FormData>
 
   const renderTextInput = (
-    name: fieldName,
+    name: FieldName,
     control: Control<FormData>,
     label: string,
     placeholder: string,
+    errorss: FieldErrors<FormData>, 
     rules?: object
   ) => {
     return (
@@ -184,25 +202,38 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         <Controller
           control={control}
           name={name}
-          rules={rules}
+          rules={{
+            required: 'This field is required', 
+            ...rules,
+          }}
           render={({ field: { onChange, onBlur, value } }) => (
-            <>
-              {(typeof value == 'string' || typeof value == 'undefined') && <Input
-                style={[styles.input, { backgroundColor: colorScheme == 'light' ? 'white' : 'transparent', color: colorScheme == 'light' ? 'black' : 'white' }]}
+              <Input
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
+                    color: colorScheme === 'light' ? 'black' : 'white',
+                  },
+                ]}
                 placeholder={placeholder}
                 onBlur={onBlur}
                 onChangeText={onChange}
-                value={value}
-              />}
-            </>
+                value={typeof value === 'string' ? value : ''}
+              />
           )}
         />
+  
+      {errorss[name as keyof FieldErrors<FormData>] && (
+        <ThemedText style={styles.errorText}>
+          {errorss[name as keyof FieldErrors<FormData>]?.message || ''}
+        </ThemedText>
+      )}      
       </>
     );
   };
 
   const renderTextBoxInput = (
-    name: fieldName,
+    name: FieldName,
     control: Control<FormData>,
     label: string,
     placeholder: string,
@@ -240,7 +271,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   }
 
   const confirmCustomIosDate = () => {
-    if (iosDate){
+    if (iosDate) {
       toggleDatePickerVisibility('customReminderDate', false);
       const dates = data.customReminderDates || []
       dates.push(iosDate)
@@ -257,53 +288,52 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </ThemedText>
 
         {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && Platform.OS == 'ios' && (
-            <Sheet
-              modal
-              dismissOnOverlayPress
-              dismissOnSnapToBottom
-              open={datePickerVisibility[fieldName]}
-              onOpenChange={(open: boolean) => toggleDatePickerVisibility(fieldName, false)}
-              snapPoints={[50, 100]}
-            >
-              <Sheet.Frame padding="$4"
-                backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
-                <Sheet.Handle />
-                <YStack space>
-                  <DateTimePicker
-                    value={selectedDate || new Date()}
-                    mode='date'
-                    display='spinner'
-                    onChange={(e, date) => {
-                      if (Platform.OS == 'ios' && date) {
-                        setIosDate(date)
-                      } else {
-                        if (date) {
-                          toggleDatePickerVisibility(fieldName, false);
-                          setValue(fieldName, date)
-                        }
+          <Sheet
+            modal
+            dismissOnOverlayPress
+            dismissOnSnapToBottom
+            open={datePickerVisibility[fieldName]}
+            onOpenChange={(open: boolean) => toggleDatePickerVisibility(fieldName, false)}
+            snapPoints={[50, 100]}
+          >
+            <Sheet.Frame padding="$4"
+              backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+              <Sheet.Handle />
+              <YStack space>
+                <DateTimePicker
+                  value={selectedDate || new Date()}
+                  mode='date'
+                  display='spinner'
+                  onChange={(e, date) => {
+                    if (Platform.OS == 'ios' && date) {
+                      setIosDate(date)
+                    } else {
+                      if (date) {
                         toggleDatePickerVisibility(fieldName, false);
+                        setValue(fieldName, date)
                       }
-                    }}
-                  />
-
-                  <Button style={{backgroundColor:Colors.light.tint}} onPress={() => confirmIosDate(fieldName)}>Confirm</Button>
-                </YStack>
-              </Sheet.Frame>
-            </Sheet>
+                      toggleDatePickerVisibility(fieldName, false);
+                    }
+                  }}
+                />
+                <Button style={{ backgroundColor: Colors.light.tint }} onPress={() => confirmIosDate(fieldName)}>Confirm</Button>
+              </YStack>
+            </Sheet.Frame>
+          </Sheet>
         )}
-         {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && (
-             <DateTimePicker
-             value={selectedDate || new Date()}
-             mode='date'
-             display='default'
-             onChange={(e, date) => {
-                 if (date) {
-                   toggleDatePickerVisibility(fieldName, false);
-                   setValue(fieldName, date)
-                 }
-                 toggleDatePickerVisibility(fieldName, false);
-             }}
-           />
+        {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && (
+          <DateTimePicker
+            value={selectedDate || new Date()}
+            mode='date'
+            display='default'
+            onChange={(e, date) => {
+              if (date) {
+                toggleDatePickerVisibility(fieldName, false);
+                setValue(fieldName, date)
+              }
+              toggleDatePickerVisibility(fieldName, false);
+            }}
+          />
         )}
       </TouchableOpacity>
     </>
@@ -312,11 +342,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const buildMaxDate = (currentFormData: FormData): Date | undefined => {
     switch (currentFormData.category) {
       case 'Agreements':
-        console.log("agreement end date:",currentFormData.endDate)
         return currentFormData.endDate
       case 'Insurance Renewals':
         return currentFormData.insuranceEndDate
-      case 'Onboarding Consultant':
+      case 'IQAMA Renewals':
         return currentFormData.expiryDate
       case 'Purchase Order':
         return currentFormData.poEndDate
@@ -325,7 +354,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       default:
         return undefined
     }
-
   }
 
   const renderCustomReminderDates = () => {
@@ -338,8 +366,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             if (data.wantsCustomReminders && isEdit) {
               setValue('customReminderDates', [])
               setValue('wantsCustomReminders', !data.wantsCustomReminders)
-            }else{
-              setValue('wantsCustomReminders',true)
+            } else {
+              setValue('wantsCustomReminders', true)
             }
           }}>
           <Checkbox.Indicator >
@@ -347,21 +375,21 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           </Checkbox.Indicator>
         </Checkbox>
         <ThemedText  >
-          would you like to recieve manual reminders?
+          would you like to recieve custom reminders?
         </ThemedText>
       </XStack>
 
       {manualReminders && <>
         <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
-        <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'} 
-        onPress={() => setDatePickerVisibility((prev) => ({
-          ...prev,
-          ['customReminderDate']: true,
-        }))} />
+        <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'}
+          onPress={() => setDatePickerVisibility((prev) => ({
+            ...prev,
+            ['customReminderDate']: true,
+          }))} />
 
-        {Platform.OS!=='ios'&& datePickerVisibility['customReminderDate'] && (
+        {Platform.OS !== 'ios' && datePickerVisibility['customReminderDate'] && (
           <DateTimePicker
-          id='customReminderDate'
+            id='customReminderDate'
             value={new Date()}
             mode="date"
             display="default"
@@ -371,18 +399,19 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               if (date) {
                 toggleDatePickerVisibility('customReminderDate', false);
                 const dates = data.customReminderDates || []
-                dates.push(date)
-                setValue('customReminderDates', dates)
+                if (e.type == 'set') {
+                  dates.push(date)
+                  setValue('customReminderDates', dates)
+                }
               }
               toggleDatePickerVisibility('customReminderDate', false);
             }}
           />
         )}
 
-{Platform.OS=='ios'&& datePickerVisibility['customReminderDate'] && (
-  <>
-
-<Sheet
+        {Platform.OS == 'ios' && datePickerVisibility['customReminderDate'] && (
+          <>
+            <Sheet
               modal
               dismissOnSnapToBottom
               open={datePickerVisibility['customReminderDate']}
@@ -393,25 +422,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                 backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
                 <Sheet.Handle />
                 <YStack space>
-                
-                <DateTimePicker
-                id='customReminderDateIos'
-            value={iosDate || new Date()}
-            mode="date"
-            display="spinner"
-            maximumDate={buildMaxDate(data)}
-            minimumDate={new Date()}
-            onChange={(e, date) => {
-              if (date && Platform.OS=='ios') {
-                setIosDate(date)
-              }
-            }}
-          />
-                  <Button style={{backgroundColor:Colors.light.tint}} onPress={confirmCustomIosDate}>Confirm</Button>
+                  <DateTimePicker
+                    id='customReminderDateIos'
+                    value={iosDate || new Date()}
+                    mode="date"
+                    display="spinner"
+                    maximumDate={buildMaxDate(data)}
+                    minimumDate={new Date()}
+                    onChange={(e, date) => {
+                      if (date && Platform.OS == 'ios' && e.type == 'set') {
+                        setIosDate(date)
+                      }
+                    }}
+                  />
+                  <Button style={{ backgroundColor: Colors.light.tint }} onPress={confirmCustomIosDate}>Confirm</Button>
                 </YStack>
               </Sheet.Frame>
             </Sheet>
-  </>)}
+          </>)}
         {data.customReminderDates?.length > 0 && data.customReminderDates.map((date, idx) =>
           <XStack alignItems='center' key={idx}><CalendarRange size={20} color={Colors.light.tint} marginHorizontal={10} />
             <ThemedText key={idx}>{date.toLocaleDateString()}</ThemedText>
@@ -430,8 +458,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     switch (data.category) {
       case 'Agreements':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
-          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
+          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
@@ -448,9 +476,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </>
       case 'Purchase Order':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
-          {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name')}
-          {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
+          {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name',errors)}
+          {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
@@ -461,26 +489,26 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           </ThemedView>
           {renderCustomReminderDates()}
         </>
-      case 'Onboarding Consultant':
+      case 'IQAMA Renewals':
         return <>
-          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
-          {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number')}
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name',errors)}
+          {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
-          <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-          {renderDatePicker(data.expiryDate, 'expiryDate')}
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
+            {renderDatePicker(data.expiryDate, 'expiryDate')}
           </ThemedView>
 
           {renderCustomReminderDates()}
         </>
       case 'Visa Details':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name')}
-          {renderTextInput('visaNumber', control, 'Visa Number', 'Enter Visa Number')}
-          {renderTextInput('sponsor', control, 'Sponsor', 'Enter Sponsor')}
-          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name')}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
+          {renderTextInput('visaNumber', control, 'Visa Number', 'Enter Visa Number',errors)}
+          {renderTextInput('sponsor', control, 'Sponsor', 'Enter Sponsor',errors)}
+          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
           <ThemedView style={styles.dateDisplayContainer}>
@@ -493,10 +521,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </>
       case 'Insurance Renewals':
         return <>
-          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name')}
-          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company')}
-          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category')}
-          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value')}
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name',errors)}
+          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company',errors)}
+          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category',errors)}
+          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>

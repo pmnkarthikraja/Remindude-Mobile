@@ -1,34 +1,44 @@
-import { Dimensions, FlatList, Image, Platform, Switch, Text, useColorScheme, View } from 'react-native';
+import { Dimensions, FlatList, Image, Platform, ScrollView, Switch, Text, TouchableHighlight, useColorScheme, View } from 'react-native';
+import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 
-import { Colors } from '@/constants/Colors';
-import React, { FunctionComponent, useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react';
 import type { CardProps } from 'tamagui';
-import { Card, H2, Paragraph, YStack, Text as TextTamagui } from 'tamagui';
-import { Button, H3, XStack } from 'tamagui';
-import {LinearGradient} from 'expo-linear-gradient'
+import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
 
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { Appearance } from 'react-native';
 
-import { StyleSheet } from 'react-native';
-import Lottie from 'lottie-react-native'; 
-import { Path, Circle, Line , Text as SVGText, Polygon, Ellipse} from 'react-native-svg'
+import Lottie from 'lottie-react-native';
+import { StyleSheet, RefreshControl } from 'react-native';
+import { Path, Polygon } from 'react-native-svg';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Category } from '@/utils/category';
-import { Moon, MoonStar, Sun, Sunrise } from '@tamagui/lucide-icons';
+import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { useProfileContext } from '@/hooks/useProfile';
-import Svg, { Rect } from 'react-native-svg';
-import Animated, { useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle, withDelay, Easing } from 'react-native-reanimated';
+import { categorizeData, Category, FormData } from '@/utils/category';
+import { MoonStar, Sun } from '@tamagui/lucide-icons';
+import * as Notifications from 'expo-notifications';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Svg from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const categories:Category[]=[
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+const categories: Category[] = [
   "Agreements",
   "Purchase Order",
   "Visa Details",
-  "Onboarding Consultant",
+  // "Onboarding Consultant",
   // "Interview Schedule",
   // "VAT Submission",
-  // "IQAMA Renewals",
+  "IQAMA Renewals",
   "Insurance Renewals",
   // "Bills Payments",
   // "Room Rent Collection",
@@ -42,13 +52,6 @@ const categories:Category[]=[
   // "Employee Issue Tracking"
 ]
 
-const benefits=[
-  "Agreements",
-  "Purchase Order",
-  "Visa Details",
-  "Onboarding Consultant",
-  "Insurance Renewal"
-]
 
 export const categoryImagePaths: Record<string, any> = {
   Agreements: require('../../../assets/images/categories/Agreement.png'),
@@ -56,7 +59,7 @@ export const categoryImagePaths: Record<string, any> = {
   Deduction: require('../../../assets/images/categories/Deduction.png'),
   "Purchase Order": require('../../../assets/images/categories/Purchase Order.png'),
   "Visa Details": require('../../../assets/images/categories/Visa.png'),
-  "Onboarding Consultant" : require('../../../assets/images/categories/Onboard Consultation.png'),
+  "Onboarding Consultant": require('../../../assets/images/categories/Onboard Consultation.png'),
   "Interview Schedule": require('../../../assets/images/categories/Interview Schedule.png'),
   "VAT Submission": require('../../../assets/images/categories/VAT Submission.png'),
   "IQAMA Renewals": require('../../../assets/images/categories/IQAMA Renewal.png'),
@@ -65,27 +68,29 @@ export const categoryImagePaths: Record<string, any> = {
   "Room Rent Collection": require('../../../assets/images/categories/Rental Collectin.png'),
   "Room Rent Pay": require('../../../assets/images/categories/Room Rent Pay.png'),
   "Saudi Salary Processing": require('../../../assets/images/categories/Saudi Salary Processing.png'),
-  "WithHolding Tax":require('../../../assets/images/categories/WithHolding Tax.png'),
+  "WithHolding Tax": require('../../../assets/images/categories/WithHolding Tax.png'),
   "GOSI Payments": require('../../../assets/images/categories/Room Rent Pay.png'),
   "Saudization Payment collection": require('../../../assets/images/categories/Rental Collectin.png'),
   "Employee Issue Tracking": require('../../../assets/images/categories/Employment Issue.png')
 };
 
-export const CategoryCardWrapper: FunctionComponent<{ category: Category }> = ({
+export const CategoryCardWrapper: FunctionComponent<{ category: Category, items: FormData[] }> = ({
   category,
+  items
 }) => {
+
   return (
     <XStack $sm={{ flexDirection: 'column' }} paddingHorizontal="$4">
       <CategoryCard
         theme={'alt2'}
-        animation="bouncy"
         size="$1"
+        animation={'quickest'}
         width={'100%'}
         height={170}
         padding={5}
-        hoverStyle={{ scale: 0.825 }}
-        pressStyle={{ scale: 0.775 }}
+        // pressStyle={{ scale: 0.775 }}
         category={category}
+        items={items}
       />
     </XStack>
   );
@@ -93,9 +98,11 @@ export const CategoryCardWrapper: FunctionComponent<{ category: Category }> = ({
 
 interface CategoryCardProps extends CardProps {
   category: Category;
+  items: FormData[]
 }
 
 export function CategoryCard(props: CategoryCardProps) {
+  const { items, category } = props
   const colorscheme = useColorScheme();
   const image = categoryImagePaths[props.category];
 
@@ -106,10 +113,12 @@ export function CategoryCard(props: CategoryCardProps) {
     return colorscheme === 'light' ? lightColors[index] : darkColors[index];
   };
 
+  const filteredItems = items.filter(i => i.category == category)
+  const { next30Days, next30to60Days, next60to90Days, renewal } = categorizeData(filteredItems)
   const labelData = [
-    { label: '30 Days', count: 12 },
-    { label: '60 Days', count: 8 },
-    { label: '90 Days', count: 5 }
+    { label: 'Next 30 Days', count: next30Days.length },
+    { label: '30 - 60 Days', count: next30to60Days.length },
+    { label: '60 - 90 Days', count: next60to90Days.length }
   ];
 
   return (
@@ -123,19 +132,20 @@ export function CategoryCard(props: CategoryCardProps) {
       <Card.Header >
         <View style={styles.cardHeader}>
           <Image source={image} style={styles.cardHeadImg} />
-          <H3 theme={'alt2'} 
-          color={'$black050'}
-          size={'$8'}>
+          <H3 theme={'alt2'}
+            color={'$black050'}
+            size={'$8'}>
             {props.category}
           </H3>
         </View>
 
-      {props.category=='Agreements' &&  <View>
-          <Text adjustsFontSizeToFit 
-          style={{fontSize:12,color:colorscheme=='light'?'orangered':'orange',paddingLeft:10}}>
-            Renewal Pending: 
-            <Text style={{fontWeight:'bold',fontSize:20}}>3</Text>
-            </Text>
+        {renewal.length > 0 && <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text adjustsFontSizeToFit
+            style={{ fontSize: 12, color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 10 }}>
+            Renewal Pending:
+          </Text>
+          <Text style={{ fontWeight: 'bold', color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 5, fontSize: 20 }}>{renewal.length}</Text>
+
         </View>}
 
       </Card.Header>
@@ -151,45 +161,45 @@ export function CategoryCard(props: CategoryCardProps) {
           colorscheme == 'light'
             ? 'white'
             : Platform.OS == 'ios'
-            ? '$accentBackground'
-            : '$accentColor'
+              ? '$accentBackground'
+              : '$accentColor'
         }
       >
 
 
-  <Svg
-      height="200"
-      width="400"
-      style={{
-        position: 'absolute', 
-        top: 35,
-        right: 0, 
-        opacity: 0.3, 
-      }}
-    >
-      <Path
-        d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
-        fill={colorscheme=='light' ? "blue":'#CCE3F3'} 
-      />
-    </Svg>
+        <Svg
+          height="200"
+          width="400"
+          style={{
+            position: 'absolute',
+            top: 35,
+            right: 0,
+            opacity: 0.3,
+          }}
+        >
+          <Path
+            d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
+            fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
+          />
+        </Svg>
 
-    <Svg
-      height="200"
-      width="400"
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0, 
-        opacity: 0.25, 
-      }}
-    >
-      <Path
-        d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z" 
-        fill={colorscheme=='light' ? "purple" :'transparent'} 
-      />
-    </Svg>
+        <Svg
+          height="200"
+          width="400"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            opacity: 0.25,
+          }}
+        >
+          <Path
+            d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
+            fill={colorscheme == 'light' ? "purple" : 'transparent'}
+          />
+        </Svg>
 
-       
+
       </Card.Background>
       <Card.Footer padded>
         <XStack jc="space-around" space="$4">
@@ -203,12 +213,13 @@ export function CategoryCard(props: CategoryCardProps) {
               ai="center"
               jc="center"
             >
-              <TextTamagui color={'$black'}>{item.label}</TextTamagui>
-              <TextTamagui fontSize={'$8'} color={'$accentColor'}>
+              <View style={{ height: 20 }}></View>
+              <TextTamagui fontSize={10} color={'$black'} >{item.label}</TextTamagui>
+              <TextTamagui style={{ marginTop: -10 }} padding={15} fontSize={'$8'} color={'$accentColor'}>
                 {item.count}
               </TextTamagui>
 
-             {index==0 && <Svg
+              {index == 0 && <Svg
                 height="50"
                 width="100%"
                 style={{
@@ -233,7 +244,7 @@ export function CategoryCard(props: CategoryCardProps) {
 
 const { width } = Dimensions.get('window');
 
-const createStarPath = (cx:number, cy:number, spikes:number, outerRadius:number, innerRadius:number) => {
+const createStarPath = (cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
   let path = '';
   let angle = Math.PI / spikes;
 
@@ -247,14 +258,14 @@ const createStarPath = (cx:number, cy:number, spikes:number, outerRadius:number,
 };
 
 
-const generateRandomStars = (count:number) => {
+const generateRandomStars = (count: number) => {
   let stars = [];
   for (let i = 0; i < count; i++) {
-    const size = Math.random() * 2 +3; 
+    const size = Math.random() * 2 + 3;
     stars.push({
       id: i,
-      x: Math.random() * width, 
-      y: Math.random() * 100,  
+      x: Math.random() * width,
+      y: Math.random() * 100,
       size,
       path: createStarPath(0, 0, 5, size, size / 2),
     });
@@ -263,59 +274,59 @@ const generateRandomStars = (count:number) => {
 };
 
 const Header = () => {
-  const [stars] = useState(() => generateRandomStars(15)); 
+  const [stars] = useState(() => generateRandomStars(15));
   const systemTheme = Appearance.getColorScheme();
-  const {profile,userName,email} = useProfileContext()
+  const { profile, userName, email } = useProfileContext()
   const translateX = useSharedValue(-150);
-  const [switchOn,setSwitchOn]=useState(systemTheme=='dark')
+  const [switchOn, setSwitchOn] = useState(systemTheme == 'dark')
 
   React.useEffect(() => {
     translateX.value = withRepeat(
-      withTiming(width, { duration: 15000 }), 
-      -1,
-      false 
+      withTiming(width, { duration: 15000,reduceMotion:ReduceMotion.Never }),
+      100,
+      false
     );
   }, [translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }], 
+    transform: [{ translateX: translateX.value }],
   }));
 
   const toggleTheme = () => {
-    const theme = systemTheme=='dark'?'light':'dark'
-    setSwitchOn(theme=='dark')
+    const theme = systemTheme == 'dark' ? 'light' : 'dark'
+    setSwitchOn(theme == 'dark')
     Appearance.setColorScheme(theme)
   };
 
   return (
     <View style={[styles.header]}>
-       {systemTheme=='dark'&&<Svg height={100} width={width} style={styles.starsContainer}>
+      {systemTheme == 'dark' && <Svg height={100} width={width} style={styles.starsContainer}>
         {stars.map((star) => (
           <Polygon
             key={star.id}
             points={star.path}
             fill="white"
-            opacity={Math.random() * 0.8 + 0.2} 
-            translateX={star.x} 
-            translateY={star.y} 
+            opacity={Math.random() * 0.8 + 0.2}
+            translateX={star.x}
+            translateY={star.y}
           />
         ))}
       </Svg>}
 
       {systemTheme === 'light' && (
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
-        <Image
-          source={require('../clouds.png')} 
-          style={styles.cloud}
-          resizeMode="contain"
-        />
-      </Animated.View>
+          <Image
+            source={require('../clouds.png')}
+            style={styles.cloud}
+            resizeMode="contain"
+          />
+        </Animated.View>
       )}
       <Image
-        source={{ uri:profile }} 
+        source={{ uri: profile }}
         style={styles.profilePic}
       />
-       <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
+      <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
       <Switch
         value={switchOn}
         onValueChange={toggleTheme}
@@ -323,64 +334,111 @@ const Header = () => {
         thumbColor={switchOn ? '#f5dd4b' : '#f4f3f4'}
         style={styles.switch}
       />
-       <Animated.View>
-          {systemTheme=='dark' ? (
-            <MoonStar fill={'white'} color="white" size={20} />
-          ) : 
-          ( 
+      <Animated.View>
+        {systemTheme == 'dark' ? (
+          <MoonStar fill={'white'} color="white" size={20} />
+        ) :
+          (
             <Sun fill={'yellow'} color="yellow" size={20} />
           )}
-        </Animated.View>
-          </View>
+      </Animated.View>
+    </View>
   );
 };
 
-export default function HomeScreen() {
+export const wait = (timeout:
+  number
+)=>{
+  return new Promise(resolve => setTimeout(resolve,timeout))
+}
+
+const HomeScreen = () => {
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [refreshing,setRefreshing]=useState(false)
+  
+  const onRefresh= useCallback(()=>{
+    setRefreshing(true)
+    wait(2000).then(()=>setRefreshing(false))
+  },[])
+
+  useEffect(() => {
+    // Request notification permissions
+    const requestPermissions = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      setPermissionGranted(status === 'granted');
+    };
+
+    requestPermissions();
+
+    // Set up a notification listener to handle notifications received while the app is open
+    const subscription = Notifications.addNotificationReceivedListener(
+      notification => {
+        console.log('Notification received:', notification.request.identifier);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const colorscheme = useColorScheme()
+  const { formdata } = useCategoryDataContext()
   return (
     <View style={styles.container}>
-      <LinearGradient 
-      colors={[ colorscheme =='light' ? '#a1c4fd':'#252C39', colorscheme=='light'?'white':'transparent']}
-      style={{ flex: 1 }}
+      <LinearGradient
+        colors={[colorscheme == 'light' ? '#a1c4fd' : '#252C39', colorscheme == 'light' ? 'white' : 'transparent']}
+        style={{ flex: 1 }}
       >
-      <Header />
-        
-      <FlatList
-        ListFooterComponent={() => <View style={{ height: 150 }} />}
-        ListHeaderComponentStyle={{
-          flex:1,
-        }}
-        ListHeaderComponent={() => (
-          <>
-          <Lottie
-        source={require('../../../assets/Animation/Animation2.json')} 
-         autoPlay
-        loop
-        style={styles.animation2}
-      />
-          <Lottie
- source={require('../../../assets/Animation/Animation.json')} 
-         autoPlay
-        loop
-        style={styles.animation}
-      />
-       <Lottie
-        source={require('../../../assets/Animation/Animation2.json')} 
-         autoPlay
-        loop
-        style={styles.animation2}
-      />
-      </>
-        )}
-        
-        data={categories}
-        contentContainerStyle={styles.listContainer}
-        renderItem={({ item }) => <CategoryCardWrapper category={item} />}
-      />
+     
+        <Header />
+
+           <TouchableHighlight style={styles.gotologin} onPress={async ()=>{
+        await AsyncStorage.removeItem('token');
+
+        router.navigate('/login')
+        }}>
+        <Text>Go to login</Text>
+       </TouchableHighlight>
+        <FlatList
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>}
+          ListFooterComponent={() => <View style={{ height: 150 }} />}
+          ListHeaderComponentStyle={{
+            flex: 1,
+          }}
+          ListHeaderComponent={() => (
+            <>
+              <Lottie
+                source={require('../../../assets/Animation/Animation2.json')}
+                autoPlay
+                loop
+                style={styles.animation2}
+              />
+              <Lottie
+                source={require('../../../assets/Animation/Animation.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+              <Lottie
+                source={require('../../../assets/Animation/Animation2.json')}
+                autoPlay
+                loop
+                style={styles.animation2}
+              />
+            </>
+          )}
+
+          data={categories}
+          contentContainerStyle={styles.listContainer}
+          renderItem={({ item }) => <CategoryCardWrapper key={item.length} items={formdata} category={item} />}
+        />
       </LinearGradient>
     </View>
   );
 }
+
+export default gestureHandlerRootHOC(HomeScreen)
 
 const styles = StyleSheet.create({
   starsContainer: {
@@ -395,15 +453,15 @@ const styles = StyleSheet.create({
   },
   cloud: {
     position: 'absolute',
-    width: 150, 
-    height: 100, 
-    top: 50, 
+    width: 150,
+    height: 100,
+    top: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    paddingTop:40,
+    paddingTop: 40,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -431,12 +489,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   animation: {
-    width: 'auto', 
-    height: 150, 
+    width: 'auto',
+    height: 150,
   },
-  animation2:{
-    width:'auto',
-    height:20
+  animation2: {
+    width: 'auto',
+    height: 20
   },
   bannerImage: {
     resizeMode: 'cover',
@@ -447,8 +505,8 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 20,
   },
-  themeSwitch:{
-    color:'grey'
+  themeSwitch: {
+    color: 'grey'
   },
   paragraphContainer: {
     marginTop: 10,
@@ -458,23 +516,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   next30Days: {
-    color: '#FF6600', 
+    color: '#FF6600',
     fontWeight: '600',
   },
   next30To60Days: {
-    color: '#FFBF04', 
+    color: '#FFBF04',
     fontWeight: '600',
   },
   next60To90Days: {
-    color: '#004684', 
+    color: '#004684',
     fontWeight: '600',
   },
   highlightedText: {
     fontWeight: 'bold',
-    fontSize:23
+    fontSize: 23
   },
   switch: {
     width: 60,
     height: 30,
+  },
+  gotologin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 5,
+    width: 100,
+    justifyContent: 'center',
+    marginLeft:10
   },
 });

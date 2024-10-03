@@ -14,9 +14,9 @@ export interface LoginProps{
 const Login:FunctionComponent<LoginProps>=({
   onlogin
 })=> {
-    const { register, handleSubmit, watch, clearErrors, setValue, formState: { errors },control } = useForm<User>();
+  const { register, handleSubmit, watch, clearErrors, setValue, formState: { errors },control } = useForm<User>();
 
-const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;  //on mobile, raw path is not working. thats why we're giving this.ßß
+  const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;  //on mobile, raw path is not working. thats why we're giving this.ßß
   const handleForgotPassword = () => {
     Alert.alert("Forgot Password", "Functionality to be implemented.");
   };

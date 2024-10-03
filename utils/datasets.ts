@@ -1,4 +1,4 @@
-import { Agreements, InsuranceRenewals, OnboardingConsultant, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
+import { Agreements, InsuranceRenewals, IQAMARenewals, OtherCategoryData, PurchaseOrder, VisaDetails } from "./category";
 import uuid from 'react-native-uuid';
 
 const enddate = (days:number) => new Date(new Date().setDate(new Date().getDate()+days))
@@ -16,7 +16,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   {
     id:uuid.v4().toString(),
@@ -30,7 +31,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   {
     id:uuid.v4().toString(),
@@ -44,7 +46,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   {
     id:uuid.v4().toString(),
@@ -58,7 +61,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   {
     id:uuid.v4().toString(),
@@ -72,7 +76,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   {
     id:uuid.v4().toString(),
@@ -86,7 +91,8 @@ export const agreementsData: Agreements[] = [
     customReminderDates:[
       enddate(10),
       enddate(40)
-    ]
+    ],
+    reminderDates:[]
   },
   ];
   
@@ -105,7 +111,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -121,7 +128,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -137,7 +145,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -153,7 +162,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -169,7 +179,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
   ];
   
@@ -188,7 +199,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -204,7 +216,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -220,7 +233,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -236,7 +250,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -252,14 +267,15 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+    reminderDates:[]
     },
   ];
   
-  export const onboardingData: OnboardingConsultant[] = [
+  export const iqamaRenewals: IQAMARenewals[] = [
     {
       id:uuid.v4().toString(),
-      category:'Onboarding Consultant',
+      category:'IQAMA Renewals',
       employeeName: "John Doe",
       iqamaNumber: "IQ-001",
       remarks:'',
@@ -268,11 +284,12 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
-      category:'Onboarding Consultant',
+      category:'IQAMA Renewals',
       employeeName: "Jane Smith",
       iqamaNumber: "IQ-002",
       remarks:'',
@@ -281,11 +298,12 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
-      category:'Onboarding Consultant',
+      category:'IQAMA Renewals',
       employeeName: "Alice Johnson",
       iqamaNumber: "IQ-003",
       remarks:'',
@@ -294,11 +312,12 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
-      category:'Onboarding Consultant',
+      category:'IQAMA Renewals',
       employeeName: "Bob Brown",
       iqamaNumber: "IQ-004",
       remarks:'',
@@ -307,11 +326,12 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
-      category:'Onboarding Consultant',
+      category:'IQAMA Renewals',
       employeeName: "Charlie White",
       iqamaNumber: "IQ-005",
       remarks:'',
@@ -320,7 +340,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
   ];
   
@@ -339,7 +360,8 @@ export const agreementsData: Agreements[] = [
       customReminderDates:[
         enddate(10),
         enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -354,8 +376,8 @@ export const agreementsData: Agreements[] = [
       wantsCustomReminders:true,
       customReminderDates:[
         enddate(10),
-        enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -370,8 +392,8 @@ export const agreementsData: Agreements[] = [
       wantsCustomReminders:true,
       customReminderDates:[
         enddate(10),
-        enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -386,8 +408,8 @@ export const agreementsData: Agreements[] = [
       wantsCustomReminders:true,
       customReminderDates:[
         enddate(10),
-        enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
     {
       id:uuid.v4().toString(),
@@ -402,8 +424,8 @@ export const agreementsData: Agreements[] = [
       wantsCustomReminders:true,
       customReminderDates:[
         enddate(10),
-        enddate(40)
-      ]
+      ],
+      reminderDates:[]
     },
   ];
   
