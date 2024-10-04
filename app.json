@@ -10,14 +10,14 @@
     "backgroundColor": "#000000" ,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.testExpoApp"
+      "bundleIdentifier": "com.anonymous.testexpoapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.testExpoApp"
+      "package": "com.anonymous.testexpoapp"
     },
     "web": {
       "bundler": "metro",

@@ -6,7 +6,7 @@ const subtractDays = (date: Date, days: number): Date => {
     return newDate;
 };
 
-const addDays = (date: Date, days: number): Date => {
+export const addDays = (date: Date, days: number): Date => {
     const newDate = new Date(date);
     newDate.setDate(newDate.getDate() + days);
     return newDate;

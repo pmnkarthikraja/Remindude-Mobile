@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
-import { calculateReminderDates } from '@/utils/calculateReminder';
+import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
 import { Category, FormData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ArrowLeft, CalendarRange, Check, Plus, X } from '@tamagui/lucide-icons';
@@ -15,6 +15,8 @@ import uuid from 'react-native-uuid';
 import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
 import { buildNotifications } from '@/utils/pushNotifications';
+import {debounce } from 'lodash'
+import axios from 'axios';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -85,75 +87,142 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const data = watch()
 
-  useEffect(() => {
-    if (data.category && !isEdit) {
-      if (data.category == 'Agreements') {
-        reset({
-          category: 'Agreements',
-          clientName: '',
-          endDate: new Date(),
-          startDate: new Date(),
-          vendorCode: '',
-          wantsCustomReminders: false,
-          customReminderDates: [],
-          reminderDates:[],
-          remarks:''
-        })
-      } else if (data.category == 'Insurance Renewals') {
-        reset({
-          category: 'Insurance Renewals',
-          employeeName: '',
-          insuranceCompany: '',
-          insuranceEndDate: new Date(),
-          insuranceStartDate: new Date(),
-          value: '',
-          wantsCustomReminders: false,
-          customReminderDates: [],
-            reminderDates:[],
-          remarks:''
-        })
-      } else if (data.category == 'IQAMA Renewals') {
-        reset({
-          category: 'IQAMA Renewals',
-          employeeName: '',
-          expiryDate: new Date(),
-          iqamaNumber: '',
-          wantsCustomReminders: false,
-          customReminderDates: [],
-            reminderDates:[],
-          remarks:''
-        })
-      } else if (data.category == 'Purchase Order') {
-        reset({
-          category: 'Purchase Order',
-          clientName: '',
-          consultant: '',
-          entryDate: new Date(),
-          poEndDate: new Date(),
-          poIssueDate: new Date(),
-          poNumber: '',
-          wantsCustomReminders: false,
-          customReminderDates: [],
-            reminderDates:[],
-          remarks:''
-        })
-      } else {
-        reset({
-          category: 'Visa Details',
-          clientName: '',
-          consultantName: '',
-          sponsor: '',
-          visaEndDate: new Date(),
-          visaEntryDate: new Date(),
-          visaNumber: '',
-          wantsCustomReminders: false,
-          customReminderDates: [],
-            reminderDates:[],
-          remarks:''
-        })
+  const debouncedReset = debounce((category: string) => {
+    if (!isEdit) {
+      switch (category) {
+        case 'Agreements':
+          reset({
+            category: 'Agreements',
+            clientName: '',
+            startDate: new Date(),
+            endDate: new Date(),
+            vendorCode: '',
+            wantsCustomReminders: false,
+            customReminderDates: [],
+          });
+          break;
+        case 'Insurance Renewals':
+          reset({
+            category: 'Insurance Renewals',
+            employeeName: '',
+            insuranceCompany: '',
+            insuranceStartDate: new Date(),
+            insuranceEndDate: new Date(),
+            wantsCustomReminders: false,
+            customReminderDates: [],
+          });
+          break;
+        case 'IQAMA Renewals':
+          reset({
+            category: 'IQAMA Renewals',
+            employeeName: '',
+            expiryDate: new Date(),
+            iqamaNumber: '',
+            wantsCustomReminders: false,
+            customReminderDates: [],
+          });
+          break;
+        case 'Purchase Order':
+          reset({
+            category: 'Purchase Order',
+            clientName: '',
+            consultant: '',
+            entryDate: new Date(),
+            poIssueDate: new Date(),
+            poEndDate: new Date(),
+            wantsCustomReminders: false,
+            customReminderDates: [],
+          });
+          break;
+        default:
+          reset({
+            category: 'Visa Details',
+            clientName: '',
+            consultantName: '',
+            sponsor: '',
+            visaEntryDate: new Date(),
+            visaEndDate: new Date(),
+            wantsCustomReminders: false,
+            customReminderDates: [],
+          });
+          break;
       }
     }
-  }, [data.category, reset]);
+  }, 300);
+
+  useEffect(() => {
+    debouncedReset(data.category);
+  }, [data.category]);
+
+  // useEffect(() => {
+  //   if (data.category && !isEdit) {
+  //     if (data.category == 'Agreements') {
+  //       reset({
+  //         category: 'Agreements',
+  //         clientName: '',
+  //         endDate: new Date(),
+  //         startDate: new Date(),
+  //         vendorCode: '',
+  //         wantsCustomReminders: false,
+  //         customReminderDates: [],
+  //         reminderDates:[],
+  //         remarks:''
+  //       })
+  //     } else if (data.category == 'Insurance Renewals') {
+  //       reset({
+  //         category: 'Insurance Renewals',
+  //         employeeName: '',
+  //         insuranceCompany: '',
+  //         insuranceEndDate: new Date(),
+  //         insuranceStartDate: new Date(),
+  //         value: '',
+  //         wantsCustomReminders: false,
+  //         customReminderDates: [],
+  //           reminderDates:[],
+  //         remarks:''
+  //       })
+  //     } else if (data.category == 'IQAMA Renewals') {
+  //       reset({
+  //         category: 'IQAMA Renewals',
+  //         employeeName: '',
+  //         expiryDate: new Date(),
+  //         iqamaNumber: '',
+  //         wantsCustomReminders: false,
+  //         customReminderDates: [],
+  //           reminderDates:[],
+  //         remarks:''
+  //       })
+  //     } else if (data.category == 'Purchase Order') {
+  //       reset({
+  //         category: 'Purchase Order',
+  //         clientName: '',
+  //         consultant: '',
+  //         entryDate: new Date(),
+  //         poEndDate: new Date(),
+  //         poIssueDate: new Date(),
+  //         poNumber: '',
+  //         wantsCustomReminders: false,
+  //         customReminderDates: [],
+  //           reminderDates:[],
+  //         remarks:''
+  //       })
+  //     } else {
+  //       reset({
+  //         category: 'Visa Details',
+  //         clientName: '',
+  //         consultantName: '',
+  //         sponsor: '',
+  //         visaEndDate: new Date(),
+  //         visaEntryDate: new Date(),
+  //         visaNumber: '',
+  //         wantsCustomReminders: false,
+  //         customReminderDates: [],
+  //           reminderDates:[],
+  //         remarks:''
+  //       })
+  //     }
+  //   }
+  // }, [data.category, reset]);
 
   const colorScheme = useColorScheme()
   const onSubmit = async (data: FormData) => {
@@ -161,14 +230,35 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       const id = uuid.v4().toString()
       const withId: FormData = { ...data, id }
       const withReminderDates = calculateReminderDates(withId)
-      console.log('Formatted Data for API:', withReminderDates);
-      console.log("scheduling push notifications...")
       await buildNotifications(withReminderDates,'Add')
+      //send through axios
+
+      try{
+        await axios.post('https://remindude.vercel.app/formdata',{
+          ...withReminderDates
+        })
+      }catch(e){
+        console.log("error on axios:",e)
+      }
+    
+
       setFormData([...formdata, withReminderDates])
     } else {
       const withReminderDates = calculateReminderDates(data)
       const newData = formdata.map(item => item.id == data.id ? withReminderDates : item)
       await buildNotifications(withReminderDates,'Update')
+
+      console.log("update coming:",withReminderDates)
+
+      try{
+       const res= await axios.put(`https://remindude.vercel.app/formdata/${withReminderDates.id}`,{
+          ...withReminderDates
+        })
+        console.log("updated data: ",res.data)
+      }catch(e){
+        console.log("error on axios:",e)
+      }
+    
       setFormData(newData)
     }
     setLoading(true)
@@ -176,7 +266,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       reset()
       router.navigate('/')
       setLoading(false)
-    }, 2000)
+    }, 1000)
   };
 
   const formatDate = (date: Date): string => {
@@ -339,6 +429,29 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     </>
   }
 
+  const renderInstantDate = (fieldName:AcceptedDateFields)=>{
+    return <>
+      {fieldName !== 'customReminderDate' &&<XStack paddingVertical={10}>
+            <TouchableOpacity style={styles.box} activeOpacity={0.7} 
+            onPress={()=>setValue(fieldName,addDays(new Date(), 30))}>
+              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+30days</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.box} activeOpacity={0.7}
+             onPress={()=>setValue(fieldName,addDays(new Date(), 60))}>
+              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+60days</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.box} activeOpacity={0.7}
+             onPress={()=>setValue(fieldName,addDays(new Date(), 90))}>
+              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+90days</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.box,{backgroundColor:'orange',borderColor:'white'}]} activeOpacity={0.7}
+             onPress={()=>setValue(fieldName,addDays(new Date(), 0))}>
+              <Text fontSize={11} textAlign='center' color={'red'} fontWeight={'bold'}>Reset</Text>
+            </TouchableOpacity>
+          </XStack>}
+    </>
+  }
+
   const buildMaxDate = (currentFormData: FormData): Date | undefined => {
     switch (currentFormData.category) {
       case 'Agreements':
@@ -461,8 +574,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
           {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+        
 
           <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
+          {renderInstantDate('endDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.startDate, 'startDate')}
@@ -481,6 +596,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
+          {renderInstantDate('poEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.poIssueDate, 'poIssueDate')}
@@ -496,6 +612,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
+          {renderInstantDate('expiryDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.expiryDate, 'expiryDate')}
@@ -511,6 +628,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name',errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
+          {renderInstantDate('visaEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
@@ -528,6 +646,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
+          {renderInstantDate('insuranceEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
@@ -576,7 +695,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     width: 40,
                     height: 40,
                     borderRadius: 12,
-                    // borderWidth: 2,
                   }}
                 />
                 <YStack>
@@ -714,5 +832,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-
+  box:{
+    width:60,
+    height:30,
+    backgroundColor:'skyblue',
+    padding:6,
+    borderRadius:25,
+    elevation:3,
+    borderWidth:2,
+    borderStyle:'solid',
+    borderColor:Colors.light.tint,
+    justifyContent:'center',
+    marginRight:10,
+  }
 });

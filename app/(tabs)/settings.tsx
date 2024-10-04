@@ -1,10 +1,12 @@
 import { Colors } from '@/constants/Colors';
 import { useProfileContext } from '@/hooks/useProfile';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack } from 'expo-router';
 import React from 'react';
-import { useColorScheme } from 'react-native';
-import { Avatar, Button, Label, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
+import {  StyleSheet} from 'react-native';
+import { TouchableHighlight, useColorScheme } from 'react-native';
+import { Avatar, Button, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
 
 
 export default function SettingsScreen() {
@@ -51,11 +53,31 @@ export default function SettingsScreen() {
           <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Language" />
         </YStack>
 
+        <TouchableHighlight style={styles.gotologin} onPress={async ()=>{
+        await AsyncStorage.removeItem('token');
+        router.navigate('/login')
+        }}>
+        <Text>Logout</Text>
+       </TouchableHighlight>
+
       </StackTamagui>
     </YStack>
     </LinearGradient>
   );
 }
+
+const styles = StyleSheet.create({
+  gotologin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'orange',
+    borderRadius: 5,
+    padding: 5,
+    width: 100,
+    justifyContent: 'center',
+    alignSelf:'center'
+  },
+})
 
 
 

@@ -1,7 +1,6 @@
 import { FormData } from '@/utils/category';
 import { agreementsData, insuranceRenewalData, iqamaRenewals, purchaseOrderData, visaDetailsData } from '@/utils/datasets';
-import React, { createContext, useContext, useState, ReactNode, FunctionComponent } from 'react';
-import uuid from 'react-native-uuid';
+import React, { createContext, FunctionComponent, ReactNode, useContext, useState } from 'react';
 
 interface CategoryDataContext {
   formdata: FormData[];
@@ -13,11 +12,7 @@ const CategoryContext = createContext<CategoryDataContext | undefined>(undefined
 
 export const CategoryDataProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
 const [formdata,setFormData]=useState<FormData[]>([
- ...agreementsData,
- ...purchaseOrderData,
- ...visaDetailsData,
- ...iqamaRenewals,
- ...insuranceRenewalData
+
 ])
 
   return (

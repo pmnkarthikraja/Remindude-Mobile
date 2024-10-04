@@ -1,17 +1,18 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import React, { FunctionComponent, useCallback, useState } from 'react';
-import { Modal, Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
-import Item from './Item';
-import { Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, ReduceMotion } from 'react-native-reanimated';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Button, ScrollView, Sheet, Text } from 'tamagui';
-import Animated from 'react-native-reanimated';
-import { CalendarRange, Filter, FilterX } from '@tamagui/lucide-icons';
 import { categorizeData, FormData, getEndDate } from '@/utils/category';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { CalendarRange, Filter } from '@tamagui/lucide-icons';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import React, { FunctionComponent, useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { Button, ScrollView, Sheet, Text, } from 'tamagui';
 import { wait } from '.';
+import Item from './Item';
+import Lottie from 'lottie-react-native';
+
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
   const colorscheme = useColorScheme()
@@ -40,42 +41,85 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
   );
 };
 
+ interface State {
+  initialData:FormData[]
+  data: FormData[];
+  modalVisible: boolean;
+  startDate: Date | null;
+  endDate: Date | null;
+  showStartPicker: boolean;
+  showEndPicker: boolean;
+  refreshing: boolean;
+}
+ type Action =
+  | { type: 'SET_MODAL_VISIBLE'; payload: boolean }
+  | { type: 'SET_START_DATE'; payload: Date | null }
+  | { type: 'SET_END_DATE'; payload: Date | null }
+  | { type: 'SET_SHOW_START_PICKER'; payload: boolean }
+  | { type: 'SET_SHOW_END_PICKER'; payload: boolean }
+  | { type: 'SET_REFRESHING'; payload: boolean }
+  | { type: 'SET_DATA'; payload: FormData[] }
+  | { type: 'SET_INITIAL_DATA'; payload: FormData[] };
+
+  const initialState: State = {
+  initialData:[],
+  data: [],
+  modalVisible: false,
+  startDate: null,
+  endDate: null,
+  showStartPicker: false,
+  showEndPicker: false,
+  refreshing: false,
+};
+
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'SET_MODAL_VISIBLE':
+      return { ...state, modalVisible: action.payload };
+    case 'SET_START_DATE':
+      return { ...state, startDate: action.payload };
+    case 'SET_END_DATE':
+      return { ...state, endDate: action.payload };
+    case 'SET_SHOW_START_PICKER':
+      return { ...state, showStartPicker: action.payload };
+    case 'SET_SHOW_END_PICKER':
+      return { ...state, showEndPicker: action.payload };
+    case 'SET_REFRESHING':
+      return { ...state, refreshing: action.payload };
+    case 'SET_DATA':
+      return { ...state, data: action.payload };
+    case 'SET_INITIAL_DATA':
+      return {...state,  initialData: action.payload}
+    default:
+      return state;
+  }
+};
 
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
+  const [state, dispatch] = useReducer(reducer, { ...initialState});
   const { formdata } = useCategoryDataContext();
-  const got = formdata.filter(d => d.category === category);
-  const [data, setData] = useState<FormData[]>(got)
-  const colourscheme = useColorScheme()
   const opacity = useSharedValue(1);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [startDate, setStartDate] = useState<Date| null>(null);
-  const [endDate, setEndDate] = useState<Date|null>(null);
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-  const [refreshing,setRefreshing]=useState(false)
-  
-  const onRefresh= useCallback(()=>{
-    setRefreshing(true)
-    wait(2000).then(()=>setRefreshing(false))
-  },[])
+  const {initialData:got,data,endDate,modalVisible,refreshing,showEndPicker,showStartPicker,startDate} = state
+  const colourscheme = useColorScheme();
+  const [isLoading,setIsLoading]=useState(true)
 
-  const handleFilter = (startDate: Date | null, endDate: Date | null) => {
-    const filteredData = got.filter(item => {
-      const itemDate = getEndDate(item)
-      if (itemDate && startDate && endDate) {
-        return itemDate >= startDate && itemDate <= endDate;
-      }
-    });
-    setData(filteredData);
-    setModalVisible(false);
-  };
-
-
+  useEffect(()=>{
+    const filteredFormData = formdata.filter(d => d.category === category);
+    dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData})
+    dispatch({type:'SET_DATA',payload:filteredFormData})
+    setIsLoading(false)
+  },[category])
 
   React.useEffect(() => {
     opacity.value = withRepeat(withTiming(0, { duration: 500, easing: Easing.linear, reduceMotion:ReduceMotion.Never }), -1, true);
   }, [opacity]);
+
+  const onRefresh= useCallback(()=>{
+    dispatch({type:'SET_REFRESHING',payload:true})
+    wait(2000).then(() => dispatch({ type: 'SET_REFRESHING', payload: false }));
+  },[])
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -84,13 +128,43 @@ const CategoryPage = () => {
     };
   });
 
+
+  if (isLoading) {
+    return (
+        <ThemedView style={styles.container}>
+        <ActivityIndicator size={'large'} style={{justifyContent:'center',alignContent:'center'}}/>
+        <Lottie
+                source={require('../../../assets/Animation/Animation.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+        </ThemedView>
+    );
+  }
+
+
+
+  const handleFilter = (startDate: Date | null, endDate: Date | null) => {
+    console.log("start date:",startDate)
+    console.log("end date:",endDate)
+    const filteredData = got.filter(item => {
+      const itemDate = getEndDate(item)
+      if (itemDate && startDate && endDate) {
+        return itemDate >= startDate && itemDate <= endDate;
+      }
+    });
+    dispatch({type:'SET_DATA', payload:filteredData})
+    dispatch({type:'SET_MODAL_VISIBLE',payload:false})
+  };
+  
   const {
     next30Days,
     next30to60Days,
     next60to90Days,
     laterThan90Days,
     renewal
-  } = categorizeData(data);
+  } =  categorizeData(data);
 
   const categories = [
     { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
@@ -122,8 +196,7 @@ const CategoryPage = () => {
   }
 
   const handleSearch = (text: string) => {
-    setData(
-      got.filter(item => {
+     const payload= got.filter(item => {
         if (item.category == 'Agreements') {
           return searchItem(item.clientName, text) || searchItem(item.vendorCode, text)
         } else if (item.category == 'Insurance Renewals') {
@@ -136,14 +209,14 @@ const CategoryPage = () => {
           return searchItem(item.clientName, text) || searchItem(item.consultantName, text) || searchItem(item.sponsor, text) || searchItem(item.visaNumber, text)
         }
       })
-    )
+    dispatch({type:'SET_DATA',payload:payload})
   }
 
   function onClearFilter(){
-    setStartDate(null)
-    setEndDate(null)
-    setData(got)
-    setModalVisible(false)
+    dispatch({type:'SET_START_DATE',payload:null})
+    dispatch({type:'SET_END_DATE',payload:null})
+    dispatch({type:'SET_DATA',payload:got})
+    dispatch({type:'SET_MODAL_VISIBLE',payload:false})
   }
 
   const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
@@ -159,9 +232,8 @@ const CategoryPage = () => {
           placement: 'stacked',
           onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
         },
-        // headerStyle:{backgroundColor:'#a1c4fd'},
         headerRight: () => <Button
-          onPress={() => setModalVisible(true)}
+          onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
           icon={
           <>
           {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
@@ -173,18 +245,17 @@ const CategoryPage = () => {
         />
       }} />
 
-
-      <Sheet modal open={modalVisible} onOpenChange={() => setModalVisible(false)} snapPointsMode='fit' >
+      <Sheet modal open={modalVisible} onOpenChange={() => dispatch({type:'SET_MODAL_VISIBLE',payload:false})} snapPointsMode='fit' >
         <ThemedView style={styles.sheetContainer}>
           <Text>Select Date Range:</Text>
 
           <ThemedView style={styles.datePickerRow}>
             <CalendarRange />
-            <Button onPress={() => setShowStartPicker(true)}>
+            <Button onPress={() => dispatch({type:'SET_SHOW_START_PICKER',payload:true})}>
               From: {startDate ? startDate.toLocaleDateString(): <Text>-</Text>}
             </Button>
             <Text>-</Text>
-            <Button onPress={() =>setShowEndPicker(true)}>
+            <Button onPress={() =>dispatch({type:'SET_SHOW_END_PICKER',payload:true})}>
               To: {endDate ? endDate.toLocaleDateString(): <Text>-</Text>}
             </Button>
           </ThemedView>
@@ -198,15 +269,14 @@ const CategoryPage = () => {
         </ThemedView>
       </Sheet>
 
-
       {showStartPicker && (
         <DateTimePicker
           value={startDate || new Date()}
           mode="date"
           display="default"
           onChange={(event, selectedDate) => {
-            setShowStartPicker(false);
-            if (selectedDate) setStartDate(selectedDate);
+            dispatch({type:'SET_SHOW_START_PICKER',payload:!showStartPicker});
+            if (selectedDate) dispatch({type:'SET_START_DATE',payload:selectedDate})
           }}
         />
       )}
@@ -217,19 +287,27 @@ const CategoryPage = () => {
           mode="date"
           display="default"
           onChange={(event, selectedDate) => {
-            setShowEndPicker(false);
-            if (selectedDate) setEndDate(selectedDate);
+            dispatch({type:'SET_SHOW_END_PICKER',payload:false});
+            if (selectedDate) dispatch({type:'SET_END_DATE',payload:selectedDate})
           }}
         />
       )}
 
 
-
-      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={
+      {!isLoading && data.length>0 && <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>}>
         {categories.map(({ title, data, color }, index) => data.length > 0 && 
         renderCategoryList(title, data, index, color))}
-      </ScrollView>
+      </ScrollView>}
+      {!isLoading && data.length==0 && <>
+        <Lottie
+                source={require('../../../assets/Animation/Animation-no_data.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+      </>}
+      {isLoading && <ActivityIndicator/>}
       <ThemedView style={{ height: 80 }}></ThemedView>
     </ThemedView>
   );
@@ -282,6 +360,21 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: '#ff6600',
     color: '#fff',
+  },
+  loadingContainer: {
+    padding: 16,
+  },
+  skeletonContainer:{
+    justifyContent: 'center',
+    height: 250,
+    width: 250,
+    borderRadius: 25,
+    marginRight: 10,
+    backgroundColor: 'white',
+  },
+  animation: {
+    width: 'auto',
+    height: 250,
   },
 });
 

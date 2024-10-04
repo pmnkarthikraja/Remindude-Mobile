@@ -87,13 +87,18 @@ export interface InsuranceRenewals {
   reminderDates:Date[]
 }
 
+export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals;
+
+
 export type Category =
   | "Agreements"
   | "Purchase Order"
   | "Visa Details"
   | "IQAMA Renewals"
   | "Insurance Renewals"
-  // | "IQAMA Renewals"
+  
+
+// | "IQAMA Renewals"
   // | "Interview Schedule"
   // | "VAT Submission"
   // | "Bills Payments"
@@ -107,15 +112,6 @@ export type Category =
   // | "Saudization Payment collection"
   // | "Employee Issue Tracking"
 
-type CategoryFields = {
-Agreements: Agreements;
-"Purchase Order": PurchaseOrder;
-"Visa Details": VisaDetails;
-"IQAMA Renewals": IQAMARenewals;
-"Insurance Renewals": InsuranceRenewals;
-};
-
-export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals;
 
 
 // export interface CategoryFormData<T extends Category> {
@@ -191,7 +187,6 @@ const sortData = (data: FormData[], sortBy: SortType): FormData[] => {
   }
 };
 
-
 export const getEndDate = (item: FormData): Date | null => {
   if ('endDate' in item) return item.endDate;
   if ('poEndDate' in item) return item.poEndDate;
@@ -200,3 +195,72 @@ export const getEndDate = (item: FormData): Date | null => {
   if ('insuranceEndDate' in item) return item.insuranceEndDate;
   return null;
 };
+
+
+export const parseResponse = (data:any):FormData[]=>{
+  return data.map((item:any) => {
+    const baseData = {
+      id: item.id,
+      category: item.category,
+      remarks: item.remarks,
+      wantsCustomReminders: item.wantsCustomReminders,
+      customReminderDates: item.customReminderDates.map((date:string) => new Date(date)),
+      reminderDates: item.reminderDates.map((date:string) => new Date(date)),
+    };
+
+    switch (item.category){
+      case "Agreements":
+        return {
+          ...baseData,
+          clientName: item.clientName,
+          vendorCode: item.vendorCode,
+          startDate: new Date(item.startDate),
+          endDate: new Date(item.endDate),
+        } as Agreements;
+
+      case "Purchase Order":
+        return {
+          ...baseData,
+          clientName: item.clientName,
+          consultant: item.consultant,
+          poNumber: item.poNumber,
+          poIssueDate: new Date(item.poIssueDate),
+          poEndDate: new Date(item.poEndDate),
+          entryDate: new Date(item.entryDate),
+        } as PurchaseOrder;
+
+      case "Visa Details":
+        return {
+          ...baseData,
+          clientName: item.clientName,
+          visaNumber: item.visaNumber,
+          sponsor: item.sponsor,
+          consultantName: item.consultantName,
+          visaEndDate: new Date(item.visaEndDate),
+          visaEntryDate: new Date(item.visaEntryDate),
+        } as VisaDetails;
+
+      case "IQAMA Renewals":
+        return {
+          ...baseData,
+          employeeName: item.employeeName,
+          iqamaNumber: item.iqamaNumber,
+          expiryDate: new Date(item.expiryDate),
+        } as IQAMARenewals;
+
+      case "Insurance Renewals":
+        return {
+          ...baseData,
+          employeeName: item.employeeName,
+          insuranceStartDate: new Date(item.insuranceStartDate),
+          insuranceEndDate: new Date(item.insuranceEndDate),
+          insuranceCompany: item.insuranceCompany,
+          insuranceCategory: item.insuranceCategory,
+          value: item.value,
+        } as InsuranceRenewals;
+
+      default:
+        throw new Error(`Unknown category: ${item.category}`);
+    }
+  })
+}

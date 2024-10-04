@@ -2,29 +2,24 @@ import React, { FunctionComponent, useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ImageBackground, Image, Alert, Button, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Asset } from 'expo-asset';
-import { router } from 'expo-router';
+import { router,usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useForm,Controller} from 'react-hook-form'
 import { User } from '@/utils/user';
 import * as WebBrowser from 'expo-web-browser'
 import * as Google from 'expo-auth-session/providers/google'
-import {makeRedirectUri} from 'expo-auth-session'
+import {makeRedirectUri, Prompt, AuthSessionOptions} from 'expo-auth-session'
 import { useEmailSigninMutation } from '@/hooks/userHooks';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import * as Linking from 'expo-linking';
 
 WebBrowser.maybeCompleteAuthSession()
 
-export interface LoginProps{
-  onlogin:()=>void
-}
 
-const Login:FunctionComponent<LoginProps>=({
-  onlogin
-})=> {
-  const [userInfo,setUserInfo]=useState(null)
+const Login:FunctionComponent=()=> {
   const [forgotModal,setForgotModal]=useState(false)
-  const { data: emailSignInData, isLoading: isEmailSigninLoading, isError: isEmailSigninError, error: emailSigninError, isSuccess: isEmailSigninSuccess, mutateAsync: emailSigninMutation } = useEmailSigninMutation(false)
-  const [request,response,promptAsync]=Google.useAuthRequest({
+  const { isLoading: isEmailSigninLoading, isError: isEmailSigninError, error: emailSigninError, isSuccess: isEmailSigninSuccess, mutateAsync: emailSigninMutation } = useEmailSigninMutation(false)
+  const [_request,response,promptAsync]=Google.useAuthRequest({
     webClientId:'522585345584-5eogmt9juv74frkjndmhq4i5ob3ah68g.apps.googleusercontent.com',
     androidClientId:'522585345584-mb227ovhe4v1dr9b2g2fbrum5j6av682.apps.googleusercontent.com',
     iosClientId:'',
@@ -32,9 +27,7 @@ const Login:FunctionComponent<LoginProps>=({
       "profile",
       "email"
     ],
-    redirectUri:makeRedirectUri({
-      scheme: 'remindude',  
-    }),
+    responseType:'code',
   })
 const { handleSubmit, watch,formState: { errors },control } = useForm<User>();
 
@@ -43,37 +36,32 @@ const triggerForgotModal=()=>{
 }
 
 useEffect(()=>{
-  setUserInfo(null)
-  handleSigninWithGoogle()
-},[response])
+  if (response?.type === 'success') {
+    handleSigninWithGoogle();
+  } else if (response?.type === 'error') {
+    console.log('Login failed:', response?.error);
+    router.navigate('/login')
+  }},[response])
+
 
 async function handleSigninWithGoogle(){
-  // const user = await AsyncStorage.getItem('@user')
-  // if (!user){
     if (response?.type==='success'){
       await getUserInfo(response.authentication?.accessToken || '')
     }
-  // }else{
-  //   setUserInfo(JSON.parse(user))
-  // }
 }
 
 const getUserInfo = async (token:string)=>{
   if (!token)return
   try{
-    // const response = await fetch("https://www.googleapis.com/userinfo/v2/me",{
-    //   headers:{Authorization:`Bearer ${token}`}
-    // })
-    // const user  =await  response.json()
-    const res = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const user = await res.json();
-    await AsyncStorage.setItem('@user',JSON.stringify(user))
-    setUserInfo(user)
-    router.navigate('/(tabs)/')
+    const response = await fetch("https://www.googleapis.com/userinfo/v2/me",{
+      headers:{Authorization:`Bearer ${token}`}
+    })
+    const user  =await  response.json()
+    await AsyncStorage.setItem('token',JSON.stringify(user))
+    router.navigate('/')
   }catch(e){
     console.log("error on getting profile on google.",e)
+    router.navigate('/login')
   }
 }
 
@@ -91,36 +79,6 @@ const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
   const handleSignUp = () => {
     router.push('/signup')
   };
-
-
-  // const signIn = async () => {
-  //   try {
-  //     await GoogleSignin.hasPlayServices();
-  //     const response = await GoogleSignin.signIn();
-  //     console.log({response})
-  //     // if (isSuccessResponse(response)) {
-  //     //   setState({ userInfo: response.data });
-  //     // } else {
-  //     //   // sign in was cancelled by user
-  //     // }
-  //   } catch (error) {
-  //     console.log("error on signin: ",error)
-  //     // if (isErrorWithCode(error)) {
-  //     //   switch (error.code) {
-  //     //     case statusCodes.IN_PROGRESS:
-  //     //       // operation (eg. sign in) already in progress
-  //     //       break;
-  //     //     case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-  //     //       // Android only, play services not available or outdated
-  //     //       break;
-  //     //     default:
-  //     //     // some other error happened
-  //     //   }
-  //     // } else {
-  //     //   // an error that's not related to google sign in occurred
-  //     }
-  //   }
-  
 
   return (
     <ImageBackground source={{uri:image}} style={styles.backgroundImage}>
@@ -190,18 +148,10 @@ const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
           <View style={{height:20}}></View>
 
           <TouchableOpacity onPress={async ()=>{
-            await AsyncStorage.setItem('token','dummytoken')
+            // await AsyncStorage.setItem('token','dummytoken')
             router.navigate('/(tabs)/')}} style={styles.googleButton}>
             <Text  style={styles.googleButtonText}>Go to home</Text>
           </TouchableOpacity>
-
-          {/* <GoogleSigninButton size={GoogleSigninButton. Size.Wide} /> */}
-
-          {/* <TouchableOpacity onPress={signIn} style={styles.googleButton}>
-            <Text  style={styles.googleButtonText}>Google Signin</Text>
-          </TouchableOpacity> */}
-
-
         </View>
 
         <View style={styles.signUpContainer}>

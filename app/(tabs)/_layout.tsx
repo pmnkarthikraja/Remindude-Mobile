@@ -101,7 +101,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Explore',
+          title: 'Setting',
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
@@ -114,7 +114,7 @@ export default function TabLayout() {
           ),
         }}
       />
-    </Tabs>:<Login  onlogin={()=>setAuth(true)}/>}
+    </Tabs>:<Login  />}
     </>}
     </>
   );

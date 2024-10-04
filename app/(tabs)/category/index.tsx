@@ -16,12 +16,14 @@ import { Path, Polygon } from 'react-native-svg';
 import { ThemedText } from '@/components/ThemedText';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { useProfileContext } from '@/hooks/useProfile';
-import { categorizeData, Category, FormData } from '@/utils/category';
+import { categorizeData, Category, FormData, parseResponse } from '@/utils/category';
 import { MoonStar, Sun } from '@tamagui/lucide-icons';
 import * as Notifications from 'expo-notifications';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GoogleUser } from '@/utils/user';
+import axios from 'axios';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -88,7 +90,7 @@ export const CategoryCardWrapper: FunctionComponent<{ category: Category, items:
         width={'100%'}
         height={170}
         padding={5}
-        // pressStyle={{ scale: 0.775 }}
+        // pressStyle={{ scale:8.3 }}
         category={category}
         items={items}
       />
@@ -124,7 +126,7 @@ export function CategoryCard(props: CategoryCardProps) {
   return (
     <Card
       style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
-      onPress={() => router.navigate(`/category/${props.category}`)}
+      onPress={() => router.navigate(`/category/${category}`)}
       elevate
       size="$7"
       {...props}
@@ -165,8 +167,6 @@ export function CategoryCard(props: CategoryCardProps) {
               : '$accentColor'
         }
       >
-
-
         <Svg
           height="200"
           width="400"
@@ -273,7 +273,13 @@ const generateRandomStars = (count: number) => {
   return stars;
 };
 
-const Header = () => {
+interface HeaderProps{
+  user:GoogleUser | undefined
+}
+
+const Header:FunctionComponent<HeaderProps> = ({
+  user
+}) => {
   const [stars] = useState(() => generateRandomStars(15));
   const systemTheme = Appearance.getColorScheme();
   const { profile, userName, email } = useProfileContext()
@@ -323,7 +329,7 @@ const Header = () => {
         </Animated.View>
       )}
       <Image
-        source={{ uri: profile }}
+        source={{ uri: user?.picture || profile }}
         style={styles.profilePic}
       />
       <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
@@ -355,6 +361,7 @@ export const wait = (timeout:
 const HomeScreen = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [refreshing,setRefreshing]=useState(false)
+  const [user,setUser]=useState<GoogleUser|undefined>(undefined)
   
   const onRefresh= useCallback(()=>{
     setRefreshing(true)
@@ -362,7 +369,6 @@ const HomeScreen = () => {
   },[])
 
   useEffect(() => {
-    // Request notification permissions
     const requestPermissions = async () => {
       const { status } = await Notifications.requestPermissionsAsync();
       setPermissionGranted(status === 'granted');
@@ -370,7 +376,16 @@ const HomeScreen = () => {
 
     requestPermissions();
 
-    // Set up a notification listener to handle notifications received while the app is open
+    const go = async () =>{
+      const item = await AsyncStorage.getItem('token')
+      if (item!=null){
+        const gotUser:GoogleUser =JSON.parse(item)
+        setUser(gotUser)
+      }
+    }
+
+    go()
+
     const subscription = Notifications.addNotificationReceivedListener(
       notification => {
         console.log('Notification received:', notification.request.identifier);
@@ -383,23 +398,34 @@ const HomeScreen = () => {
   }, []);
 
   const colorscheme = useColorScheme()
-  const { formdata } = useCategoryDataContext()
+  const { formdata, setFormData } = useCategoryDataContext()
+
+    useEffect(()=>{
+  const load = async () => {
+    try{
+      const data =await axios.get('https://remindude.vercel.app/formdata')
+      const transformed=parseResponse(data.data)
+      setFormData([...formdata,...transformed])
+     }catch(e){
+      console.log("error on load data",e)
+     }
+  }
+
+  load()
+},[])
+
   return (
     <View style={styles.container}>
       <LinearGradient
         colors={[colorscheme == 'light' ? '#a1c4fd' : '#252C39', colorscheme == 'light' ? 'white' : 'transparent']}
         style={{ flex: 1 }}
       >
-     
-        <Header />
+        <Header user={user}/>
 
-           <TouchableHighlight style={styles.gotologin} onPress={async ()=>{
-        await AsyncStorage.removeItem('token');
 
-        router.navigate('/login')
-        }}>
-        <Text>Go to login</Text>
-       </TouchableHighlight>
+  
+
+
         <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>}
           ListFooterComponent={() => <View style={{ height: 150 }} />}
@@ -535,14 +561,5 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
   },
-  gotologin: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 5,
-    width: 100,
-    justifyContent: 'center',
-    marginLeft:10
-  },
+  
 });

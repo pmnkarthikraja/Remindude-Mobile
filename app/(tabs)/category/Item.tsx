@@ -8,21 +8,29 @@ import { router } from 'expo-router';
 import { Path, Svg } from 'react-native-svg';
 import { CalendarClock, Trash, User, FileText, Tag, CheckCircle, CircleUser } from '@tamagui/lucide-icons';
 import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import axios from 'axios';
 
-const Item = React.memo(({ item }: { item: FormData}) => {
-  const [isModalVisible, setModalVisible] = useState(false);
-  const {formdata, setFormData} = useCategoryDataContext();
+const Item = React.memo(({ item }: { item: FormData }) => {
+  const { formdata, setFormData } = useCategoryDataContext();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const colorscheme = useColorScheme();
+  
+  const [modalState, setModalState] = useState<{isVisible:boolean,itemId:string|null}>({ isVisible: false, itemId: null });
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     const filtered = formdata.filter(data => data.id !== item.id);
     setFormData(filtered);
-    setModalVisible(false); 
+    try{
+      await axios.delete(`https://remindude.vercel.app/formdata/${item.id}`)
+    }catch(e){
+      console.log("error on axios:",e)
+    }
+
+    setModalState({ isVisible: false, itemId: null }); 
   }, [formdata, item.id]);
 
-  const openModal = useCallback(() => setModalVisible(true), []);
-  const closeModal = useCallback(() => setModalVisible(false), []);
+  const openModal = useCallback(() => setModalState({ isVisible: true, itemId: item.id }), [item.id]);
+  const closeModal = useCallback(() => setModalState({ isVisible: false, itemId: null }), []);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -32,6 +40,15 @@ const Item = React.memo(({ item }: { item: FormData}) => {
     }).start();
   }, [fadeAnim]);
 
+  const backgroundColor = colorscheme === 'light' 
+    ? 'white' 
+    : Platform.OS === 'ios' 
+      ? '$accentBackground' 
+      : '$accentColor'; 
+
+      const textColor = colorscheme === 'light' ? '#00796B' : '#FF5722'
+
+
   const renderContent = useCallback(() => {
     switch (item.category) {
       case 'Agreements':
@@ -40,30 +57,19 @@ const Item = React.memo(({ item }: { item: FormData}) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <User size={20} color={colorscheme === 'light' ? '#00796B' : 'orange'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'orange' }}>
-                  {item.clientName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.clientName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <Tag size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Vendor Code: {item.vendorCode}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Vendor Code: {item.vendorCode}</Text>
               </XStack>
             </YStack>
-
-
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  {item.endDate.toLocaleDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.endDate.toLocaleDateString()}</Text>
               </XStack>
-              
             </YStack>
-            
           </XStack>
         );
       case 'Purchase Order':
@@ -72,73 +78,50 @@ const Item = React.memo(({ item }: { item: FormData}) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <User size={20} color={colorscheme === 'light' ? '#00796B' : 'orange'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'orange' }}>
-                  {item.clientName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.clientName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <CheckCircle size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Consultant: {item.consultant}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Consultant: {item.consultant}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <Tag size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  PO Number: {item.poNumber}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>PO Number: {item.poNumber}</Text>
               </XStack>
             </YStack>
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  {item.poEndDate.toLocaleDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.poEndDate.toLocaleDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
         );
       case 'Visa Details':
         return (
-            <XStack>
+          <XStack>
             <YStack>
               <XStack style={styles.itemText}>
                 <User size={20} color={colorscheme === 'light' ? '#00796B' : 'orange'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'orange' }}>
-                  {item.clientName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.clientName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <CheckCircle size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Consultant: {item.consultantName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Consultant: {item.consultantName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <Tag size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Visa Number: {item.visaNumber}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Visa Number: {item.visaNumber}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <CircleUser size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Sponsor: {item.sponsor}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Sponsor: {item.sponsor}</Text>
               </XStack>
             </YStack>
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  {item.visaEndDate.toLocaleDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.visaEndDate.toLocaleDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -149,24 +132,15 @@ const Item = React.memo(({ item }: { item: FormData}) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <User size={20} color={colorscheme === 'light' ? '#00796B' : 'orange'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'orange' }}>
-                  {item.employeeName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.employeeName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <FileText size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  IQAMA Number: {item.iqamaNumber}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>IQAMA Number: {item.iqamaNumber}</Text>
               </XStack>
-            {/* </YStack>
-            <YStack> */}
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  Expiry Date: {item.expiryDate.toDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Expiry Date: {item.expiryDate.toDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -177,31 +151,19 @@ const Item = React.memo(({ item }: { item: FormData}) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <User size={20} color={colorscheme === 'light' ? '#00796B' : 'orange'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'orange' }}>
-                  {item.employeeName}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>{item.employeeName}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <FileText size={20} color={colorscheme === 'light' ? '#FF9800' : '#FF5722'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#FF9800' : '#FF5722' }}>
-                  Insurance Company: {item.insuranceCompany}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Insurance Company: {item.insuranceCompany}</Text>
               </XStack>
-            {/* </YStack>
-            <YStack> */}
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  Start: {item.insuranceStartDate.toDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>Start: {item.insuranceStartDate.toDateString()}</Text>
               </XStack>
-
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={{ marginLeft: 6, fontWeight: 'bold', color: colorscheme === 'light' ? '#00796B' : 'skyblue' }}>
-                  End: {item.insuranceEndDate.toDateString()}
-                </Text>
+                <Text style={[styles.text,{color:textColor}]}>End: {item.insuranceEndDate.toDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -210,11 +172,12 @@ const Item = React.memo(({ item }: { item: FormData}) => {
         return <ThemedText style={styles.itemText}>No data available.</ThemedText>;
     }
   }, [item, colorscheme]);
+  
 
   return (
     <XStack $sm={{ flexDirection: 'column' }} style={styles.itemContainer}>
       <Card
-        style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
+        style={styles.cardStyle}
         onPress={() => router.navigate(`/(tabs)/category/edit/${item.id}`)}
       >
         <CardHeader>
@@ -230,23 +193,23 @@ const Item = React.memo(({ item }: { item: FormData}) => {
             Delete
           </Button>
 
-          <Modal visible={isModalVisible} onDismiss={closeModal}>
+          <Modal visible={modalState.isVisible} onDismiss={closeModal}>
             <YStack space="$4" padding="$4" alignItems="center">
-              <Text style={{ fontWeight: 'bold' }}>Are you sure?</Text>
+              <Text style={styles.modalTitle}>Are you sure?</Text>
               <Paragraph>This action cannot be undone. Do you want to delete this item?</Paragraph>
               <XStack space="$4">
                 <Button theme="gray" onPress={closeModal} size="$3">Cancel</Button>
-                <Button theme="red" onPress={handleDelete} size="$3">Confirm Delete</Button>
+                <Button theme="red" onPress={async ()=>await handleDelete()} size="$3">Confirm Delete</Button>
               </XStack>
             </YStack>
           </Modal>
         </CardHeader>
-        <Card.Background theme={'alt2'} borderRadius={10} backgroundColor={colorscheme == 'light' ? 'white' : Platform.OS == 'ios' ? '$accentBackground' : '$accentColor'}>
-          <Svg height="200" width="400" style={{ position: 'absolute', top: 0, right: 0, opacity: 0.3 }}>
-            <Path d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z" fill={colorscheme == 'light' ? "blue" : '#CCE3F3'} />
+        <Card.Background theme={'alt2'} style={[styles.cardBackground, {backgroundColor}]}>
+          <Svg height="200" width="400" style={styles.svgTop}>
+            <Path d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z" fill={colorscheme === 'light' ? "blue" : '#CCE3F3'} />
           </Svg>
-          <Svg height="100%" width="400" style={{ position: 'absolute', bottom: 0, left: 0, opacity: 0.25 }}>
-            <Path d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z" fill={colorscheme == 'light' ? "purple" : 'white'} />
+          <Svg height="100%" width="400" style={styles.svgBottom}>
+            <Path d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z" fill={colorscheme === 'light' ? "purple" : 'white'} />
           </Svg>
         </Card.Background>
       </Card>
@@ -261,10 +224,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  cardStyle: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent'
+  },
+  cardBackground: {
+    borderRadius: 10,
+  },
   itemText: {
     fontSize: 16,
     marginBottom: 4,
   },
+  text: {
+    marginLeft: 6,
+    fontWeight: 'bold',
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+  },
+  svgTop: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    opacity: 0.3
+  },
+  svgBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    opacity: 0.25
+  }
 });
 
 export default React.memo(Item);
