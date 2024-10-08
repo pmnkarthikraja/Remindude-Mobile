@@ -1,20 +1,16 @@
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useProfileContext } from '@/hooks/useProfile';
-import { getCurrentUser, User } from '@/utils/user';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack, useNavigation } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {  ActivityIndicator, StyleSheet} from 'react-native';
-import { TouchableHighlight, useColorScheme } from 'react-native';
-import { useQueryClient } from 'react-query';
+import { router, Stack } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, Alert, StyleSheet, TouchableHighlight, useColorScheme } from 'react-native';
 import { Avatar, Button, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
-
 
 export default function SettingsScreen() {
   const colorscheme = useColorScheme()
   const {loading,user,logout} =useUser()
+  console.log("user: ",user?.googleId)
   const {profile} = useProfileContext()
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -51,11 +47,14 @@ export default function SettingsScreen() {
         <Separator my="$4" />
 
         <XStack gap="$3" $xs={{ flexDirection: 'column' }}>
-        {/* <SwitchWithLabel size="$4"  defaultChecked/> */}
       </XStack>
 
         <YStack space >       
-          <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Change Password" />
+          <ListItem  disabled={user?.googleId!==undefined} onPress={()=>{
+            router.navigate('/change-password')
+          }} borderRadius={10} backgroundColor={'$accentBackground'} 
+          title="Change Password"
+          />
           <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Privacy" />
           <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Language" />
         </YStack>

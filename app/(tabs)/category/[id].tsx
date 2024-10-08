@@ -191,8 +191,6 @@ const CategoryPage = () => {
   }
 
   const handleFilter = (startDate: Date | null, endDate: Date | null) => {
-    console.log("start date:",startDate)
-    console.log("end date:",endDate)
     const filteredData = got.filter(item => {
       const itemDate = getEndDate(item)
       if (itemDate && startDate && endDate) {

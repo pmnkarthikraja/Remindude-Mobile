@@ -1,19 +1,12 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import { MasterSwitchData, userApi } from "../api/userApi";
-import { User } from "@/utils/user";
-import { router, useNavigation } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useState, useEffect } from 'react';
-import { useIsFocused } from "@react-navigation/native";
-import { FormData } from "@/utils/category";
 import { useUser } from "@/components/userContext";
+import { FormData } from "@/utils/category";
+import axios, { AxiosError } from "axios";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 interface AxiosErrorType {
   message: string,
   success: boolean
 }
-
 
 export const useCreateFormDataMutation = () => {
   const queryClient = useQueryClient();
@@ -24,11 +17,7 @@ export const useCreateFormDataMutation = () => {
       }),
     {
       onSuccess: (data) => {
-        console.log("successfully added:",data)
         queryClient.invalidateQueries('formdata');
-        // if (!validatePassword){
-        //   localStorage.setItem('token',data.data.token)
-        // }
       },
       onError: (e: AxiosError<AxiosErrorType>) => {
         console.log("error on adding formdata", e);
@@ -75,7 +64,6 @@ export const useDeleteFormDataMutation = () => {
 export const useGetFormData = () => {
   const { user } = useUser();
   const email = user?.email
-  console.log("email:",email)
 
   return useQuery({
     queryKey: ['formdata',email],
@@ -88,7 +76,6 @@ export const useGetFormData = () => {
           },
         }
       );
-      console.log("result data",res.data)
       return res.data as FormData[]; 
     },
     onError: (error: AxiosError<any>) => {

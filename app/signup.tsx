@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Asset } from 'expo-asset';
 import { router } from 'expo-router';
 import { User } from '@/utils/user';
-import { useEmailSigninMutation, useEmailSignupMutation, useGoogleSigninMutation, useGoogleSignupMutation, useSendOTPMutation, useVerifyOTPMutation } from '@/hooks/userHooks';
+import { useEmailSigninMutation, useEmailSignupMutation, useGoogleSignupMutation, useSendOTPMutation, useVerifyOTPMutation } from '@/hooks/userHooks';
 import { Controller, useForm } from 'react-hook-form';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -55,8 +55,6 @@ const Signup = () => {
     }
   }
 
-
-
   const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
   const handleSignout = async () => {
     try {
@@ -89,7 +87,7 @@ const Signup = () => {
 
   useEffect(()=>{
     if (isverifyotperr && verifyotperr?.response?.status === 400) {
-      Alert.alert('Errords', 'Invalid OTP. Please try again.');
+      Alert.alert('Error', 'Invalid OTP. Please try again.');
     } 
   },[verifyotperr])
 
@@ -107,7 +105,9 @@ const Signup = () => {
       router.navigate('/');
     } catch (error) {
       console.log("error on verify otp:", error);
-      Alert.alert('Sorry', verifyotperr?.response?.data.message || verifyotperr?.message || emailSignupError?.response?.data.message || emailSignupError?.message);
+      if (emailSignupError){
+        Alert.alert('Sorry', emailSignupError?.response?.data.message || emailSignupError?.message);
+      }
     }
   }
 
@@ -200,7 +200,9 @@ const Signup = () => {
 
           <View style={styles.signInOptionsContainer}>
             <Text style={styles.note}>Or sign up using</Text>
-            <TouchableOpacity style={styles.googleButton} onPress={()=>promptAsync()}>
+            <TouchableOpacity style={styles.googleButton} onPress={async ()=>{
+              setUserExist(false)
+              await promptAsync()}}>
               <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/128/281/281764.png' }} style={styles.googleIcon} />
               <Text style={styles.googleButtonText}>Google</Text>
             </TouchableOpacity>

@@ -24,8 +24,6 @@ export const useEmailSignupMutation = (validatePassword:boolean) => {
       onSuccess: async (data) => {
         queryClient.invalidateQueries('userDetails');
         if (!validatePassword){
-          // await AsyncStorage.setItem('token',data.data.token)
-          console.log("incoming user:",data.data.user)
           await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
           setUser(data.data.user)
         }
@@ -175,15 +173,10 @@ export const useEmailSigninMutation = (validatePassword:boolean) => {
     {
       onSuccess: async (data) => {
         queryClient.invalidateQueries('userDetails');
-        console.log("on success login:",data.data)
         if (!validatePassword){
           await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
           setUser(data.data.user)
         }
-        setTimeout(() => {
-          router.replace('/(tabs)')
-        }, 500)
-        console.log("on login mutation success: ", data);
       },
       onError: (e: AxiosError<AxiosErrorType>) => {
         console.log("error on onLogin: ", e);

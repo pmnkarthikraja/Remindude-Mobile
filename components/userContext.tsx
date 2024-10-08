@@ -20,7 +20,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadUser = async () => {
       const userData = await AsyncStorage.getItem('user');
-      console.log("userData: ",userData)
       if (userData) {
         setUser(JSON.parse(userData));
       }

@@ -6,6 +6,7 @@ export interface User {
     password?: string
     profilePicture?: string
     googlePicture?: string
+    googleId?:string
 }
 
 // export interface GoogleUser {

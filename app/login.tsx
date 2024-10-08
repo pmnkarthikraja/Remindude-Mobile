@@ -16,9 +16,8 @@ WebBrowser.maybeCompleteAuthSession()
 
 const Login: FunctionComponent = () => {
   const [forgotModal, setForgotModal] = useState(false)
-  const { isLoading: isEmailSigninLoading, isError: isEmailSigninError, error: emailSigninError, isSuccess: isEmailSigninSuccess, mutateAsync: emailSigninMutation } = useEmailSigninMutation(false)
-  const { isLoading: isGoogleSigninLoading, isError: isGoogleSigninError, error: googleSigninError, mutateAsync: googleSigninMutation } = useGoogleSigninMutation()
-
+  const { isLoading: isEmailSigninLoading, isError: isEmailSigninError, error: emailSigninError, isSuccess: isEmailSigninSuccess, mutateAsync: emailSigninMutation,reset:emailsigninreset } = useEmailSigninMutation(false)
+  const { isLoading: isGoogleSigninLoading, isError: isGoogleSigninError, error: googleSigninError, mutateAsync: googleSigninMutation, reset:googlesigninreset } = useGoogleSigninMutation()
   const [_request, response, promptAsync] = Google.useAuthRequest({
     webClientId: '522585345584-5eogmt9juv74frkjndmhq4i5ob3ah68g.apps.googleusercontent.com',
     androidClientId: '522585345584-mb227ovhe4v1dr9b2g2fbrum5j6av682.apps.googleusercontent.com',
@@ -86,8 +85,10 @@ const Login: FunctionComponent = () => {
   };
 
   const signInQuery = async () => {
+    googlesigninreset()
     const data = watch()
     await emailSigninMutation(data)
+    router.navigate('/')
   }
 
   const handleSignUp = () => {
@@ -106,7 +107,8 @@ const Login: FunctionComponent = () => {
             <ActivityIndicator size="small" color="#0000ff" />
           }
           <Text style={styles.errorText}>{isEmailSigninError && emailSigninError.response?.data.message || emailSigninError?.message}</Text>
-
+          <Text style={styles.errorText}>{isGoogleSigninError && googleSigninError.response?.data.message || googleSigninError?.message}</Text>
+          
           <Controller
             control={control}
             name="email"
@@ -154,7 +156,10 @@ const Login: FunctionComponent = () => {
           <View style={styles.signInOptionsContainer}>
             <Text style={styles.note}>Or sign in using</Text>
 
-            <TouchableOpacity onPress={async () => await promptAsync()} style={styles.googleButton}>
+            <TouchableOpacity onPress={async () => {
+              emailsigninreset()
+              await promptAsync()
+              }} style={styles.googleButton}>
               <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/128/281/281764.png' }} style={styles.googleIcon} />
               <Text style={styles.googleButtonText}>Google</Text>
             </TouchableOpacity>

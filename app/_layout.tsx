@@ -63,9 +63,10 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <QueryClientProvider client={queryClient}>
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false ,title:'Settings'}} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="oauthredirect" options={{ headerShown: false }} />
+            <Stack.Screen name="change-password" options={{ headerShown: true , title:'Change Password'}} />
             <Stack.Screen name="+not-found" />
           </Stack>
         </QueryClientProvider>
