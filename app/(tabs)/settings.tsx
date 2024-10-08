@@ -1,17 +1,24 @@
+import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useProfileContext } from '@/hooks/useProfile';
+import { getCurrentUser, User } from '@/utils/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack } from 'expo-router';
-import React from 'react';
-import {  StyleSheet} from 'react-native';
+import { router, Stack, useNavigation } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {  ActivityIndicator, StyleSheet} from 'react-native';
 import { TouchableHighlight, useColorScheme } from 'react-native';
+import { useQueryClient } from 'react-query';
 import { Avatar, Button, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
 
 
 export default function SettingsScreen() {
   const colorscheme = useColorScheme()
-  const {profile,userName,email}= useProfileContext()
+  const {loading,user,logout} =useUser()
+  const {profile} = useProfileContext()
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
 
   return (
     <LinearGradient 
@@ -24,13 +31,13 @@ export default function SettingsScreen() {
 
         <XStack ai="center" jc="space-between">
           <XStack ai="center">
-            <Avatar circular size="$7">
-              <Avatar.Image src={profile} />
+           <Avatar circular size="$7">
+              <Avatar.Image src={user?.profilePicture || profile} />
               <Avatar.Fallback bg="$gray4" />
             </Avatar>
             <YStack ml="$3">
-              <Text color={colorscheme=='light'?'black':'white'}  fontWeight="bold">{userName}</Text>
-              <Text  color="$gray9">{email}</Text>
+              <Text color={colorscheme=='light'?'black':'white'}  fontWeight="bold">{user?.userName}</Text>
+              <Text  color="$gray9">{user?.email}</Text>
             </YStack>
           </XStack>
           <Button
@@ -44,7 +51,7 @@ export default function SettingsScreen() {
         <Separator my="$4" />
 
         <XStack gap="$3" $xs={{ flexDirection: 'column' }}>
-        <SwitchWithLabel size="$4" />
+        {/* <SwitchWithLabel size="$4"  defaultChecked/> */}
       </XStack>
 
         <YStack space >       
@@ -53,10 +60,7 @@ export default function SettingsScreen() {
           <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Language" />
         </YStack>
 
-        <TouchableHighlight style={styles.gotologin} onPress={async ()=>{
-        await AsyncStorage.removeItem('token');
-        router.navigate('/login')
-        }}>
+        <TouchableHighlight style={styles.gotologin} onPress={logout}>
         <Text>Logout</Text>
        </TouchableHighlight>
 
@@ -85,15 +89,6 @@ export function SwitchWithLabel(props: { size: SizeTokens; defaultChecked?: bool
   const id = `switch-${props.size.toString().slice(1)}-${props.defaultChecked ?? ''}}`
   return (
     <XStack width={'70%'} alignItems="center" gap="$4">
-      {/* <Label
-        paddingRight="$0"
-        minWidth={90}
-        justifyContent="flex-end"
-        size={props.size}
-        htmlFor={id}
-      >
-        Notification
-      </Label> */}
       <ListItem borderRadius={10} backgroundColor={'$accentBackground'} title="Notifications" />
       <Separator minHeight={20} vertical />
       <Switch id={id} size={props.size} defaultChecked={props.defaultChecked} backgroundColor={'$accentBackground'}>

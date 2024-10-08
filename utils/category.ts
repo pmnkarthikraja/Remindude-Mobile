@@ -1,24 +1,6 @@
-export interface OtherCategoryData {
-   id:string,
-   category:string,
-   clientName: string;
-   remarks:string,
-   startDate:Date,
-   endDate:Date,
-   poIssueDate: Date;
-  poEndDate: Date;
-  visaEndDate: Date;
-  visaEntryDate: Date;
-  expiryDate: Date;
-  insuranceStartDate: Date;
-  insuranceEndDate: Date;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  }
-  
-
 export interface Agreements {
   id:string,
+  email:string,
   category:"Agreements"
   clientName: string;
   vendorCode: string;
@@ -32,6 +14,7 @@ export interface Agreements {
 
 export interface PurchaseOrder {
   id:string,
+  email:string,
   category:"Purchase Order"
   clientName: string;
   consultant: string;
@@ -47,6 +30,7 @@ export interface PurchaseOrder {
 
 export interface VisaDetails {
   id:string,
+  email:string,
   category:"Visa Details"
   clientName: string;
   visaNumber: string;
@@ -62,6 +46,7 @@ export interface VisaDetails {
 
 export interface IQAMARenewals {
   id:string,
+  email:string,
   category:"IQAMA Renewals"
   employeeName: string;
   iqamaNumber: string;
@@ -74,6 +59,7 @@ export interface IQAMARenewals {
 
 export interface InsuranceRenewals {
   id:string,
+  email:string,
   category: 'Insurance Renewals';
   employeeName: string;
   insuranceStartDate: Date;

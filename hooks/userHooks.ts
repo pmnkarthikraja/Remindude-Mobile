@@ -2,8 +2,11 @@ import { AxiosError, AxiosResponse } from "axios";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { MasterSwitchData, userApi } from "../api/userApi";
 import { User } from "@/utils/user";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect } from 'react';
+import { useIsFocused } from "@react-navigation/native";
+import { useUser } from "@/components/userContext";
 
 interface AxiosErrorType {
   message: string,
@@ -13,18 +16,22 @@ interface AxiosErrorType {
 
 export const useEmailSignupMutation = (validatePassword:boolean) => {
   const queryClient = useQueryClient();
+  const {setUser} =useUser()
 
   return useMutation(
     (userDetails: User) => userApi.signup(userDetails),
     {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         queryClient.invalidateQueries('userDetails');
         if (!validatePassword){
-          localStorage.setItem('token',data.data.token)
+          // await AsyncStorage.setItem('token',data.data.token)
+          console.log("incoming user:",data.data.user)
+          await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
+          setUser(data.data.user)
         }
         setTimeout(() => {
-          window.location.href='/home'
-        }, 1500);
+          router.navigate('/')
+        }, 500)
       },
       onError: (e: AxiosError<AxiosErrorType>) => {
         console.log("error on onRegister", e);
@@ -158,31 +165,20 @@ export const useResetPassword = () => {
   )
 }
 
-interface GoogleUser {
-  email: string,
-  familyName: string,
-  givenName: string,
-  id: string,
-  imageUrl: string,
-  serverAuthCode: string,
-  name: string
-  authentication: {
-    accessToken: string,
-    idToken: string,
-    refreshToken: string
-  }
-}
 
 export const useEmailSigninMutation = (validatePassword:boolean) => {
   const queryClient = useQueryClient();
+  const {setUser} =useUser()
 
   return useMutation(
     (user: User) => userApi.login(user),
     {
       onSuccess: async (data) => {
         queryClient.invalidateQueries('userDetails');
+        console.log("on success login:",data.data)
         if (!validatePassword){
-          await AsyncStorage.setItem('token',data.data.token)
+          await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
+          setUser(data.data.user)
         }
         setTimeout(() => {
           router.replace('/(tabs)')
@@ -190,27 +186,83 @@ export const useEmailSigninMutation = (validatePassword:boolean) => {
         console.log("on login mutation success: ", data);
       },
       onError: (e: AxiosError<AxiosErrorType>) => {
-        console.log("error on onLogin", e);
+        console.log("error on onLogin: ", e);
       }
     }
   );
 };
 
+interface GoogleLoginPayload{
+  email:string,
+  googleId:string
+}
+
+export const useGoogleSigninMutation = () => {
+  const queryClient = useQueryClient();
+  const {setUser} =useUser()
+
+  return useMutation(
+    (payload:GoogleLoginPayload) => userApi.googleLogin(payload.googleId,payload.email),
+    {
+      onSuccess: async (data) => {
+        queryClient.invalidateQueries('userDetails');
+        await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
+        setUser(data.data.user as User)
+        
+        setTimeout(() => {
+          router.replace('/(tabs)')
+        }, 500)
+      },
+      onError: (e: AxiosError<AxiosErrorType>) => {
+        console.log("error on google login", e);
+      }
+    }
+  );
+};
+
+
+ export const useGoogleSignupMutation = () => {
+   const queryClient = useQueryClient();
+   const {setUser} =useUser()
+
+   return useMutation(
+     async (accessToken:string) => await userApi.googleSignup(accessToken),
+     {
+       onSuccess: async (data) => {
+         queryClient.invalidateQueries('userDetails');
+         await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
+         setUser(data.data.user as User)
+
+         router.navigate('/')
+       },
+       onError: (e: AxiosError<any>) => {
+         console.log("error on google signup", e);
+         router.navigate('/signup')
+       }
+     }
+   );
+ }
+
 interface EditProfilePayload{
   email:string,
   password:string,
   userName:string,
-  profilePicture:Blob|string
+  profilePicture:string
 }
 
 export const useEditProfileMutation = () => {
   const queryClient = useQueryClient();
+  const {setUser} = useUser()
 
   return useMutation(
     (user: EditProfilePayload) => userApi.editProfile(user.email,user.password,user.userName,user.profilePicture),
     {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         queryClient.invalidateQueries('userDetails');
+        await AsyncStorage.removeItem('user')
+        await AsyncStorage.setItem('user',JSON.stringify(data.data.user))
+        setUser(data.data.user)
+      
         console.log("on edit profile mutation success: ", data);
       },
       onError: (e: AxiosError<AxiosErrorType>) => {
@@ -219,7 +271,6 @@ export const useEditProfileMutation = () => {
     }
   );
 };
-
 
 
 export const useGetMasterSwitchData = (email:string,refetchInterval?: number) => {
@@ -248,4 +299,3 @@ export const useToggleMasterSwitchData = () => {
     }
   );
 };
-

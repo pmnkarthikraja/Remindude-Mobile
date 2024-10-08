@@ -1,22 +1,22 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
-import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
 import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
 import { Category, FormData } from '@/utils/category';
+import { buildNotifications } from '@/utils/pushNotifications';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ArrowLeft, CalendarRange, Check, Plus, X } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
+import { debounce } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import { categoryImagePaths } from './category';
-import { buildNotifications } from '@/utils/pushNotifications';
-import {debounce } from 'lodash'
-import axios from 'axios';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -36,8 +36,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   isEdit,
   editItem
 }) => {
-  const { formdata, setFormData } = useCategoryDataContext()
-  const [isLoading, setLoading] = useState(false)
+  // const [isLoading, setLoading] = useState(false)
   const { control, handleSubmit, setValue, watch, reset, formState:{errors} } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
@@ -67,6 +66,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
+  const {loading,user} = useUser()
+  const {isLoading:addFormDataLoading,isError:isAddFormdataErr,mutateAsync:addFormData} = useCreateFormDataMutation()
+  const {isLoading:updateFormDataLoading,isError:isUpdateFormdataErr,mutateAsync:updateFormData} = useUpdateFormDataMutation()
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -110,6 +112,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             insuranceEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
+            remarks:'',
+            reminderDates:[]
           });
           break;
         case 'IQAMA Renewals':
@@ -120,6 +124,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             iqamaNumber: '',
             wantsCustomReminders: false,
             customReminderDates: [],
+            remarks:'',
+            reminderDates:[]
           });
           break;
         case 'Purchase Order':
@@ -132,6 +138,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             poEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
+            remarks:'',
+            reminderDates:[]
           });
           break;
         default:
@@ -144,6 +152,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             visaEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
+            remarks:'',
+            reminderDates:[]
           });
           break;
       }
@@ -154,118 +164,40 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     debouncedReset(data.category);
   }, [data.category]);
 
-  // useEffect(() => {
-  //   if (data.category && !isEdit) {
-  //     if (data.category == 'Agreements') {
-  //       reset({
-  //         category: 'Agreements',
-  //         clientName: '',
-  //         endDate: new Date(),
-  //         startDate: new Date(),
-  //         vendorCode: '',
-  //         wantsCustomReminders: false,
-  //         customReminderDates: [],
-  //         reminderDates:[],
-  //         remarks:''
-  //       })
-  //     } else if (data.category == 'Insurance Renewals') {
-  //       reset({
-  //         category: 'Insurance Renewals',
-  //         employeeName: '',
-  //         insuranceCompany: '',
-  //         insuranceEndDate: new Date(),
-  //         insuranceStartDate: new Date(),
-  //         value: '',
-  //         wantsCustomReminders: false,
-  //         customReminderDates: [],
-  //           reminderDates:[],
-  //         remarks:''
-  //       })
-  //     } else if (data.category == 'IQAMA Renewals') {
-  //       reset({
-  //         category: 'IQAMA Renewals',
-  //         employeeName: '',
-  //         expiryDate: new Date(),
-  //         iqamaNumber: '',
-  //         wantsCustomReminders: false,
-  //         customReminderDates: [],
-  //           reminderDates:[],
-  //         remarks:''
-  //       })
-  //     } else if (data.category == 'Purchase Order') {
-  //       reset({
-  //         category: 'Purchase Order',
-  //         clientName: '',
-  //         consultant: '',
-  //         entryDate: new Date(),
-  //         poEndDate: new Date(),
-  //         poIssueDate: new Date(),
-  //         poNumber: '',
-  //         wantsCustomReminders: false,
-  //         customReminderDates: [],
-  //           reminderDates:[],
-  //         remarks:''
-  //       })
-  //     } else {
-  //       reset({
-  //         category: 'Visa Details',
-  //         clientName: '',
-  //         consultantName: '',
-  //         sponsor: '',
-  //         visaEndDate: new Date(),
-  //         visaEntryDate: new Date(),
-  //         visaNumber: '',
-  //         wantsCustomReminders: false,
-  //         customReminderDates: [],
-  //           reminderDates:[],
-  //         remarks:''
-  //       })
-  //     }
-  //   }
-  // }, [data.category, reset]);
-
   const colorScheme = useColorScheme()
+
+  if (loading){
+    return <ActivityIndicator size={'large'}/>
+  }
+
+  /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (data: FormData) => {
+    if (user!=null){
     if (!isEdit) {
       const id = uuid.v4().toString()
-      const withId: FormData = { ...data, id }
+      const withId: FormData = { ...data, id,email:user.email }
       const withReminderDates = calculateReminderDates(withId)
       await buildNotifications(withReminderDates,'Add')
-      //send through axios
-
       try{
-        await axios.post('https://remindude.vercel.app/formdata',{
-          ...withReminderDates
-        })
+        await addFormData(withReminderDates)
       }catch(e){
         console.log("error on axios:",e)
       }
-    
-
-      setFormData([...formdata, withReminderDates])
     } else {
       const withReminderDates = calculateReminderDates(data)
-      const newData = formdata.map(item => item.id == data.id ? withReminderDates : item)
       await buildNotifications(withReminderDates,'Update')
-
-      console.log("update coming:",withReminderDates)
+      const updateData:FormData = {...withReminderDates,email:user.email}
 
       try{
-       const res= await axios.put(`https://remindude.vercel.app/formdata/${withReminderDates.id}`,{
-          ...withReminderDates
-        })
-        console.log("updated data: ",res.data)
+      await updateFormData(updateData)
       }catch(e){
         console.log("error on axios:",e)
       }
-    
-      setFormData(newData)
-    }
-    setLoading(true)
+      }
+  }
     setTimeout(() => {
       reset()
       router.navigate('/')
-      setLoading(false)
     }, 1000)
   };
 
@@ -580,9 +512,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderInstantDate('endDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(data.startDate, 'startDate')}
+            {renderDatePicker(new Date(data.startDate), 'startDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(data.endDate, 'endDate')}
+            {renderDatePicker(new Date(data.endDate), 'endDate')}
           </ThemedView>
 
           {renderCustomReminderDates()}
@@ -599,9 +531,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderInstantDate('poEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(data.poIssueDate, 'poIssueDate')}
+            {renderDatePicker(new Date(data.poIssueDate), 'poIssueDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(data.poEndDate, 'poEndDate')}
+            {renderDatePicker(new Date(data.poEndDate), 'poEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
         </>
@@ -615,7 +547,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderInstantDate('expiryDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(data.expiryDate, 'expiryDate')}
+            {renderDatePicker(new Date(data.expiryDate), 'expiryDate')}
           </ThemedView>
 
           {renderCustomReminderDates()}
@@ -631,9 +563,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderInstantDate('visaEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(data.visaEntryDate, 'visaEntryDate')}
+            {renderDatePicker(new Date(data.visaEntryDate), 'visaEntryDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(data.visaEndDate, 'visaEndDate')}
+            {renderDatePicker(new Date(data.visaEndDate), 'visaEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
         </>
@@ -649,9 +581,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderInstantDate('insuranceEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(data.insuranceStartDate, 'insuranceStartDate')}
+            {renderDatePicker(new Date(data.insuranceStartDate), 'insuranceStartDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(data.insuranceEndDate, 'insuranceEndDate')}
+            {renderDatePicker(new Date(data.insuranceEndDate), 'insuranceEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
         </>
@@ -709,7 +641,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               </Text>
             )}
           </XStack>
-          {isLoading && <ActivityIndicator size={'large'} color={Colors.light.tint} />}
+          {(addFormDataLoading || updateFormDataLoading) && <ActivityIndicator size={'large'} color={Colors.light.tint} />}
           <Sheet
             modal
             open={isSheetOpen}

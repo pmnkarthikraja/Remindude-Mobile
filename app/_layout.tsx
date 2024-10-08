@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { CategoryDataProvider } from '@/hooks/useCategoryData';
 import { ProfileContextProvider } from '@/hooks/useProfile';
+import { UserProvider } from '@/components/userContext';
 
 
 const tamaguiConfig = createTamagui(config);
@@ -55,6 +56,7 @@ export default function RootLayout() {
   }
 
   return (
+    <UserProvider>
     <CategoryDataProvider>
       <ProfileContextProvider>
     <TamaguiProvider config={tamaguiConfig}>
@@ -71,5 +73,6 @@ export default function RootLayout() {
     </TamaguiProvider>
     </ProfileContextProvider>
     </CategoryDataProvider>
+    </UserProvider>
   );
 }

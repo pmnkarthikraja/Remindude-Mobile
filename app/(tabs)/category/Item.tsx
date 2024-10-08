@@ -1,33 +1,30 @@
 import { ThemedText } from '@/components/ThemedText';
+import { useDeleteFormDataMutation } from '@/hooks/formDataHooks';
 import { FormData } from '@/utils/category';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Modal, Platform, StyleSheet, Text, useColorScheme } from 'react-native';
-import { Button, CardHeader, Paragraph, XStack, YStack } from 'tamagui';
-import { Card } from 'tamagui';
+import { CalendarClock, CheckCircle, CircleUser, FileText, Tag, Trash, User } from '@tamagui/lucide-icons';
 import { router } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Modal, Platform, StyleSheet, Text, useColorScheme } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
-import { CalendarClock, Trash, User, FileText, Tag, CheckCircle, CircleUser } from '@tamagui/lucide-icons';
-import { useCategoryDataContext } from '@/hooks/useCategoryData';
-import axios from 'axios';
+import { Button, Card, CardHeader, Paragraph, XStack, YStack } from 'tamagui';
 
 const Item = React.memo(({ item }: { item: FormData }) => {
-  const { formdata, setFormData } = useCategoryDataContext();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const colorscheme = useColorScheme();
-  
+  const {isLoading:deleteFormDataLoading,isError:isDeleteFormdataErr,mutateAsync:deleteFormData} = useDeleteFormDataMutation()
+
   const [modalState, setModalState] = useState<{isVisible:boolean,itemId:string|null}>({ isVisible: false, itemId: null });
 
   const handleDelete = useCallback(async () => {
-    const filtered = formdata.filter(data => data.id !== item.id);
-    setFormData(filtered);
     try{
-      await axios.delete(`https://remindude.vercel.app/formdata/${item.id}`)
+      await deleteFormData(item.id)
+      router.navigate('/')
     }catch(e){
       console.log("error on axios:",e)
     }
 
     setModalState({ isVisible: false, itemId: null }); 
-  }, [formdata, item.id]);
+  }, [ item.id]);
 
   const openModal = useCallback(() => setModalState({ isVisible: true, itemId: item.id }), [item.id]);
   const closeModal = useCallback(() => setModalState({ isVisible: false, itemId: null }), []);
@@ -67,7 +64,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>{item.endDate.toLocaleDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>{new Date(item.endDate).toLocaleDateString() || ''}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -92,7 +89,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>{item.poEndDate.toLocaleDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>{new Date(item.poEndDate).toLocaleDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -121,7 +118,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <YStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>{item.visaEndDate.toLocaleDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>{new Date(item.visaEndDate).toLocaleDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -140,7 +137,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
               </XStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>Expiry Date: {item.expiryDate.toDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>Expiry Date: {new Date(item.expiryDate).toDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -159,11 +156,11 @@ const Item = React.memo(({ item }: { item: FormData }) => {
               </XStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>Start: {item.insuranceStartDate.toDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>Start: {new Date(item.insuranceStartDate).toDateString()}</Text>
               </XStack>
               <XStack style={styles.itemText}>
                 <CalendarClock size={20} color={colorscheme === 'light' ? '#00796B' : 'skyblue'} />
-                <Text style={[styles.text,{color:textColor}]}>End: {item.insuranceEndDate.toDateString()}</Text>
+                <Text style={[styles.text,{color:textColor}]}>End: {new Date(item.insuranceEndDate).toDateString()}</Text>
               </XStack>
             </YStack>
           </XStack>
@@ -173,6 +170,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
     }
   }, [item, colorscheme]);
   
+
 
   return (
     <XStack $sm={{ flexDirection: 'column' }} style={styles.itemContainer}>
@@ -194,6 +192,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
           </Button>
 
           <Modal visible={modalState.isVisible} onDismiss={closeModal}>
+            {deleteFormDataLoading && <ActivityIndicator size={'large'}/>}
             <YStack space="$4" padding="$4" alignItems="center">
               <Text style={styles.modalTitle}>Are you sure?</Text>
               <Paragraph>This action cannot be undone. Do you want to delete this item?</Paragraph>

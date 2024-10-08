@@ -10,7 +10,8 @@
     "backgroundColor": "#000000" ,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.testexpoapp"
+      "bundleIdentifier": "com.anonymous.testexpoapp",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {

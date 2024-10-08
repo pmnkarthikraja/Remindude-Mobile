@@ -4,14 +4,15 @@ import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { categorizeData, FormData, getEndDate } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { FunctionComponent, useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
+import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Button, ScrollView, Sheet, Text, } from 'tamagui';
 import { wait } from '.';
 import Item from './Item';
 import Lottie from 'lottie-react-native';
+import { useGetFormData } from '@/hooks/formDataHooks';
 
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
@@ -36,7 +37,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
 
   return (
     <Animated.View style={animatedBorderStyle}>
-      <Item item={item} key={item.id}/>
+     { item && <Item item={item} key={item.id}/>}
     </Animated.View>
   );
 };
@@ -99,16 +100,17 @@ const reducer = (state: State, action: Action): State => {
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
   const [state, dispatch] = useReducer(reducer, { ...initialState});
-  const { formdata } = useCategoryDataContext();
+  const { data:formData, isLoading:formDataLoading, error:getFormDataError,refetch } = useGetFormData();
   const opacity = useSharedValue(1);
   const {initialData:got,data,endDate,modalVisible,refreshing,showEndPicker,showStartPicker,startDate} = state
   const colourscheme = useColorScheme();
   const [isLoading,setIsLoading]=useState(true)
 
   useEffect(()=>{
-    const filteredFormData = formdata.filter(d => d.category === category);
-    dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData})
-    dispatch({type:'SET_DATA',payload:filteredFormData})
+    refetch()
+    const filteredFormData =formData && formData.filter(d => d.category === category);
+    dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData || []})
+    dispatch({type:'SET_DATA',payload:filteredFormData || []})
     setIsLoading(false)
   },[category])
 
@@ -128,13 +130,58 @@ const CategoryPage = () => {
     };
   });
 
+  const navigation = useNavigation()
+  const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
+  const handleSearch = (text: string) => {
+    const payload= got.filter(item => {
+       if (item.category == 'Agreements') {
+         return searchItem(item.clientName, text) || searchItem(item.vendorCode, text)
+       } else if (item.category == 'Insurance Renewals') {
+         return searchItem(item.employeeName, text) || searchItem(item.insuranceCategory, text) || searchItem(item.insuranceCompany, text) || searchItem(item.value, text)
+       } else if (item.category == 'IQAMA Renewals') {
+         return searchItem(item.employeeName, text) || searchItem(item.iqamaNumber, text)
+       } else if (item.category == 'Purchase Order') {
+         return searchItem(item.clientName, text) || searchItem(item.consultant, text) || searchItem(item.poNumber, text)
+       } else {
+         return searchItem(item.clientName, text) || searchItem(item.consultantName, text) || searchItem(item.sponsor, text) || searchItem(item.visaNumber, text)
+       }
+     })
+   dispatch({type:'SET_DATA',payload:payload})
+ }
 
-  if (isLoading) {
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: `${category} Details`,
+      headerSearchBarOptions: {
+        placeholder: 'search..',
+        headerIconColor: colourscheme === 'light' ? 'black' : 'white',
+        textColor: colourscheme === 'light' ? 'black' : 'white',
+        shouldShowHintSearchIcon: true,
+        placement: 'stacked',
+        onChangeText: (e:any) => handleSearch(e.nativeEvent.text),
+      },
+      headerRight: () => (
+        <Button
+          onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
+          icon={
+            <>
+              {!hasFilterApplied && <Filter color={colourscheme === 'light' ? 'black' : 'white'} />}
+              {hasFilterApplied && <Filter fill={colourscheme === 'light' ? 'black' : 'white'} color={colourscheme === 'light' ? 'black' : 'white'} />}
+              {hasFilterApplied && <Text style={{ color: colourscheme === 'light' ? 'black' : 'white' }}>1</Text>}
+            </>
+          }
+          style={{ marginRight: 10, backgroundColor: 'transparent' }}
+        />
+      ),
+    });
+  }, [navigation, category, colourscheme,hasFilterApplied,handleSearch]);
+
+
+  if (isLoading || formDataLoading || formData==undefined) {
     return (
         <ThemedView style={styles.container}>
-        <ActivityIndicator size={'large'} style={{justifyContent:'center',alignContent:'center'}}/>
         <Lottie
-                source={require('../../../assets/Animation/Animation.json')}
+                source={require('../../../assets/Animation/Animation -loading1.json')}
                 autoPlay
                 loop
                 style={styles.animation}
@@ -142,8 +189,6 @@ const CategoryPage = () => {
         </ThemedView>
     );
   }
-
-
 
   const handleFilter = (startDate: Date | null, endDate: Date | null) => {
     console.log("start date:",startDate)
@@ -195,22 +240,6 @@ const CategoryPage = () => {
     return text.toLowerCase().includes(searchText.toLowerCase())
   }
 
-  const handleSearch = (text: string) => {
-     const payload= got.filter(item => {
-        if (item.category == 'Agreements') {
-          return searchItem(item.clientName, text) || searchItem(item.vendorCode, text)
-        } else if (item.category == 'Insurance Renewals') {
-          return searchItem(item.employeeName, text) || searchItem(item.insuranceCategory, text) || searchItem(item.insuranceCompany, text) || searchItem(item.value, text)
-        } else if (item.category == 'IQAMA Renewals') {
-          return searchItem(item.employeeName, text) || searchItem(item.iqamaNumber, text)
-        } else if (item.category == 'Purchase Order') {
-          return searchItem(item.clientName, text) || searchItem(item.consultant, text) || searchItem(item.poNumber, text)
-        } else {
-          return searchItem(item.clientName, text) || searchItem(item.consultantName, text) || searchItem(item.sponsor, text) || searchItem(item.visaNumber, text)
-        }
-      })
-    dispatch({type:'SET_DATA',payload:payload})
-  }
 
   function onClearFilter(){
     dispatch({type:'SET_START_DATE',payload:null})
@@ -219,30 +248,31 @@ const CategoryPage = () => {
     dispatch({type:'SET_MODAL_VISIBLE',payload:false})
   }
 
-  const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{
         title: `${category} Details`,
-        headerSearchBarOptions: {
-          placeholder: 'search..',
-          headerIconColor: colourscheme == 'light' ? 'black' : 'white',
-          textColor: colourscheme == 'light' ? 'black' : 'white',
-          shouldShowHintSearchIcon: true,
-          placement: 'stacked',
-          onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
-        },
-        headerRight: () => <Button
-          onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
-          icon={
-          <>
-          {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
-          {hasFilterApplied && <Filter fill={colourscheme=='light'?'black':'white'} color={colourscheme=='light'?'black':'white'} />} 
-         {hasFilterApplied && <Text color={colourscheme=='light'?'black':'white'}>1</Text>}
-          </>
-          }
-          style={{ marginRight: 10 ,backgroundColor:'transparent'}}
-        />
+        // headerSearchBarOptions: {
+        //   placeholder: 'search..',
+        //   headerIconColor: colourscheme == 'light' ? 'black' : 'white',
+        //   textColor: colourscheme == 'light' ? 'black' : 'white',
+        //   shouldShowHintSearchIcon: true,
+        //   disableBackButtonOverride:true,
+        //   placement: 'automatic',
+        //   obscureBackground:true,
+        //   onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
+        // },
+        // headerRight: () => <Button
+        //   onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
+        //   icon={
+        //   <>
+        //   {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
+        //   {hasFilterApplied && <Filter fill={colourscheme=='light'?'black':'white'} color={colourscheme=='light'?'black':'white'} />} 
+        //  {hasFilterApplied && <Text color={colourscheme=='light'?'black':'white'}>1</Text>}
+        //   </>
+        //   }
+        //   style={{ marginRight: 10 ,backgroundColor:'transparent'}}
+        // />
       }} />
 
       <Sheet modal open={modalVisible} onOpenChange={() => dispatch({type:'SET_MODAL_VISIBLE',payload:false})} snapPointsMode='fit' >
@@ -304,7 +334,7 @@ const CategoryPage = () => {
                 source={require('../../../assets/Animation/Animation-no_data.json')}
                 autoPlay
                 loop
-                style={styles.animation}
+                style={styles.animation_no_data}
               />
       </>}
       {isLoading && <ActivityIndicator/>}
@@ -376,6 +406,11 @@ const styles = StyleSheet.create({
     width: 'auto',
     height: 250,
   },
+  animation_no_data:{
+    width: 'auto',
+    height: 250,
+    flex:1
+  }
 });
 
 export default CategoryPage;

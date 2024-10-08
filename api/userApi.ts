@@ -16,7 +16,7 @@ export interface UserAPI{
     sendOTP:(email:string,accountVerification:boolean,type:'verification'|'forgotPassword',userName:string|undefined)=>Promise<AxiosResponse>
     verifyOTP:(email:string,otp:string)=>Promise<AxiosResponse>
     resetPassword:(email:string,password:string)=>Promise<AxiosResponse>
-    editProfile:(email:string,password:string,userName:string,profilePicture:Blob|string)=>Promise<AxiosResponse>
+    editProfile:(email:string,password:string,userName:string,profilePicture:string)=>Promise<AxiosResponse>
     validatePassword :(email:string,password:string)=>Promise<AxiosResponse>
     deleteUserAccount:(email:string)=>Promise<AxiosResponse>
 
@@ -31,6 +31,20 @@ export interface UserAPI{
 // const BASE_URL="https://remindude-backend.onrender.com"
 const BASE_URL = "https://remindude.vercel.app"
 
+const createFormData = (uri: string,formData:FormData) => {
+    const filename = uri.split('/').pop(); 
+    const match = /\.(\w+)$/.exec(filename || '');
+    const type = match ? `image/${match[1]}` : `image`;
+  
+    formData.append('profileImage', {
+      uri: uri, 
+      type: type,
+      name: filename || `image.${type}`, 
+    } as any); 
+  
+    return formData;
+  };
+  
 
 class UserAPIService implements UserAPI{
     async signup (user:User): Promise<AxiosResponse>{
@@ -45,8 +59,6 @@ class UserAPIService implements UserAPI{
      }
  
      async login (user:User): Promise<AxiosResponse>{
-        console.log("login:",user)
-        console.log("route: ",BASE_URL)
          return await axios.post(`${BASE_URL}/signin-email`,{...user},{withCredentials:true,headers:{
              "Content-Type":"application/json"
          }})
@@ -85,23 +97,19 @@ class UserAPIService implements UserAPI{
         return await axios.post(`${BASE_URL}/validate-password`,{email,password})
     }
  
-     async editProfile (email:string,password:string,userName:string,profilePicture:Blob|string):Promise<AxiosResponse>{
+     async editProfile (email:string,password:string,userName:string,profilePicture:string):Promise<AxiosResponse>{
          const formData = new FormData();
          formData.append('email', email);
          formData.append('password', password);
          formData.append('userName', userName);
-         if (!!profilePicture && typeof profilePicture!=='string'){
-             formData.append('profilePicture', profilePicture, 'profile.jpg');
-         }
-         if (!!profilePicture && typeof profilePicture=='string'){
-            formData.append("isProfilePicSet",profilePicture)
-         }
-         return await axios.put(`${BASE_URL}/update-user`,formData,{
+         formData.append('profilePicture',profilePicture)
+         
+         return await axios.put(`${BASE_URL}/update-user-plain`,formData,{
              headers: {
                  'Content-Type': 'multipart/form-data',
              },
          })
-     }
+     }  
 
      async getMasterSwitchData(email:string):Promise<{message:string,success:boolean,masterSwitchData:MasterSwitchData}>{
         const result= await axios.get(`${BASE_URL}/master-switch-data/${email}`,{

@@ -1,4 +1,4 @@
-import { Dimensions, FlatList, Image, Platform, ScrollView, Switch, Text, TouchableHighlight, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Platform, ScrollView, Switch, Text, TouchableHighlight, useColorScheme, View } from 'react-native';
 import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +6,7 @@ import React, { FunctionComponent, useCallback, useEffect, useState } from 'reac
 import type { CardProps } from 'tamagui';
 import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
 
-import { router } from 'expo-router';
+import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { Appearance } from 'react-native';
 
 import Lottie from 'lottie-react-native';
@@ -14,16 +14,17 @@ import { StyleSheet, RefreshControl } from 'react-native';
 import { Path, Polygon } from 'react-native-svg';
 
 import { ThemedText } from '@/components/ThemedText';
-import { useCategoryDataContext } from '@/hooks/useCategoryData';
 import { useProfileContext } from '@/hooks/useProfile';
-import { categorizeData, Category, FormData, parseResponse } from '@/utils/category';
+import { categorizeData, Category, FormData } from '@/utils/category';
 import { MoonStar, Sun } from '@tamagui/lucide-icons';
 import * as Notifications from 'expo-notifications';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg from 'react-native-svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GoogleUser } from '@/utils/user';
-import axios from 'axios';
+import {  User } from '@/utils/user';
+import { ThemedView } from '@/components/ThemedView';
+import { useGetFormData } from '@/hooks/formDataHooks';
+import { useUser } from '@/components/userContext';
+import NetInfo from '@react-native-community/netinfo';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -274,7 +275,7 @@ const generateRandomStars = (count: number) => {
 };
 
 interface HeaderProps{
-  user:GoogleUser | undefined
+  user:User | null
 }
 
 const Header:FunctionComponent<HeaderProps> = ({
@@ -329,10 +330,10 @@ const Header:FunctionComponent<HeaderProps> = ({
         </Animated.View>
       )}
       <Image
-        source={{ uri: user?.picture || profile }}
+        source={{ uri: user?.profilePicture || profile }}
         style={styles.profilePic}
       />
-      <ThemedText style={styles.greeting}>Hello, {userName}!</ThemedText>
+      <ThemedText style={styles.greeting}>Hello, {user?.userName}!</ThemedText>
       <Switch
         value={switchOn}
         onValueChange={toggleTheme}
@@ -359,13 +360,35 @@ export const wait = (timeout:
 }
 
 const HomeScreen = () => {
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [_permissionGranted, setPermissionGranted] = useState(false);
   const [refreshing,setRefreshing]=useState(false)
-  const [user,setUser]=useState<GoogleUser|undefined>(undefined)
-  
-  const onRefresh= useCallback(()=>{
+  const colorscheme = useColorScheme()
+  const [isloading,setloading]=useState(true)
+  const {loading,user} =useUser()
+  const { data:formData, isLoading, error:getFormDataError ,refetch} = useGetFormData();
+  const [isConnected, setIsConnected] = useState(true);
+  const navigation = useNavigation()
+
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+     if (state.isConnected!=null){ 
+      setIsConnected(state.isConnected);
+      refetch()
+      if (!state.isConnected) {
+        Alert.alert('No Internet Connection', 'You are currently offline.');
+      }}
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [navigation]);
+
+  const onRefresh= useCallback(async ()=>{
     setRefreshing(true)
-    wait(2000).then(()=>setRefreshing(false))
+    refetch()
+    setRefreshing(false)
   },[])
 
   useEffect(() => {
@@ -376,43 +399,38 @@ const HomeScreen = () => {
 
     requestPermissions();
 
-    const go = async () =>{
-      const item = await AsyncStorage.getItem('token')
-      if (item!=null){
-        const gotUser:GoogleUser =JSON.parse(item)
-        setUser(gotUser)
-      }
-    }
-
-    go()
-
     const subscription = Notifications.addNotificationReceivedListener(
       notification => {
         console.log('Notification received:', notification.request.identifier);
       }
     );
+    setloading(false)
 
     return () => {
       subscription.remove();
     };
   }, []);
 
-  const colorscheme = useColorScheme()
-  const { formdata, setFormData } = useCategoryDataContext()
 
-    useEffect(()=>{
-  const load = async () => {
-    try{
-      const data =await axios.get('https://remindude.vercel.app/formdata')
-      const transformed=parseResponse(data.data)
-      setFormData([...formdata,...transformed])
-     }catch(e){
-      console.log("error on load data",e)
-     }
+
+  useEffect(() => {
+    if (user) {
+      refetch()
+    }
+  }, [user]);
+
+  if (isloading || isLoading || loading || formData==undefined) {
+    return (
+        <ThemedView style={styles.container}>
+        <Lottie
+                source={require('../../../assets/Animation/Animation -loading1.json')}
+                autoPlay
+                loop
+                style={styles.loadingAnimation}
+              />
+        </ThemedView>
+    );
   }
-
-  load()
-},[])
 
   return (
     <View style={styles.container}>
@@ -421,11 +439,7 @@ const HomeScreen = () => {
         style={{ flex: 1 }}
       >
         <Header user={user}/>
-
-
-  
-
-
+        
         <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>}
           ListFooterComponent={() => <View style={{ height: 150 }} />}
@@ -434,6 +448,7 @@ const HomeScreen = () => {
           }}
           ListHeaderComponent={() => (
             <>
+           {isConnected && <>
               <Lottie
                 source={require('../../../assets/Animation/Animation2.json')}
                 autoPlay
@@ -452,12 +467,21 @@ const HomeScreen = () => {
                 loop
                 style={styles.animation2}
               />
+              </>}
+              {!isConnected && <>
+                <Lottie
+                source={require('../../../assets/Animation/Animation - no_internet.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+              </>}
             </>
           )}
 
           data={categories}
           contentContainerStyle={styles.listContainer}
-          renderItem={({ item }) => <CategoryCardWrapper key={item.length} items={formdata} category={item} />}
+          renderItem={({ item }) => <CategoryCardWrapper key={item.length} items={formData} category={item} />}
         />
       </LinearGradient>
     </View>
@@ -517,6 +541,12 @@ const styles = StyleSheet.create({
   animation: {
     width: 'auto',
     height: 150,
+  },
+  loadingAnimation:{
+    flex:1,
+    justifyContent:'center',
+    width:'auto',
+    height:150
   },
   animation2: {
     width: 'auto',

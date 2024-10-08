@@ -5,7 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import Login from '../login';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View,StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
+import { ActivityIndicator, View,StyleSheet, TouchableOpacity, Image, Text, Platform } from 'react-native';
 
 const CustomTabButton:FunctionComponent<{children:any,onPress:any,color:string}> = ({children,onPress,color})=>{
   return <TouchableOpacity style={{
@@ -35,8 +35,8 @@ export default function TabLayout() {
   useEffect(()=>{
     const verify = async () =>{
       setloading(true)
-      const token = await AsyncStorage.getItem('token')
-      if (token!=null){
+      const user = await AsyncStorage.getItem('user')
+      if (user!=null){
         setAuth(true)
       }else{
         router.replace('/login')
@@ -55,7 +55,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarStyle:[styles.tabbarstyle,styles.shadow],
+        tabBarStyle:[(Platform.OS!='ios' && styles.tabbarstyle),styles.shadow],
         tabBarShowLabel:false
       }}>
         <Tabs.Screen name='index' options={{href:null, headerShown:false}} />
