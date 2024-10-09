@@ -18,10 +18,11 @@ export default function ProfileUpdateScreen() {
     const [profile, setProfile] = useState<string>(defaultProfilePic)
     const [userName, setUserName] = useState('')
     const [email, setEmail] = useState('')
-    const { isLoading, isError, error:profileupdateErr, mutateAsync: doEditProfile } = useEditProfileMutation()
+    const { isLoading, isError:isprofileupdateerr, error:profileupdateErr, mutateAsync: doEditProfile,reset:profileupdatereset } = useEditProfileMutation()
     const colorscheme = useColorScheme()
 
     useEffect(() => {
+        profileupdatereset()
         if (user) {
             setUserName(user.userName);
             setEmail(user.email);
@@ -93,7 +94,7 @@ export default function ProfileUpdateScreen() {
                 <Toast position='top' type='error' />
 
                 {isLoading && <ActivityIndicator size={'large'} />}
-                <Text style={{color:'red'}}>{profileupdateErr?.response?.data.message || profileupdateErr?.message}</Text>
+               {isprofileupdateerr && <Text style={{color:'red'}}>{profileupdateErr?.response?.data.message ||  "Sorry, Please try again later!"}</Text>}
                 <XStack ai="center" jc="center" mt="$6" onPress={pickImage}>
                     <Avatar circular size="$10">
                         <Avatar.Image src={profile} />

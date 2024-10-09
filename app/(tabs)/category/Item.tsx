@@ -18,6 +18,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
   const handleDelete = useCallback(async () => {
     try{
       await deleteFormData(item.id)
+      closeModal()
       router.navigate('/')
     }catch(e){
       console.log("error on axios:",e)
@@ -192,8 +193,8 @@ const Item = React.memo(({ item }: { item: FormData }) => {
           </Button>
 
           <Modal visible={modalState.isVisible} onDismiss={closeModal}>
+            <YStack space="$4" padding="$4" alignItems="center" margin='auto'>
             {deleteFormDataLoading && <ActivityIndicator size={'large'}/>}
-            <YStack space="$4" padding="$4" alignItems="center">
               <Text style={styles.modalTitle}>Are you sure?</Text>
               <Paragraph>This action cannot be undone. Do you want to delete this item?</Paragraph>
               <XStack space="$4">

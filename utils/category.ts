@@ -250,3 +250,53 @@ export const parseResponse = (data:any):FormData[]=>{
     }
   })
 }
+
+
+export const parseDates = (data: FormData[]): FormData[] => {
+  return data.map((item) => {
+    switch (item.category) {
+      case 'Agreements':
+        return {
+          ...item,
+          startDate: new Date(item.startDate),
+          endDate: new Date(item.endDate),
+          customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        };
+      case 'Purchase Order':
+        return {
+          ...item,
+          poIssueDate: new Date(item.poIssueDate),
+          poEndDate: new Date(item.poEndDate),
+          entryDate: new Date(item.entryDate),
+          customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        };
+      case 'Visa Details':
+        return {
+          ...item,
+          visaEndDate: new Date(item.visaEndDate),
+          visaEntryDate: new Date(item.visaEntryDate),
+          customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        };
+      case 'IQAMA Renewals':
+        return {
+          ...item,
+          expiryDate: new Date(item.expiryDate),
+          customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        };
+      case 'Insurance Renewals':
+        return {
+          ...item,
+          insuranceStartDate: new Date(item.insuranceStartDate),
+          insuranceEndDate: new Date(item.insuranceEndDate),
+          customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        };
+      default:
+        return item;
+    }
+  });
+};

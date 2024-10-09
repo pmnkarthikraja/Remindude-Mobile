@@ -328,9 +328,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                   display='spinner'
                   onChange={(e, date) => {
                     if (Platform.OS == 'ios' && date) {
+                    date.setHours(10,0,0,0) //set 10 am
                       setIosDate(date)
                     } else {
                       if (date) {
+                        date.setHours(10,0,0,0) //set 10 am
                         toggleDatePickerVisibility(fieldName, false);
                         setValue(fieldName, date)
                       }
@@ -350,6 +352,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             display='default'
             onChange={(e, date) => {
               if (date) {
+                date.setHours(10,0,0,0) //set 10 am
                 toggleDatePickerVisibility(fieldName, false);
                 setValue(fieldName, date)
               }

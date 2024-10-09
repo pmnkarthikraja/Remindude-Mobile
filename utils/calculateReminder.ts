@@ -3,12 +3,14 @@ import { FormData } from "./category";
 const subtractDays = (date: Date, days: number): Date => {
     const newDate = new Date(date);
     newDate.setDate(newDate.getDate() - days);
+    newDate.setHours(10,0,0,0) //set 10 am
     return newDate;
 };
 
 export const addDays = (date: Date, days: number): Date => {
     const newDate = new Date(date);
     newDate.setDate(newDate.getDate() + days);
+    newDate.setHours(10,0,0,0) //set 10 am
     return newDate;
 };
 

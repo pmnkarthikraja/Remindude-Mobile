@@ -16,19 +16,22 @@ import * as Notifications from 'expo-notifications';
   };
 
 const constructNotification = async (category:Category, title:string,body:string,scheduleDate:Date,idx:number):Promise<string> => {
-   return  await Notifications.scheduleNotificationAsync({
+    const scheduledAt10AM = new Date(scheduleDate);
+    scheduledAt10AM.setHours(10, 0, 0, 0); // set to 10:00:00 AM
+    console.log("schedule time:",scheduledAt10AM.toLocaleString())
+
+    return  await Notifications.scheduleNotificationAsync({
         content: {
           title: title,
           body: body,
           sound:'default'
         },
         trigger: {
-         date:scheduleDate
+         date:scheduledAt10AM
         // seconds:4*idx
         },
       });
 }
-
 
 export const buildNotifications = async (formData:FormData, mode:'Add'|'Update') =>{
     if (mode=='Update'){
