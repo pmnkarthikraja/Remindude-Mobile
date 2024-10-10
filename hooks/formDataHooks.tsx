@@ -61,34 +61,6 @@ export const useDeleteFormDataMutation = () => {
   );
 };
 
-
-// export const useGetFormData = () => {
-//   const { user } = useUser();
-//   const email = user?.email
-
-//   return useQuery({
-//     queryKey: ['formdata',email],
-//     queryFn: async () => {
-//       const res = await axios.get(
-//         `https://remindude.vercel.app/formdata/${email}`,
-//         {
-//           params: {
-//             email,  
-//           },
-//         }
-//       );
-//       return res.data as FormData[]; 
-//     },
-//     onError: (error: AxiosError<any>) => {
-//       console.error('Error fetching form data:', error);
-//       return error.response?.data?.message || 'Error fetching form data';
-//     },
-//     enabled: !!email,
-//     refetchOnWindowFocus: false, 
-//     staleTime: 5 * 60 * 1000, 
-//   });
-// };
-
 export const useGetFormData = () => {
   const { user } = useUser();
   const email = user?.email
@@ -106,11 +78,10 @@ export const useGetFormData = () => {
     staleTime: 5 * 60 * 1000, 
   });
 
-  // memoize parsed data to avoid unnecessary re-calculations
   const parsedData = useMemo(() => {
     if (!data) return [];
     return parseDates(data);
-  }, [data]);
+  },[data]);
 
   return {
     data: parsedData,

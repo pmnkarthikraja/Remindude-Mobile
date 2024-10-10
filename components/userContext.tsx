@@ -9,6 +9,8 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   logout: () => Promise<void>;
+  setOfficeMode:(officeMode:boolean)=>void
+  officeMode:boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [officeMode, setOfficeMode] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -36,7 +39,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, logout }}>
+    <UserContext.Provider value={{ user, setUser, loading, logout,setOfficeMode,officeMode }}>
       {children}
     </UserContext.Provider>
   );

@@ -9,10 +9,10 @@ import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useR
 import { ActivityIndicator, Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Button, ScrollView, Sheet, Text, } from 'tamagui';
-import { wait } from '.';
 import Item from './Item';
 import Lottie from 'lottie-react-native';
 import { useGetFormData } from '@/hooks/formDataHooks';
+import { wait } from '@/components/OfficeScreen';
 
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
@@ -105,14 +105,20 @@ const CategoryPage = () => {
   const {initialData:got,data,endDate,modalVisible,refreshing,showEndPicker,showStartPicker,startDate} = state
   const colourscheme = useColorScheme();
   const [isLoading,setIsLoading]=useState(true)
+  const navigation = useNavigation()
 
-  useEffect(()=>{
-    refetch()
-    const filteredFormData =formData && formData.filter(d => d.category === category);
-    dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData || []})
-    dispatch({type:'SET_DATA',payload:filteredFormData || []})
-    setIsLoading(false)
-  },[category])
+  useEffect(() => {
+   const doRefetch = async () =>{
+      const result = await refetch()
+      if (result.data){
+        const filteredFormData = result.data.filter(d => d.category === category);
+        dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData || []})
+        dispatch({type:'SET_DATA',payload:filteredFormData || []})
+        setIsLoading(false)
+      }
+   }
+   doRefetch()
+  }, [category, colourscheme, navigation]);
 
   React.useEffect(() => {
     opacity.value = withRepeat(withTiming(0, { duration: 500, easing: Easing.linear, reduceMotion:ReduceMotion.Never }), -1, true);
@@ -130,7 +136,6 @@ const CategoryPage = () => {
     };
   });
 
-  const navigation = useNavigation()
   const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
   const handleSearch = (text: string) => {
     const payload= got.filter(item => {
@@ -150,30 +155,33 @@ const CategoryPage = () => {
  }
 
   useLayoutEffect(() => {
-    navigation.setOptions({
-      title: `${category} Details`,
-      headerSearchBarOptions: {
-        placeholder: 'search..',
-        headerIconColor: colourscheme === 'light' ? 'black' : 'white',
-        textColor: colourscheme === 'light' ? 'black' : 'white',
-        shouldShowHintSearchIcon: true,
-        placement: 'stacked',
-        onChangeText: (e:any) => handleSearch(e.nativeEvent.text),
-      },
-      headerRight: () => (
-        <Button
-          onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
-          icon={
-            <>
-              {!hasFilterApplied && <Filter color={colourscheme === 'light' ? 'black' : 'white'} />}
-              {hasFilterApplied && <Filter fill={colourscheme === 'light' ? 'black' : 'white'} color={colourscheme === 'light' ? 'black' : 'white'} />}
-              {hasFilterApplied && <Text style={{ color: colourscheme === 'light' ? 'black' : 'white' }}>1</Text>}
-            </>
-          }
-          style={{ marginRight: 10, backgroundColor: 'transparent' }}
-        />
-      ),
-    });
+    if (Platform.OS=='ios'){
+      navigation.setOptions({
+        title: `${category} Details`,
+        headerSearchBarOptions: {
+          placeholder: 'search..',
+          headerIconColor: colourscheme === 'light' ? 'black' : 'white',
+          textColor: colourscheme === 'light' ? 'black' : 'white',
+          shouldShowHintSearchIcon: true,
+          placement: 'stacked',
+          onChangeText: (e:any) => handleSearch(e.nativeEvent.text),
+        },
+        headerRight: () => (
+          <Button
+            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
+            icon={
+              <>
+                {!hasFilterApplied && <Filter color={colourscheme === 'light' ? 'black' : 'white'} />}
+                {hasFilterApplied && <Filter fill={colourscheme === 'light' ? 'black' : 'white'} color={colourscheme === 'light' ? 'black' : 'white'} />}
+                {hasFilterApplied && <Text style={{ color: colourscheme === 'light' ? 'black' : 'white' }}>1</Text>}
+              </>
+            }
+            style={{ marginRight: 10, backgroundColor: 'transparent' }}
+          />
+        ),
+      });
+    }
+    
   }, [navigation, category, colourscheme,hasFilterApplied,handleSearch]);
 
 
@@ -250,28 +258,28 @@ const CategoryPage = () => {
     <ThemedView style={styles.container}>
       <Stack.Screen options={{
         title: `${category} Details`,
-        // headerSearchBarOptions: {
-        //   placeholder: 'search..',
-        //   headerIconColor: colourscheme == 'light' ? 'black' : 'white',
-        //   textColor: colourscheme == 'light' ? 'black' : 'white',
-        //   shouldShowHintSearchIcon: true,
-        //   disableBackButtonOverride:true,
-        //   placement: 'automatic',
-        //   obscureBackground:true,
-        //   onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
-        // },
-        // headerRight: () => <Button
-        //   onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
-        //   icon={
-        //   <>
-        //   {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
-        //   {hasFilterApplied && <Filter fill={colourscheme=='light'?'black':'white'} color={colourscheme=='light'?'black':'white'} />} 
-        //  {hasFilterApplied && <Text color={colourscheme=='light'?'black':'white'}>1</Text>}
-        //   </>
-        //   }
-        //   style={{ marginRight: 10 ,backgroundColor:'transparent'}}
-        // />
-      }} />
+        headerSearchBarOptions:Platform.OS=='android' ? {
+          placeholder: 'search..',
+          headerIconColor: colourscheme == 'light' ? 'black' : 'white',
+          textColor: colourscheme == 'light' ? 'black' : 'white',
+          shouldShowHintSearchIcon: true,
+          disableBackButtonOverride:true,
+          placement: 'automatic',
+          obscureBackground:true,
+          onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
+        }:undefined,
+        headerRight:Platform.OS=='android' ? () => <Button
+          onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
+          icon={
+          <>
+          {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
+          {hasFilterApplied && <Filter fill={colourscheme=='light'?'black':'white'} color={colourscheme=='light'?'black':'white'} />} 
+         {hasFilterApplied && <Text color={colourscheme=='light'?'black':'white'}>1</Text>}
+          </>
+          }
+          style={{ marginRight: 10 ,backgroundColor:'transparent'}}
+        /> : undefined
+      }} /> 
 
       <Sheet modal open={modalVisible} onOpenChange={() => dispatch({type:'SET_MODAL_VISIBLE',payload:false})} snapPointsMode='fit' >
         <ThemedView style={styles.sheetContainer}>
