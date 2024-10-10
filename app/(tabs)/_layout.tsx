@@ -1,12 +1,12 @@
-import { router, Tabs } from 'expo-router';
-import React, {  Children, FunctionComponent, useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
+import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import Login from '../login';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View,StyleSheet, TouchableOpacity, Image, Text, Platform } from 'react-native';
-import { useUser } from '@/components/userContext';
+import { router, Tabs } from 'expo-router';
+import React, { FunctionComponent, useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Login from '../login';
 
 const CustomTabButton:FunctionComponent<{children:any,onPress:any,color:string}> = ({children,onPress,color})=>{
   return <TouchableOpacity style={{
@@ -53,7 +53,7 @@ export default function TabLayout() {
 
     {!loading && <>
 
-   {auth? <Tabs
+   {auth ? <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#f9f9f9',
         headerShown: false,
@@ -62,6 +62,7 @@ export default function TabLayout() {
       }}>
         <Tabs.Screen name='index' options={{href:null, headerShown:false}} />
         <Tabs.Screen name='profile' options={{href:null, headerShown:false}} />
+
       <Tabs.Screen
         name="category"
         options={{
@@ -70,16 +71,34 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
            <> 
-           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={officeMode ? '#24cc5e' : color} />
+           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={officeMode ? '#4CAF50' : color} />
            <Text style={{
             fontSize:10,
-            color:officeMode ? '#24cc5e' : color
+            color:officeMode ? '#4CAF50' : color
            }}>Home</Text>
            </>
           ),
         }}
       />
-            <Tabs.Screen
+      { <Tabs.Screen
+        name="tasks"
+        options={{
+          title: 'Tasks',
+          tabBarButton: officeMode ? undefined : () => null, 
+          tabBarActiveTintColor:Colors.light.tint,
+          tabBarIcon: ({ color, focused }) => (
+            <>
+            <TabBarIcon name={focused ? 'file-tray-full' : 'file-tray-full-outline'} color={officeMode ? '#4CAF50' : color} />
+            <Text style={{
+              fontSize:10,
+              fontWeight:focused ? 'bold' : 'normal',
+              color:officeMode ? '#4CAF50' : color
+             }}>Tasks</Text>
+             </>
+          ),
+        }}
+      />}
+           <Tabs.Screen
         name='add'
         options={{
           title: 'Add',
@@ -96,8 +115,25 @@ export default function TabLayout() {
             }}/>
           ),
           tabBarButton:(props)=>(
-            <CustomTabButton  children={props.children} onPress={props.onPress} color={officeMode ? '#24cc5e' : Colors.light.tint}/>
+            <CustomTabButton  children={props.children} onPress={props.onPress} color={officeMode ? '#4CAF50' : Colors.light.tint}/>
           )
+        }}
+      />
+             <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarButton: officeMode ? undefined : () => null, 
+          tabBarActiveTintColor:Colors.light.tint,
+          tabBarIcon: ({ color, focused }) => (
+            <>
+            <TabBarIcon name={focused ? 'calendar-clear' : 'calendar-clear-outline'} color={officeMode ? '#4CAF50' : color} />
+            <Text style={{
+              fontSize:10,
+              color:officeMode ? '#4CAF50' : color
+             }}>Calendar</Text>
+             </>
+          ),
         }}
       />
       <Tabs.Screen
@@ -107,10 +143,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={officeMode ? '#24cc5e' : color} />
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={officeMode ? '#4CAF50' : color} />
             <Text style={{
               fontSize:10,
-              color:officeMode ? '#24cc5e' : color
+              color:officeMode ? '#4CAF50' : color
              }}>Settings</Text>
              </>
           ),

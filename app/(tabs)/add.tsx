@@ -1,3 +1,4 @@
+import { categoryImagePaths } from '@/components/OfficeScreen';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
@@ -16,7 +17,6 @@ import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
-import { categoryImagePaths } from './category';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
