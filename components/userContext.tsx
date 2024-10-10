@@ -28,7 +28,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setLoading(false);
     };
-
+    console.log("load user called")
     loadUser();
   }, []);
 

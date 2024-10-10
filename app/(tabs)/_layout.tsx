@@ -6,6 +6,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import Login from '../login';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View,StyleSheet, TouchableOpacity, Image, Text, Platform } from 'react-native';
+import { useUser } from '@/components/userContext';
 
 const CustomTabButton:FunctionComponent<{children:any,onPress:any,color:string}> = ({children,onPress,color})=>{
   return <TouchableOpacity style={{
@@ -31,6 +32,7 @@ export default function TabLayout() {
   const [auth,setAuth]=useState(false)
   const [loading,setloading]=useState(false)
   const colorScheme = useColorScheme();
+  const {officeMode} = useUser()
 
   useEffect(()=>{
     const verify = async () =>{
@@ -53,7 +55,7 @@ export default function TabLayout() {
 
    {auth? <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#f9f9f9',
         headerShown: false,
         tabBarStyle:[(Platform.OS!='ios' && styles.tabbarstyle),styles.shadow],
         tabBarShowLabel:false
@@ -68,10 +70,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
            <> 
-           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={officeMode ? '#24cc5e' : color} />
            <Text style={{
             fontSize:10,
-            color:color
+            color:officeMode ? '#24cc5e' : color
            }}>Home</Text>
            </>
           ),
@@ -94,7 +96,7 @@ export default function TabLayout() {
             }}/>
           ),
           tabBarButton:(props)=>(
-            <CustomTabButton  children={props.children} onPress={props.onPress} color={Colors.light.tint}/>
+            <CustomTabButton  children={props.children} onPress={props.onPress} color={officeMode ? '#24cc5e' : Colors.light.tint}/>
           )
         }}
       />
@@ -105,10 +107,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={officeMode ? '#24cc5e' : color} />
             <Text style={{
               fontSize:10,
-              color:color
+              color:officeMode ? '#24cc5e' : color
              }}>Settings</Text>
              </>
           ),

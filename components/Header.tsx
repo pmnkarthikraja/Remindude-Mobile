@@ -10,6 +10,7 @@ import { User } from '@/utils/user';
 import { MoonStar, Sun } from '@tamagui/lucide-icons';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg from 'react-native-svg';
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 
@@ -53,7 +54,7 @@ interface HeaderProps{
     const { profile } = useProfileContext()
     const translateX = useSharedValue(-150);
     const [switchOn, setSwitchOn] = useState(systemTheme == 'dark')
-    const {officeMode, setOfficeMode} = useUser()
+    const {officeMode, setOfficeMode,loading} = useUser()
   
     React.useEffect(() => {
       translateX.value = withRepeat(
@@ -109,8 +110,8 @@ interface HeaderProps{
         <Switch
           value={officeMode}
           onValueChange={toggleOffice}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={officeMode ? '#f5dd4b' : '#f4f3f4'}
+          trackColor={{ false: 'white', true: 'grey' }}
+          thumbColor={officeMode ? '#24cc5e' : Colors.light.tint}
           style={styles.switch}
         />
         <ThemedText>{officeMode ? 'Task':'Office'}</ThemedText>
