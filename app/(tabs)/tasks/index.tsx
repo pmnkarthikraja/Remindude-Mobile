@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, FunctionComponent } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Platform, Pressable } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Platform, Pressable, useColorScheme, Alert } from 'react-native';
 import moment from 'moment';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -12,7 +12,7 @@ const TaskScreen = () => {
   const [isYearListVisible, setYearListVisible] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(moment().format('MMMM'));
   const [selectedYear, setSelectedYear] = useState(moment().format('YYYY'));
- 
+ const colorscheme = useColorScheme()
 
   const months = moment.months();
   const years = Array.from({ length: 15 }, (_, index) => (moment().year() + index).toString());
@@ -56,9 +56,15 @@ const TaskScreen = () => {
     setTasks(dummyTasks[date] || []);
   };
 
+  const linearGradientUnified = [
+    colorscheme == 'light' ? '#a1c4fd' : '#252C39',
+    colorscheme == 'light' ? 'white' : 'transparent']
+
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+        colors={linearGradientUnified}
+        style={{ flex: 1 }}>
       <View style={{ height: 50 }}></View>
 
       <View style={styles.header}>
@@ -128,7 +134,7 @@ const TaskScreen = () => {
       <ListTasks />
       {Platform.OS == 'android' && <View style={{ height: 60 }}></View>}
 
-    </View>
+    </LinearGradient>
   );
 };
 
@@ -356,45 +362,49 @@ export default TaskScreen;
 
 import {AntDesign, MaterialIcons} from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const tasksdata = [
+  {
+    title: 'Website Designing',
+    date: '19 August 2024',
+    time: '09:10 AM',
+    progress: '9/20 Finished',
+    logo: require('../../../assets/images/categories/Agreement.png'),
+    label: 'Agreements'
+  },
+  {
+    title: 'It Staff Landing Page',
+    date: '19 August 2024',
+    time: '08:10 AM',
+    progress: '5/10 Finished',
+    logo: require('../../../assets/images/categories/Deduction.png'),
+    label: 'Interview Scheduling'
+  },
+  {
+    title: 'Website Designing',
+    date: '19 August 2024',
+    time: '10:55 PM',
+    progress: '9/20 Finished',
+    logo: require('../../../assets/images/categories/Visa.png'),
+    label: 'Visa Processing'
+  },
+  {
+    title: 'It Staff Landing Page',
+    date: '19 August 2024',
+    time: '03:10 PM',
+    progress: '5/10 Finished',
+    logo: require('../../../assets/images/categories/Agreement.png'),
+    label: 'Website'
+  },
+]
 
 const ListTasks = () => {
-  const tasks = [
-    {
-      title: 'Website Designing',
-      date: '19 August 2024',
-      time: '09:10 AM',
-      progress: '9/20 Finished',
-      logo: require('../../../assets/images/categories/Agreement.png'),
-      label: 'Agreements'
-    },
-    {
-      title: 'It Staff Landing Page',
-      date: '19 August 2024',
-      time: '08:10 AM',
-      progress: '5/10 Finished',
-      logo: require('../../../assets/images/categories/Deduction.png'),
-      label: 'Interview Scheduling'
-    },
-    {
-      title: 'Website Designing',
-      date: '19 August 2024',
-      time: '10:55 PM',
-      progress: '9/20 Finished',
-      logo: require('../../../assets/images/categories/Visa.png'),
-      label: 'Visa Processing'
-    },
-    {
-      title: 'It Staff Landing Page',
-      date: '19 August 2024',
-      time: '03:10 PM',
-      progress: '5/10 Finished',
-      logo: require('../../../assets/images/categories/Agreement.png'),
-      label: 'Website'
-    },
-  ]
+  const [tasks,setTasks]=useState(tasksdata)
+ 
   return <>
     <FlatList data={tasks} renderItem={({ item: task, index }) => <>
-    <TouchableOpacity activeOpacity={0.8} onPress={()=>router.navigate(`/(tabs)/tasks/${task.title}`)}>
+    <TouchableOpacity activeOpacity={0.9} onPress={()=>router.navigate(`/(tabs)/tasks/${task.title}`)}>
       <View key={index} style={stylesTaskCards.card}>
         <View style={stylesTaskCards.logoContainer}>
           <View style={stylesTaskCards.logoBackground}>
@@ -409,11 +419,23 @@ const ListTasks = () => {
        <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between'}}>
         <Text style={stylesTaskCards.cardTitle}>{task.title}</Text>
         <View style={{flexDirection:'row',gap:10, marginTop:30}}>
-          <TouchableOpacity  onPress={()=>router.navigate('/(tabs)')}>
+          <TouchableOpacity  onPress={()=>router.navigate(`/(tabs)/tasks/${task.title}`)}>
         <MaterialIcons name="edit" size={15}  color={'green'} style={{padding:5}}/>
         </TouchableOpacity>
 
-        <TouchableOpacity  onPress={()=>router.navigate('/(tabs)')}>
+        <TouchableOpacity  onPress={()=>Alert.alert("Confirm Delete?","Do you want to delete it?",[
+          {
+            text:'confirm',
+            onPress:()=>{
+              setTasks([])
+            },
+            isPreferred:true,
+            style:'cancel',
+          },
+          {
+            text:'cancel',
+          }
+        ])}>
         <AntDesign name="delete" size={15} color={'red'}  style={{padding:5}}/>
         </TouchableOpacity>
         </View>
