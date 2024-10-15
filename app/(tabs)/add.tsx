@@ -17,6 +17,7 @@ import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import TaskEditScreen from './tasks/[taskid]';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -66,7 +67,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-  const {loading,user} = useUser()
+  const {loading,user,officeMode} = useUser()
   const {isLoading:addFormDataLoading,isError:isAddFormdataErr,mutateAsync:addFormData} = useCreateFormDataMutation()
   const {isLoading:updateFormDataLoading,isError:isUpdateFormdataErr,mutateAsync:updateFormData} = useUpdateFormDataMutation()
 
@@ -165,6 +166,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   }, [data.category]);
 
   const colorScheme = useColorScheme()
+
+if (officeMode){
+  return <TaskEditScreen/>
+}
 
   if (loading){
     return <ActivityIndicator size={'large'}/>

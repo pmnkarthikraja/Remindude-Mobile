@@ -92,12 +92,19 @@ const IndexPage = () => {
     );
   }
 
+  const linearGradient = [
+     colorscheme == 'light' ? (officeMode ?'#f9f9f9' :'#a1c4fd') : '#252C39',
+     colorscheme == 'light' ? 'white' : 'transparent']
+
+  const linearGradientUnified = [
+    colorscheme == 'light' ? '#a1c4fd' : '#252C39',
+    colorscheme == 'light' ? 'white' : 'transparent']
+
   return <>
    <View style={styles.container}>
       <LinearGradient
-        colors={[colorscheme == 'light' ? (officeMode ?'#f9f9f9' :'#a1c4fd') : '#252C39', colorscheme == 'light' ? 'white' : 'transparent']}
-        style={{ flex: 1 }}
-      >
+        colors={linearGradientUnified}
+        style={{ flex: 1 }}>
         <Header user={user}/>
 
         {masterLoading &&   <Lottie

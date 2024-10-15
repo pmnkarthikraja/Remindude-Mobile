@@ -26,7 +26,7 @@ const CustomTabButton:FunctionComponent<{children:any,onPress:any,color:string}>
     </View>
   </TouchableOpacity>
 }
-
+const officeColor = '#4caf50'
 
 export default function TabLayout() {
   const [auth,setAuth]=useState(false)
@@ -52,7 +52,6 @@ export default function TabLayout() {
     {loading && <View><ActivityIndicator size="large" color="#007BFF" /></View>}
 
     {!loading && <>
-
    {auth ? <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#f9f9f9',
@@ -62,6 +61,7 @@ export default function TabLayout() {
       }}>
         <Tabs.Screen name='index' options={{href:null, headerShown:false}} />
         <Tabs.Screen name='profile' options={{href:null, headerShown:false}} />
+        {/* <Tabs.Screen name='taskRoute' options={{href:null, headerShown:false}} /> */}
 
       <Tabs.Screen
         name="category"
@@ -71,10 +71,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
            <> 
-           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={officeMode ? '#4CAF50' : color} />
+           <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
            <Text style={{
             fontSize:10,
-            color:officeMode ? '#4CAF50' : color
+            color:color
            }}>Home</Text>
            </>
           ),
@@ -88,11 +88,11 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'file-tray-full' : 'file-tray-full-outline'} color={officeMode ? '#4CAF50' : color} />
+            <TabBarIcon name={focused ? 'file-tray-full' : 'file-tray-full-outline'} color={ color} />
             <Text style={{
               fontSize:10,
               fontWeight:focused ? 'bold' : 'normal',
-              color:officeMode ? '#4CAF50' : color
+              color: color
              }}>Tasks</Text>
              </>
           ),
@@ -115,7 +115,7 @@ export default function TabLayout() {
             }}/>
           ),
           tabBarButton:(props)=>(
-            <CustomTabButton  children={props.children} onPress={props.onPress} color={officeMode ? '#4CAF50' : Colors.light.tint}/>
+            <CustomTabButton  children={props.children} onPress={props.onPress} color={Colors.light.tint}/>
           )
         }}
       />
@@ -127,10 +127,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'calendar-clear' : 'calendar-clear-outline'} color={officeMode ? '#4CAF50' : color} />
+            <TabBarIcon name={focused ? 'calendar-clear' : 'calendar-clear-outline'} color={color} />
             <Text style={{
               fontSize:10,
-              color:officeMode ? '#4CAF50' : color
+              color: color
              }}>Calendar</Text>
              </>
           ),
@@ -143,10 +143,10 @@ export default function TabLayout() {
           tabBarActiveTintColor:Colors.light.tint,
           tabBarIcon: ({ color, focused }) => (
             <>
-            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={officeMode ? '#4CAF50' : color} />
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={ color} />
             <Text style={{
               fontSize:10,
-              color:officeMode ? '#4CAF50' : color
+              color: color
              }}>Settings</Text>
              </>
           ),

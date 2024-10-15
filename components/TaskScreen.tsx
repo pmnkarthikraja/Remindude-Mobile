@@ -1,7 +1,6 @@
 import { Alert, Animated, Dimensions, Easing, FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { FunctionComponent, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigation } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import { StyleSheet } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
@@ -14,11 +13,12 @@ import { ThemedText } from './ThemedText';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import 'react-native-gesture-handler';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { ArrowRight } from '@tamagui/lucide-icons';
+import { Switch } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { AntDesign } from '@expo/vector-icons';
 
 
 const TaskPage: FunctionComponent = () => {
-  const [refreshing, setRefreshing] = useState(false)
   const colorscheme = useColorScheme()
   const [isloading, setloading] = useState(true)
   const { loading, user, officeMode } = useUser()
@@ -43,11 +43,6 @@ const TaskPage: FunctionComponent = () => {
     };
   }, [navigation]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    refetch()
-    setRefreshing(false)
-  }, [])
 
   useEffect(() => {
     const checkPermissions = async () => {
@@ -100,12 +95,12 @@ const TaskPage: FunctionComponent = () => {
   return <ScrollView style={styles.container} showsVerticalScrollIndicator>
     <ThemedText style={{ paddingLeft: 15, color: '#969696' }}>you have 4 tasks due today</ThemedText>
 
-    <View style={styles.searchContainer}>
-      <TextInput style={styles.searchInput} placeholder="Search" />
+    <ThemedView style={styles.searchContainer}>
+      <TextInput style={[styles.searchInput, colorscheme=='light'?{color:'black',backgroundColor:'white'}:{color:'white', backgroundColor:'black'}]} placeholder="Search"  />
       <TouchableOpacity style={styles.filterButton}>
         <Ionicons name="options-outline" size={24} color="white" />
       </TouchableOpacity>
-    </View>
+    </ThemedView>
 
     <CurrentDate />
     <TaskCards />
@@ -132,21 +127,19 @@ const styles = StyleSheet.create({
     width: 'auto',
     height: 150
   },
-
-  // starts here,
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
     marginTop: 10,
-    paddingHorizontal: 10
+    paddingHorizontal: 10,
+    backgroundColor:'transparent'
   },
   searchInput: {
     flex: 1,
     height: 50,
     borderRadius: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
     fontSize: 16,
     elevation: 5,
   },
@@ -158,21 +151,21 @@ const styles = StyleSheet.create({
   },
 });
 
-
-
 const CurrentDate = () => {
   const date = new Date().toDateString();
+  const colorscheme= useColorScheme()
 
   return (
-    <View style={stylesCurrentDate.dateContainer}>
-      <Text style={stylesCurrentDate.todayText}>Today</Text>
-      <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-        <TouchableOpacity>
-          <Ionicons name='calendar-number-outline' size={24} color="black" />
+    <ThemedView style={stylesCurrentDate.dateContainer}>
+      <ThemedText style={stylesCurrentDate.todayText}>Today Tasks</ThemedText>
+      <Switch />
+      <ThemedView style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor:'transparent' }}>
+        <TouchableOpacity onPress={()=>router.navigate('/calendar')}>
+          <Ionicons name='calendar-number-outline' size={24} color={colorscheme=='light' ? 'black':'white'}/>
         </TouchableOpacity>
-        <Text>{date}</Text>
-      </View>
-    </View>
+        <ThemedText>{date}</ThemedText>
+      </ThemedView>
+    </ThemedView>
   );
 };
 
@@ -183,15 +176,17 @@ const stylesCurrentDate = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     paddingHorizontal: 15,
+    backgroundColor:'transparent'
   },
+
   todayText: {
     fontSize: 18,
     fontWeight: 'bold',
   },
 });
 
-
 const TaskCards = () => {
+  const colorscheme = useColorScheme()
   const tasks = [
     {
       title: 'Website Designing',
@@ -224,50 +219,95 @@ const TaskCards = () => {
   ]
 
   return (
+    <>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={stylesTaskCards.taskScroll}>
       {tasks.map((task, index) => (
-        <View key={index} style={stylesTaskCards.card}>
+        <TouchableOpacity onPress={()=>router.navigate(`/(tabs)/category/task/${task.title}`)} activeOpacity={0.8} 
+        key={index}
+        >
+        <View key={index} style={[stylesTaskCards.card, colorscheme=='light'?{backgroundColor:'#fff'}:{backgroundColor:'transparent'}]}>
           <View style={stylesTaskCards.logoContainer}>
             <View style={stylesTaskCards.logoBackground}>
               <Image source={{ uri: task.logo }} style={stylesTaskCards.logo} />
             </View>
           </View>
 
+          <Svg
+          height="160"
+          width="250"
+          style={{
+            position: 'absolute',
+            // top: 35,
+            // right: 0,
+            borderRadius:20,
+            bottom:0,
+            opacity: 0.3,
+          }}
+        >
+          <Path
+            d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
+            fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
+          />
+        </Svg>
+
+        <Svg
+          height="200"
+          width="250"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            opacity: 0.15,
+          }}
+        >
+          <Path
+            d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
+            fill={colorscheme == 'light' ? "purple" : 'transparent'}
+          />
+        </Svg>
+
 
           <View style={stylesTaskCards.labelContainer}>
-            <Text style={stylesTaskCards.labelText}>{task.label}</Text>
+            <ThemedText style={stylesTaskCards.labelText}>{task.label}</ThemedText>
           </View>
 
-          <Text style={stylesTaskCards.cardTitle}>{task.title}</Text>
-          <Text>{task.date}</Text>
+          <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
+          <ThemedText>{task.date}</ThemedText>
 
           <View style={stylesTaskCards.progressContainer}>
             <View style={stylesTaskCards.progressBar}>
               <View style={[stylesTaskCards.progress, { width: '45%' }]} />
             </View>
-            <Text>{task.progress}</Text>
+            <ThemedText>{task.progress}</ThemedText>
           </View>
         </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
+
+   <TouchableOpacity onPress={()=>router.navigate('/(tabs)/tasks')} style={{position:'absolute',right:10,top:'34%',flexDirection:'row',justifyContent:'center',alignItems:'center',gap:5}}>
+    <ThemedText >See All</ThemedText>
+    <AntDesign  name='right' color={colorscheme=='light'?'black':'white'}/>
+    </TouchableOpacity>
+    </>
   );
 };
 
 const stylesTaskCards = StyleSheet.create({
   taskScroll: {
     marginBottom: 30,
-    marginHorizontal: 20,
+    marginHorizontal: 5,
     padding: 5,
     backgroundColor: 'transparent',
   },
   card: {
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     borderRadius: 10,
     padding: 16,
     marginRight: 10,
     marginBottom: 10,
     width: 250,
-    elevation: 2,
+    // elevation: 2,
     position: 'relative',
   },
   logoContainer: {
@@ -300,7 +340,7 @@ const stylesTaskCards = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight:'400',
     marginBottom: 10,
     marginTop: 40,
   },
@@ -343,7 +383,6 @@ const AllTasks:FunctionComponent<AllTasksProps> = ({
       </View>}
     </View>
       <View style={stylesAllTasks.taskRow}>
-        {/* <Text>Ongoing</Text> */}
         <Text style={{marginLeft:17}}>10 Tasks</Text>
         <Ionicons name="arrow-forward-outline" size={24} color="black" />
       </View>
@@ -471,30 +510,31 @@ const stylesTaskComponent = StyleSheet.create({
   },
 });
 
+
 const testTasks = [
   {
     id: 1,
     category: 'Urgent',
     tasks: [
-      { title: 'Submit report', dueDate: '2024-10-12', status: 'In progress', progress: 0.4, count:40 },
+      { title: 'Submit report', dueDate: '2024-10-12', status: 'In progress', progress: 0.4, count:3 },
     ],
-    color: '#ff4d4d', // Red for urgent
+    color: '#F0F4C3', 
   },
   {
     id: 2,
     category: 'Moderate',
     tasks: [
-      { title: 'Review code', dueDate: '2024-10-15', status: 'In progress', progress: 0.6, count:25 },
+      { title: 'Review code', dueDate: '2024-10-15', status: 'In progress', progress: 0.6, count:1 },
     ],
-    color: '#ffcc00', // Yellow for moderate
+    color: '#FFCDD2', 
   },
   {
     id: 3,
     category: 'Normal',
     tasks: [
-      { title: 'Write documentation', dueDate: '2024-10-17', status: 'Not started', progress: 0.0,count:50 },
+      { title: 'Write documentation', dueDate: '2024-10-17', status: 'Not started', progress: 0.0,count:2 },
     ],
-    color: '#2ecc71', // Green for normal
+    color: '#D1C4E9', 
   },
 ];
 
@@ -536,8 +576,9 @@ const TaskCarousel1 = () => {
 
       {item.tasks.map((task:any, index:any) => (
         <View key={index} style={stylesNew.taskContainer}>
- <AnimatedCount finalCount={task.count} />
-           <Ionicons name='arrow-forward-outline' style={{margin:'auto'}} size={15} color="white" />
+      <AnimatedCount finalCount={task.count} />
+           <Ionicons name='arrow-forward-outline' 
+           style={{margin:'auto',}} size={15} color="black" />
           </View>
       ))}
     </View>
@@ -566,13 +607,14 @@ const stylesNew = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: 'bold',
+    // fontWeight: 'bold',
     textAlign:'center',
-    color: '#fff',
+    color: 'black',
     marginBottom: 10,
   },
   count:{
-   fontSize:35
+   fontSize:35,
+   fontWeight:'200'
   },
   taskContainer: {
     marginTop: 10,

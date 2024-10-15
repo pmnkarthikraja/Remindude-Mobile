@@ -184,20 +184,6 @@ const CategoryPage = () => {
     
   }, [navigation, category, colourscheme,hasFilterApplied,handleSearch]);
 
-
-  if (isLoading || formDataLoading || formData==undefined) {
-    return (
-        <ThemedView style={styles.container}>
-        <Lottie
-                source={require('../../../assets/Animation/Animation -loading1.json')}
-                autoPlay
-                loop
-                style={styles.animation}
-              />
-        </ThemedView>
-    );
-  }
-
   const handleFilter = (startDate: Date | null, endDate: Date | null) => {
     const filteredData = got.filter(item => {
       const itemDate = getEndDate(item)
@@ -343,7 +329,12 @@ const CategoryPage = () => {
                 style={styles.animation_no_data}
               />
       </>}
-      {isLoading && <ActivityIndicator/>}
+      {(isLoading || formDataLoading || formData==undefined) && <Lottie
+                source={require('../../../assets/Animation/Animation -loading1.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />}
       <ThemedView style={{ height: 80 }}></ThemedView>
     </ThemedView>
   );
