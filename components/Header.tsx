@@ -44,10 +44,12 @@ const generateRandomStars = (count: number) => {
 
 interface HeaderProps{
     user:User | null
+    isLoading:boolean
   }
   
   const Header:FunctionComponent<HeaderProps> = ({
-    user
+    user,
+    isLoading
   }) => {
     const [stars] = useState(() => generateRandomStars(15));
     const systemTheme = Appearance.getColorScheme();
@@ -109,6 +111,7 @@ interface HeaderProps{
         <TypingAnimation userName={user?.userName+'!' || ''}/>
         <Switch
           value={officeMode}
+          disabled={isLoading}
           onValueChange={toggleOffice}
           trackColor={{ false: 'white', true: 'grey' }}
           thumbColor={officeMode ? '#24cc5e' : Colors.light.tint}

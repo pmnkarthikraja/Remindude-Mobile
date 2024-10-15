@@ -105,9 +105,11 @@ const IndexPage = () => {
       <LinearGradient
         colors={linearGradientUnified}
         style={{ flex: 1 }}>
-        <Header user={user}/>
+        <Header user={user} isLoading={masterLoading}/>
 
-        {masterLoading &&   <Lottie
+        {masterLoading &&   
+        
+        <Lottie
                 source={require('../../../assets/Animation/Animation -loading1.json')}
                 autoPlay
                 loop

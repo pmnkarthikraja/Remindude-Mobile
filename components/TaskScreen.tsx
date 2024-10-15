@@ -16,79 +16,85 @@ import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reani
 import { Switch } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { AntDesign } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 
 const TaskPage: FunctionComponent = () => {
   const colorscheme = useColorScheme()
-  const [isloading, setloading] = useState(true)
+  const [isloading, setloading] = useState(false)
   const { loading, user, officeMode } = useUser()
   const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
   const [isConnected, setIsConnected] = useState(true);
   const navigation = useNavigation()
+  // useEffect(() => {
+  //   const unsubscribe = NetInfo.addEventListener(state => {
+  //     if (state.isConnected != null) {
+  //       setIsConnected(state.isConnected);
+  //       refetch()
+  //       if (!state.isConnected) {
+  //         Alert.alert('No Internet Connection', 'You are currently offline.');
+  //       }
+  //     }
+  //   });
+
+  //   return () => {
+  //     unsubscribe();
+  //   };
+  // }, [navigation]);
 
 
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      if (state.isConnected != null) {
-        setIsConnected(state.isConnected);
-        refetch()
-        if (!state.isConnected) {
-          Alert.alert('No Internet Connection', 'You are currently offline.');
-        }
-      }
-    });
+  // useEffect(() => {
+  //   const checkPermissions = async () => {
+  //     const hasRequested = await AsyncStorage.getItem('notificationPermissionsRequested');
+  //     if (!hasRequested) {
+  //       const { status } = await Notifications.requestPermissionsAsync();
+  //       await AsyncStorage.setItem('notificationPermissionsRequested', 'true');
+  //       await AsyncStorage.setItem('notificationPermissionsStatus', status === 'granted' ? 'true' : 'false');
+  //     }
+  //   };
 
-    return () => {
-      unsubscribe();
-    };
-  }, [navigation]);
+  //   checkPermissions();
 
+  //   const subscription = Notifications.addNotificationReceivedListener(
+  //     notification => {
+  //       console.log('Notification received:', notification.request.identifier);
+  //     }
+  //   );
+  //   setloading(false)
 
-  useEffect(() => {
-    const checkPermissions = async () => {
-      const hasRequested = await AsyncStorage.getItem('notificationPermissionsRequested');
-      if (!hasRequested) {
-        const { status } = await Notifications.requestPermissionsAsync();
-        await AsyncStorage.setItem('notificationPermissionsRequested', 'true');
-        await AsyncStorage.setItem('notificationPermissionsStatus', status === 'granted' ? 'true' : 'false');
-      }
-    };
+  //   return () => {
+  //     subscription.remove();
+  //   };
+  // }, []);
 
-    checkPermissions();
+  // useEffect(() => {
+  //   const doRefetch = async () => {
+  //     await refetch()
+  //   }
+  //   if (user) {
+  //     setloading(true)
+  //     doRefetch()
+  //     setloading(false)
+  //   }
+  // }, [user]);
 
-    const subscription = Notifications.addNotificationReceivedListener(
-      notification => {
-        console.log('Notification received:', notification.request.identifier);
-      }
-    );
-    setloading(false)
+  const linearGradientUnified = [
+    colorscheme == 'light' ? '#a1c4fd' : '#252C39',
+    colorscheme == 'light' ? 'white' : 'transparent']
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    const doRefetch = async () => {
-      await refetch()
-    }
-    if (user) {
-      setloading(true)
-      doRefetch()
-      setloading(false)
-    }
-  }, [user]);
 
   if (isloading || isLoading || loading || formData == undefined) {
     return (
-      <ThemedView style={styles.container}>
+      <LinearGradient
+        colors={linearGradientUnified}
+        style={{ flex: 1 }}>
         <Lottie
           source={require('../assets/Animation/Animation -loading1.json')}
           autoPlay
           loop
           style={styles.loadingAnimation}
         />
-      </ThemedView>
+      </LinearGradient>
     );
   }
 

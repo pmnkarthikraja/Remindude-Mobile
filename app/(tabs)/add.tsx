@@ -653,8 +653,9 @@ if (officeMode){
           <Sheet
             modal
             open={isSheetOpen}
+            dismissOnSnapToBottom
             onOpenChange={(open: boolean) => setIsSheetOpen(open)}
-            snapPoints={[90, 100]}
+            snapPoints={[50, 100]}
           >
             <Sheet.Frame padding="$4"
               backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
