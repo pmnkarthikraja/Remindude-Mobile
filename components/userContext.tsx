@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '@/utils/user';
 import { router } from 'expo-router';
+import { parseTaskDates, Task } from '@/utils/task';
 
 
 interface UserContextType {
@@ -10,7 +11,9 @@ interface UserContextType {
   loading: boolean;
   logout: () => Promise<void>;
   setOfficeMode:(officeMode:boolean)=>void
-  officeMode:boolean
+  officeMode:boolean,
+  tasks:Task[]
+  setTasks:React.Dispatch<React.SetStateAction<Task[]>>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -19,6 +22,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [officeMode, setOfficeMode] = useState(false);
+  const [tasks,setTasks]=useState<Task[]>([])
 
   useEffect(() => {
     const loadUser = async () => {
@@ -26,10 +30,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userData) {
         setUser(JSON.parse(userData));
       }
+    };
+
+    const loadTasks = async () => {
+      const tasksData = await AsyncStorage.getItem('tasks');
+      if (tasksData) {
+        const data = JSON.parse(tasksData)
+        setTasks(parseTaskDates(data));
+      }
       setLoading(false);
     };
-    console.log("load user called")
-    loadUser();
+    loadUser()
+    loadTasks();
+    setLoading(false);
   }, []);
 
   const logout = async () => {
@@ -39,7 +52,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, logout,setOfficeMode,officeMode }}>
+    <UserContext.Provider value={{ user, setUser, loading, logout,setOfficeMode,officeMode,setTasks,tasks }}>
       {children}
     </UserContext.Provider>
   );

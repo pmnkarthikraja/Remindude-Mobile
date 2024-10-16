@@ -3,16 +3,23 @@ import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet, Image, 
 import moment from 'moment';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
-import {Animated as AnimatedNative} from 'react-native'
+import { Animated as AnimatedNative } from 'react-native'
 
 const TaskScreen = () => {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
-  const [tasks, setTasks] = useState(dummyTasks[selectedDate] || []);
+  // const [tasks, setTasks] = useState(dummyTasks[selectedDate] || []);
+  const {tasks:contextTasks,setTasks:setcontexttasks} =useUser()
+  const [tasks,setTasks]=useState<Task[]>(contextTasks)
   const [isMonthListVisible, setMonthListVisible] = useState(false);
   const [isYearListVisible, setYearListVisible] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(moment().format('MMMM'));
   const [selectedYear, setSelectedYear] = useState(moment().format('YYYY'));
- const colorscheme = useColorScheme()
+  const [selectedTab, setSelectedTab] = useState(0);
+  const colorscheme = useColorScheme()
+
+  useEffect(()=>{
+    setTasks(contextTasks)
+  },[contextTasks])
 
   const months = moment.months();
   const years = Array.from({ length: 15 }, (_, index) => (moment().year() + index).toString());
@@ -29,7 +36,7 @@ const TaskScreen = () => {
     const newDate = moment(selectedDate).month(month).toDate();
     setSelectedDate(moment(newDate).format('YYYY-MM-DD'));
     setSelectedMonth(month);
-    setMonthListVisible(false); 
+    setMonthListVisible(false);
   };
 
   const selectYear = (year: string) => {
@@ -39,55 +46,96 @@ const TaskScreen = () => {
     setYearListVisible(false);
   };
 
-  const getDatesForSelectedMonth = useCallback(() => {
+
+  function searchItem(text: string, searchText: string): boolean {
+    return text.toLowerCase().includes(searchText.toLowerCase())
+  }
+
+  const formatDate = (date: Date): string => {
+    return date.toISOString().split('T')[0]; // Converts to YYYY-MM-DD format
+  };
+
+  const filterTasks = () => {
+    let dateFilteredTasks = contextTasks.filter(task => formatDate(task.datetime) === selectedDate);
+
+    switch (selectedTab) {
+      case 0:
+        return dateFilteredTasks;    
+      case 1:
+        return dateFilteredTasks.filter(task => task.status === 'Pending');   
+      case 2:
+        return dateFilteredTasks.filter(task => task.status === 'Completed');  
+      case 3:
+        return dateFilteredTasks.filter(task => task.status === 'In-Progress');
+      default:
+        return [];
+    }
+  };
+
+  const handleSearch = (text: string) => {
+    const payload= filterTasks().filter(item => {
+      return searchItem(item.title, text) || searchItem(item.kind ,text) || searchItem(item.priority,text) || searchItem(item.status,text)
+     })
+     setTasks(payload)
+ }
+
+
+  const getDatesForSelectedMonth = useCallback((tasks: Task[]) => {
     const startOfMonth = moment(selectedDate).startOf('month');
     const endOfMonth = moment(selectedDate).endOf('month');
-    
+  
     const dates = [];
     for (let date = startOfMonth; date.isBefore(endOfMonth) || date.isSame(endOfMonth); date.add(1, 'day')) {
-      dates.push(date.clone());
+      const formattedDate = date.format('YYYY-MM-DD'); 
+      const isExist = tasks.some(task => {
+        return moment(task.datetime).format('YYYY-MM-DD') === formattedDate}); 
+  
+      dates.push({ date: date.clone(), isExist });
     }
-    return dates;
+  
+    return dates; 
   }, [selectedDate]);
-
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
-    setTasks(dummyTasks[date] || []);
   };
 
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
 
+    const handleTaskDelete = async (id:string)=>{
+        setcontexttasks(items => {return items.filter(item=>item.taskId !== id)})
+        setTasks(items => items.filter(item=>item.taskId !== id))
+        await AsyncStorage.setItem('tasks',JSON.stringify(contextTasks))
+    }
 
   return (
     <LinearGradient
-        colors={linearGradientUnified}
-        style={{ flex: 1 }}>
+      colors={linearGradientUnified}
+      style={{ flex: 1 }}>
       <View style={{ height: 50 }}></View>
 
       <View style={styles.header}>
         <View style={{ justifyContent: 'space-between', flexDirection: 'row' }}>
           <Text style={styles.dateText}>{moment(selectedDate).format('DD MMM Y')}</Text>
 
-        <View style={{flexDirection:'row',gap:10}}>
-          <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-            <Text>{selectedMonth}</Text>
-            <TouchableOpacity onPress={toggleMonthList}>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+              <Text>{selectedMonth}</Text>
+              <TouchableOpacity onPress={toggleMonthList}>
+                <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
 
-          <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-            <Text>{selectedYear}</Text>
-            <TouchableOpacity onPress={toggleYearList}>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
+            <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+              <Text>{selectedYear}</Text>
+              <TouchableOpacity onPress={toggleYearList}>
+                <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        {/* <Text style={styles.taskCount}>{tasks.length} tasks today</Text> */}
       </View>
 
       {isMonthListVisible && (
@@ -104,7 +152,7 @@ const TaskScreen = () => {
         </View>
       )}
 
-{isYearListVisible && (
+      {isYearListVisible && (
         <View style={styles.yearListContainer}>
           <FlatList
             scrollEnabled={true}
@@ -121,17 +169,18 @@ const TaskScreen = () => {
 
 
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchInput} placeholder="Search" />
+        <TextInput style={styles.searchInput} onChangeText={e=>handleSearch(e)} placeholder="Search" />
         <TouchableOpacity style={styles.filterButton}>
           <Ionicons name="options-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
-      <RenderCalender getDatesForSelectedMonth={getDatesForSelectedMonth}
-       handleDateChange={handleDateChange} selectedDate={selectedDate}/>
+      <RenderCalender getDatesForSelectedMonth={()=>getDatesForSelectedMonth(tasks)}
+        handleDateChange={handleDateChange} selectedDate={selectedDate} tasks={tasks}/>
 
-      <TaskTabs/>
-      <ListTasks />
+      <TaskTabs onChangeTab={(tab)=>{setSelectedTab(tab)}}/>
+
+      <ListTasks tab={selectedTab} selectedDate={selectedDate} tasks={tasks} handleOnDelete={handleTaskDelete}/>
       {Platform.OS == 'android' && <View style={{ height: 60 }}></View>}
 
     </LinearGradient>
@@ -139,34 +188,35 @@ const TaskScreen = () => {
 };
 
 
-interface RenderCalenderProps{
-  getDatesForSelectedMonth: () => moment.Moment[],
+interface RenderCalenderProps {
+  getDatesForSelectedMonth: () => {isExist:boolean,date:moment.Moment}[],
   handleDateChange: (date: string) => void,
-  selectedDate:string
+  selectedDate: string,
+  tasks:Task[]
 }
 
-const RenderCalender:FunctionComponent<RenderCalenderProps> = ({
+const RenderCalender: FunctionComponent<RenderCalenderProps> = ({
   getDatesForSelectedMonth,
   handleDateChange,
-  selectedDate
-
+  selectedDate,
+  tasks
 }) => {
-  const scrollViewRef = useRef<Animated.ScrollView>(null); 
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
   const scrollX = useSharedValue(0);
   const dates = getDatesForSelectedMonth();
-  const [isFirstLoad, setIsFirstLoad] = useState(true);  
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  const todayIndex = dates.findIndex(date => date.isSame(moment(), 'day'));
+  const todayIndex = dates.findIndex(date => date.date.isSame(moment(), 'day'));
 
   useEffect(() => {
     if (isFirstLoad && todayIndex !== -1) {
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({
-          x: todayIndex * 78, 
+          x: todayIndex * 78,
           animated: true,
         });
       }, 300);
-      
+
       setIsFirstLoad(false);
     }
   }, [isFirstLoad, todayIndex]);
@@ -177,44 +227,48 @@ const RenderCalender:FunctionComponent<RenderCalenderProps> = ({
     },
   });
 
+
   return (
     <Animated.ScrollView
-    ref={scrollViewRef}
-    horizontal
-    onScroll={onScroll}
-    scrollEventThrottle={16}
-    showsHorizontalScrollIndicator={false}
-    style={styles.calendarContainer}
-  >
-    {dates.map((date, index) => (
-      <TouchableOpacity
-        key={index}
-        onPress={() => handleDateChange(date.format('YYYY-MM-DD'))}
-        style={[
-          styles.calendarDay,
-          selectedDate === date.format('YYYY-MM-DD') ? styles.selectedDay : null,
-        ]}
-      >
-        <View style={[styles.dateCard, selectedDate === date.format('YYYY-MM-DD') ? { backgroundColor: '#4CAF50', borderRadius: 25 } : {}]}>
-          <Text style={[
-            styles.dayText,
-            moment().format('YYYY-MM-DD') === date.format('YYYY-MM-DD') ? { color: 'green' } : {},
-            selectedDate === date.format('YYYY-MM-DD') ? { color: 'white' } : {}
+      ref={scrollViewRef}
+      horizontal
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+      showsHorizontalScrollIndicator={false}
+      style={styles.calendarContainer}
+    >
+      {dates.map((date, index) => (
+        <TouchableOpacity
+          key={index}
+          onPress={() => handleDateChange(date.date.format('YYYY-MM-DD'))}
+          style={[
+            styles.calendarDay,
+            selectedDate === date.date.format('YYYY-MM-DD') ? styles.selectedDay : null,
+          ]}
+        >
+          <View style={[styles.dateCard, selectedDate === date.date.format('YYYY-MM-DD') ?
+            { backgroundColor: Colors.light.tint, borderRadius: 25 } : {}
           ]}>
-            {date.format('DD')}
-          </Text>
-          <Text style={[
-            styles.weekDayText,
-            moment().format('YYYY-MM-DD') === date.format('YYYY-MM-DD') ? { color: 'green' } : {},
-            selectedDate === date.format('YYYY-MM-DD') ? { color: 'white' } : {}
-          ]}>
-            {date.format('ddd')}
-          </Text>
-          {selectedDate === date.format('YYYY-MM-DD') && <Text style={{ margin: 'auto', fontSize: 30, color: 'white' }}>.</Text>}
-        </View>
-      </TouchableOpacity>
-    ))}
-  </Animated.ScrollView>
+            <Text style={[
+              styles.dayText,
+              moment().format('YYYY-MM-DD') === date.date.format('YYYY-MM-DD') ? { color: 'green' } : {},
+              selectedDate === date.date.format('YYYY-MM-DD') ? { color: 'white' } : {}
+            ]}>
+              {date.date.format('DD')}
+            </Text>
+            <Text style={[
+              styles.weekDayText,
+              moment().format('YYYY-MM-DD') === date.date.format('YYYY-MM-DD') ? { color: 'green' } : {},
+              selectedDate === date.date.format('YYYY-MM-DD') ? { color: 'white' } : {}
+            ]}>
+              {date.date.format('ddd')}
+            </Text>
+            {selectedDate === date.date.format('YYYY-MM-DD') && <Text style={{ margin: 'auto', fontSize: 30, color: 'white' }}>.</Text>}
+            {(date.isExist && selectedDate!==date.date.format('YYYY-MM-DD')) && <Text style={{ margin: 'auto', fontSize: 40, color:'orange' }}>.</Text>}
+          </View>
+        </TouchableOpacity>
+      ))}
+    </Animated.ScrollView>
   );
 };
 
@@ -240,6 +294,7 @@ const styles = StyleSheet.create({
   },
   dateCard: {
     padding: 20,
+    alignItems: 'center'
   },
   header: {
     paddingHorizontal: 20,
@@ -253,29 +308,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 8,
-    elevation: 5, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    position:'absolute',
-    zIndex:2,
-    right:100,
-    top:100
+    position: 'absolute',
+    zIndex: 2,
+    right: 100,
+    top: 100
   },
   yearListContainer: {
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 8,
-    elevation: 5, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    position:'absolute',
-    zIndex:2,
-    right:10,
-    top:100,
+    position: 'absolute',
+    zIndex: 2,
+    right: 10,
+    top: 100,
   },
   monthText: {
     fontSize: 16,
@@ -288,17 +343,18 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   calendarContainer: {
-    height: 120,
-    marginVertical: 20,
+    maxHeight: 100,
+    marginTop: 20,
     paddingHorizontal: 20,
+    // backgroundColor:'red'
   },
   calendarDay: {
     marginRight: 15,
     alignItems: 'center',
   },
   selectedDay: {
-    // borderBottomWidth: 2,
-    // borderBottomColor: '#24cc5e',
+    borderBottomWidth: 2,
+    borderBottomColor: '#24cc5e',
   },
   dayText: {
     fontSize: 16,
@@ -307,33 +363,6 @@ const styles = StyleSheet.create({
   weekDayText: {
     fontSize: 14,
     color: 'gray',
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  cardSubTitle: {
-    fontSize: 16,
-    color: '#000',
-  },
-  cardTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  cardParticipants: {
-    marginTop: 10,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -352,121 +381,151 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     marginLeft: 10,
-    backgroundColor: '#4CAF50',
+    // backgroundColor: '#4CAF50',
+    backgroundColor: Colors.light.tint,
     padding: 10,
     borderRadius: 10,
   },
+  animation_no_data: {
+    width: 'auto',
+    height: 250,
+    flex: 1
+  }
 });
 
 export default TaskScreen;
 
-import {AntDesign, MaterialIcons} from '@expo/vector-icons';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/Colors';
+import { useUser } from '@/components/userContext';
+import { ThemedText } from '@/components/ThemedText';
+import Lottie from 'lottie-react-native';
+import { Task } from '@/utils/task';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const tasksdata = [
-  {
-    title: 'Website Designing',
-    date: '19 August 2024',
-    time: '09:10 AM',
-    progress: '9/20 Finished',
-    logo: require('../../../assets/images/categories/Agreement.png'),
-    label: 'Agreements'
-  },
-  {
-    title: 'It Staff Landing Page',
-    date: '19 August 2024',
-    time: '08:10 AM',
-    progress: '5/10 Finished',
-    logo: require('../../../assets/images/categories/Deduction.png'),
-    label: 'Interview Scheduling'
-  },
-  {
-    title: 'Website Designing',
-    date: '19 August 2024',
-    time: '10:55 PM',
-    progress: '9/20 Finished',
-    logo: require('../../../assets/images/categories/Visa.png'),
-    label: 'Visa Processing'
-  },
-  {
-    title: 'It Staff Landing Page',
-    date: '19 August 2024',
-    time: '03:10 PM',
-    progress: '5/10 Finished',
-    logo: require('../../../assets/images/categories/Agreement.png'),
-    label: 'Website'
-  },
-]
+interface ListTasksProps{
+  tab:number,
+  selectedDate:string    //YYY-MM-DD
+  tasks:Task[],
+  handleOnDelete:(id:string)=>void
+}
 
-const ListTasks = () => {
-  const [tasks,setTasks]=useState(tasksdata)
- 
+const ListTasks:FunctionComponent<ListTasksProps> = ({
+  tab,
+  selectedDate,
+  tasks,
+  handleOnDelete
+}) => {
+  // const {  setTasks,tasks:contextTasks } = useUser()
+
+  const formatDate = (date: Date): string => {
+    return date.toISOString().split('T')[0]; 
+  };
+
+  const filterTasks = () => {
+    let dateFilteredTasks = tasks.filter(task => formatDate(task.datetime) === selectedDate);
+
+    switch (tab) {
+      case 0:
+        return dateFilteredTasks;    
+      case 1:
+        return dateFilteredTasks.filter(task => task.status === 'Pending');   
+      case 2:
+        return dateFilteredTasks.filter(task => task.status === 'Completed');  
+      case 3:
+        return dateFilteredTasks.filter(task => task.status === 'In-Progress');
+      default:
+        return [];
+    }
+  };
+
   return <>
-    <FlatList data={tasks} renderItem={({ item: task, index }) => <>
-    <TouchableOpacity activeOpacity={0.9} onPress={()=>router.navigate(`/(tabs)/tasks/${task.title}`)}>
-      <View key={index} style={stylesTaskCards.card}>
-        <View style={stylesTaskCards.logoContainer}>
-          <View style={stylesTaskCards.logoBackground}>
-            <Image source={task.logo} style={stylesTaskCards.logo} />
+    {filterTasks().length > 0 && <FlatList data={filterTasks()} renderItem={({ item: task, index }) => <>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
+        <View key={index} style={stylesTaskCards.card}>
+          <View style={stylesTaskCards.logoContainer}>
+            <View style={stylesTaskCards.logoBackground}>
+              {/* <Image source={task.logo} style={stylesTaskCards.logo} /> */}
+              <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+              <Text>{task.status}</Text>
+              {task.status=='Completed' && <MaterialIcons name='check' color={'green'} size={20}/>}
+              </View>
+            </View>
           </View>
-        </View>
 
-        <View style={stylesTaskCards.labelContainer}>
-          <Text style={stylesTaskCards.labelText}>{task.label}</Text>
-        </View>
-
-       <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between'}}>
-        <Text style={stylesTaskCards.cardTitle}>{task.title}</Text>
-        <View style={{flexDirection:'row',gap:10, marginTop:30}}>
-          <TouchableOpacity  onPress={()=>router.navigate(`/(tabs)/tasks/${task.title}`)}>
-        <MaterialIcons name="edit" size={15}  color={'green'} style={{padding:5}}/>
-        </TouchableOpacity>
-
-        <TouchableOpacity  onPress={()=>Alert.alert("Confirm Delete?","Do you want to delete it?",[
-          {
-            text:'confirm',
-            onPress:()=>{
-              setTasks([])
-            },
-            isPreferred:true,
-            style:'cancel',
-          },
-          {
-            text:'cancel',
-          }
-        ])}>
-        <AntDesign name="delete" size={15} color={'red'}  style={{padding:5}}/>
-        </TouchableOpacity>
-        </View>
-        </View>
-
-        <View style={{flexDirection:'row',gap:10}}>
-        <View style={{flexDirection:'row',gap:5, alignItems:'center'}}>
-        <AntDesign name='calendar' color={'black'}/>
-        <Text>{task.date}</Text>
-        </View>
-
-        <View style={{flexDirection:'row',gap:5,alignItems:'center'}}>
-        <MaterialIcons name='access-time' color={'black'}/>
-        <Text>{task.time}</Text>
-        </View>
-        </View>
-
-        <View style={stylesTaskCards.progressContainer}>
-          <View style={stylesTaskCards.progressBar}>
-            <View style={[stylesTaskCards.progress, { width: '45%' }]} />
+          <View style={[stylesTaskCards.labelContainer,
+          task.priority == 'Moderate' ?
+            { backgroundColor: '#D1C4E9' } : task.priority == 'Urgent' ?
+              { backgroundColor: '#FFCDD2' } : { backgroundColor: '#F0F4C3' }]}>
+            <ThemedText style={stylesTaskCards.labelText}>{task.priority}</ThemedText>
           </View>
-          <Text>{task.progress}</Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+
+            <Text style={stylesTaskCards.cardTitle}>{task.title}</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 30 }}>
+              <TouchableOpacity onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
+                <MaterialIcons name="edit" size={15} color={'green'} style={{ padding: 5 }} />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => Alert.alert("Confirm Delete?", "Do you want to delete it?", [
+                {
+                  text: 'confirm',
+                  onPress:  () => {
+                    // const filtered = contextTasks.filter(it=>it.taskId!=task.taskId)
+                    // await AsyncStorage.setItem('tasks',JSON.stringify(filtered))
+                    // setTasks(r=>{return r.filter(it=>it.taskId!=task.taskId)})
+                    handleOnDelete(task.taskId)
+                  },
+                },
+                {
+                  text: 'cancel',
+                  onPress:()=>{},
+          
+                }
+              ],{
+                cancelable:true
+              })}>
+                <AntDesign name="delete" size={15} color={'red'} style={{ padding: 5 }} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+              <AntDesign name='calendar' color={'black'} />
+              <Text>{task.datetime.toLocaleDateString()}</Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+              <MaterialIcons name='access-time' color={'black'} />
+              <Text>{task.datetime.toLocaleTimeString()}</Text>
+            </View>
+          </View>
+
+          <View style={stylesTaskCards.progressContainer}>
+            <View style={stylesTaskCards.progressBar}>
+              <View style={[stylesTaskCards.progress, { width: '45%' }]} />
+            </View>
+            <ThemedText>{`${task.subTasks?.length || 0} Checklists`}</ThemedText>
+          </View>
+
+
+
         </View>
-
-
-
-      </View>
       </TouchableOpacity>
     </>} style={stylesTaskCards.taskScroll}>
 
-    </FlatList>
+    </FlatList>}
+    {filterTasks().length == 0 &&
+      <Lottie
+        source={require('../../../assets/Animation/Animation-no_data.json')}
+        autoPlay
+        loop
+        style={styles.animation_no_data}
+      />}
   </>
 }
 
@@ -542,74 +601,82 @@ const stylesTaskCards = StyleSheet.create({
 });
 
 
+interface TaskTabsProps{
+  onChangeTab:(tab:number)=>void
+}
 
-const TaskTabs = () => {
+const TaskTabs:FunctionComponent<TaskTabsProps> = ({
+  onChangeTab
+}) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const underlinePosition = useRef(new AnimatedNative.Value(0)).current;
 
-  const handleTabPress = (index: number) => {
-      setSelectedTab(index);
+  useEffect(()=>{
+    onChangeTab(selectedTab)
+  },[selectedTab])
 
-      AnimatedNative.timing(underlinePosition, {
-          toValue:index *100, 
-          duration: 300,
-          useNativeDriver: false,
-      }).start();
+  const handleTabPress = (index: number) => {
+    setSelectedTab(index);
+
+    AnimatedNative.timing(underlinePosition, {
+      toValue: index * 100,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   };
 
   return (
-      <View>
-          <View style={stylesTab.tabsContainer}>
-              <TouchableOpacity onPress={() => handleTabPress(0)} style={stylesTab.tab}>
-                  <Text style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleTabPress(1)} style={stylesTab.tab}>
-                  <Text style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]}>Pending</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleTabPress(2)} style={stylesTab.tab}>
-                  <Text style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]}>Completed</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleTabPress(3)} style={stylesTab.tab}>
-                  <Text style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]}>In-Progress</Text>
-              </TouchableOpacity>
-          </View>
-
-          <AnimatedNative.View
-              style={[
-                  stylesTab.underline,
-                  {
-                      left: underlinePosition, 
-                  },
-              ]}
-          />
+    <View style={{marginBottom:15}}>
+      <View style={stylesTab.tabsContainer}>
+        <TouchableOpacity onPress={() => handleTabPress(0)} style={stylesTab.tab}>
+          <Text style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(1)} style={stylesTab.tab}>
+          <Text style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]}>Pending</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(2)} style={stylesTab.tab}>
+          <Text style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]}>Completed</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(3)} style={stylesTab.tab}>
+          <Text style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]}>In-Progress</Text>
+        </TouchableOpacity>
       </View>
+
+      <AnimatedNative.View
+        style={[
+          stylesTab.underline,
+          {
+            left: underlinePosition,
+          },
+        ]}
+      />
+    </View>
   );
 };
 
 const stylesTab = StyleSheet.create({
   tabsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      padding: 15,
-      marginTop:-25
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 15,
   },
   tab: {
-      flex: 1,
-      alignItems: 'center',
+    flex: 1,
+    alignItems: 'center',
   },
   tabText: {
-      fontSize: 16,
-      color: '#333',
+    fontSize: 16,
+    color: '#333',
   },
   activeTabText: {
-      fontWeight: 'bold',
+    fontWeight: 'bold',
   },
   underline: {
-      height: 3,
-      width: 100, 
-      backgroundColor: 'green',
-      position: 'absolute',
-      bottom: 0,
+    height: 3,
+    width: 100,
+    backgroundColor: 'green',
+    position: 'absolute',
+    bottom: 0,
   },
 });
 

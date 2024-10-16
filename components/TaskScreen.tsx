@@ -1,82 +1,29 @@
-import { Alert, Animated, Dimensions, Easing, FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
-import React, { FunctionComponent, useCallback, useEffect, useRef, useState } from 'react';
-import { router, useNavigation } from 'expo-router';
-import Lottie from 'lottie-react-native';
-import { StyleSheet } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
+import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import * as Notifications from 'expo-notifications';
-import { ThemedText } from './ThemedText';
+import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
+import { filterTasks, Task } from '@/utils/task';
+import { AntDesign, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useNavigation } from 'expo-router';
+import Lottie from 'lottie-react-native';
+import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Easing, FlatList, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import 'react-native-gesture-handler';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { Switch } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { AntDesign } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-
+import { ThemedText } from './ThemedText';
+import TaskTimer from './TaskTimer';
 
 const TaskPage: FunctionComponent = () => {
   const colorscheme = useColorScheme()
   const [isloading, setloading] = useState(false)
-  const { loading, user, officeMode } = useUser()
+  const { loading, user, officeMode, tasks } = useUser()
   const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
-  const [isConnected, setIsConnected] = useState(true);
-  const navigation = useNavigation()
-  // useEffect(() => {
-  //   const unsubscribe = NetInfo.addEventListener(state => {
-  //     if (state.isConnected != null) {
-  //       setIsConnected(state.isConnected);
-  //       refetch()
-  //       if (!state.isConnected) {
-  //         Alert.alert('No Internet Connection', 'You are currently offline.');
-  //       }
-  //     }
-  //   });
 
-  //   return () => {
-  //     unsubscribe();
-  //   };
-  // }, [navigation]);
-
-
-  // useEffect(() => {
-  //   const checkPermissions = async () => {
-  //     const hasRequested = await AsyncStorage.getItem('notificationPermissionsRequested');
-  //     if (!hasRequested) {
-  //       const { status } = await Notifications.requestPermissionsAsync();
-  //       await AsyncStorage.setItem('notificationPermissionsRequested', 'true');
-  //       await AsyncStorage.setItem('notificationPermissionsStatus', status === 'granted' ? 'true' : 'false');
-  //     }
-  //   };
-
-  //   checkPermissions();
-
-  //   const subscription = Notifications.addNotificationReceivedListener(
-  //     notification => {
-  //       console.log('Notification received:', notification.request.identifier);
-  //     }
-  //   );
-  //   setloading(false)
-
-  //   return () => {
-  //     subscription.remove();
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   const doRefetch = async () => {
-  //     await refetch()
-  //   }
-  //   if (user) {
-  //     setloading(true)
-  //     doRefetch()
-  //     setloading(false)
-  //   }
-  // }, [user]);
+  const { thisMonthTasks, thisWeekTasks, todayTasks, tomorrowTasks } = filterTasks(tasks)
 
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
@@ -99,24 +46,24 @@ const TaskPage: FunctionComponent = () => {
   }
 
   return <ScrollView style={styles.container} showsVerticalScrollIndicator>
-    <ThemedText style={{ paddingLeft: 15, color: '#969696' }}>you have 4 tasks due today</ThemedText>
+    <ThemedText style={{ paddingLeft: 15, color: 'grey' }}>you have {tasks.length} tasks due today</ThemedText>
 
     <ThemedView style={styles.searchContainer}>
-      <TextInput style={[styles.searchInput, colorscheme=='light'?{color:'black',backgroundColor:'white'}:{color:'white', backgroundColor:'black'}]} placeholder="Search"  />
+      <TextInput style={[styles.searchInput, colorscheme == 'light' ? { color: 'black', backgroundColor: 'white' } : { color: 'white', backgroundColor: 'black' }]} placeholder="Search" />
       <TouchableOpacity style={styles.filterButton}>
         <Ionicons name="options-outline" size={24} color="white" />
       </TouchableOpacity>
     </ThemedView>
 
     <CurrentDate />
-    <TaskCards />
-    <TaskCarousel1/>
-    <View style={{height:20}}></View>
+    <TaskCards tasks={todayTasks} />
+    <TaskCarousel1 tasks={tasks} />
+    <View style={{ height: 20 }}></View>
 
-    <AllTasks title='Tomorrow'/>
-    <AllTasks title='This Week' />
-    <AllTasks title='This Month'/>
-    <View style={{height:100}}></View>
+    <AllTasks title='Tomorrow' taskCount={tomorrowTasks.length} />
+    <AllTasks title='This Week' taskCount={thisWeekTasks.length} />
+    <AllTasks title='This Month' taskCount={thisMonthTasks.length} />
+    <View style={{ height: 100 }}></View>
   </ScrollView>
 }
 
@@ -139,7 +86,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 10,
     paddingHorizontal: 10,
-    backgroundColor:'transparent'
+    backgroundColor: 'transparent'
   },
   searchInput: {
     flex: 1,
@@ -151,23 +98,31 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     marginLeft: 10,
-    backgroundColor: '#4CAF50',
+    // backgroundColor: '#4CAF50',
+    backgroundColor: Colors.light.tint,
     padding: 10,
     borderRadius: 10,
   },
+  animation_no_data: {
+    width: 'auto',
+    height: 120,
+    marginLeft: 100,
+    marginTop: -20
+    // flex:1
+  }
 });
 
 const CurrentDate = () => {
   const date = new Date().toDateString();
-  const colorscheme= useColorScheme()
+  const colorscheme = useColorScheme()
 
   return (
     <ThemedView style={stylesCurrentDate.dateContainer}>
-      <ThemedText style={stylesCurrentDate.todayText}>Today Tasks</ThemedText>
-      <Switch />
-      <ThemedView style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor:'transparent' }}>
-        <TouchableOpacity onPress={()=>router.navigate('/calendar')}>
-          <Ionicons name='calendar-number-outline' size={24} color={colorscheme=='light' ? 'black':'white'}/>
+      <ThemedText style={stylesCurrentDate.todayText}>Today Tasks/Meetings</ThemedText>
+      {/* <Switch /> */}
+      <ThemedView style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'transparent' }}>
+        <TouchableOpacity onPress={() => router.navigate('/calendar')}>
+          <Ionicons name='calendar-number-outline' size={24} color={colorscheme == 'light' ? 'black' : 'white'} />
         </TouchableOpacity>
         <ThemedText>{date}</ThemedText>
       </ThemedView>
@@ -182,7 +137,7 @@ const stylesCurrentDate = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     paddingHorizontal: 15,
-    backgroundColor:'transparent'
+    backgroundColor: 'transparent'
   },
 
   todayText: {
@@ -191,110 +146,172 @@ const stylesCurrentDate = StyleSheet.create({
   },
 });
 
-const TaskCards = () => {
+interface TaskCardsProps {
+  tasks: Task[]
+}
+
+const TaskCards: FunctionComponent<TaskCardsProps> = ({
+  tasks
+}) => {
   const colorscheme = useColorScheme()
-  const tasks = [
-    {
-      title: 'Website Designing',
-      date: '19 August 2024',
-      progress: 'In 1 hour',
-      logo: 'https://example.com/logo1.png',
-      label: 'Agreements'
-    },
-    {
-      title: 'It Staff Landing Page',
-      date: '19 August 2024',
-      progress: '5/10 Finished',
-      logo: 'https://example.com/logo2.png',
-      label: 'Interview Scheduling'
-    },
-    {
-      title: 'Website Designing',
-      date: '19 August 2024',
-      progress: '9/20 Finished',
-      logo: 'https://example.com/logo1.png',
-      label: 'Visa Processing'
-    },
-    {
-      title: 'It Staff Landing Page',
-      date: '19 August 2024',
-      progress: '5/10 Finished',
-      logo: 'https://example.com/logo2.png',
-      label: 'Website'
-    },
-  ]
+  const iconName = useTimeElapseAnimation()
 
   return (
     <>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={stylesTaskCards.taskScroll}>
-      {tasks.map((task, index) => (
-        <TouchableOpacity onPress={()=>router.navigate(`/(tabs)/category/task/${task.title}`)} activeOpacity={0.8} 
-        key={index}
-        >
-        <View key={index} style={[stylesTaskCards.card, colorscheme=='light'?{backgroundColor:'#fff'}:{backgroundColor:'transparent'}]}>
-          <View style={stylesTaskCards.logoContainer}>
-            <View style={stylesTaskCards.logoBackground}>
-              <Image source={{ uri: task.logo }} style={stylesTaskCards.logo} />
-            </View>
-          </View>
+      {tasks.length > 0 && <View style={{ flexDirection: 'column', alignItems: tasks.length == 1 ? 'center' : 'stretch' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={stylesTaskCards.taskScroll}>
+          {tasks.map((task, index) => (
+            <TouchableOpacity onPress={() => router.navigate(`/(tabs)/category/task/${task.taskId}`)}
+              activeOpacity={0.8}
+              key={index}
+            >
+              <View key={index} style={[stylesTaskCards.card, colorscheme == 'light' ? { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
+                <View style={stylesTaskCards.logoContainer}>
+                  <View style={stylesTaskCards.logoBackground}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <Text>{task.status}</Text>
+                      {task.status == 'Completed' && <MaterialIcons name='check' color={'green'} size={20} />}
+                    </View>
+                  </View>
+                </View>
 
-          <Svg
-          height="160"
-          width="250"
+                <Svg
+                  height="160"
+                  width="250"
+                  style={{
+                    position: 'absolute',
+                    borderRadius: 20,
+                    bottom: 0,
+                    opacity: 0.3,
+                  }}
+                >
+                  <Path
+                    d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
+                    fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
+                  />
+                </Svg>
+
+                <Svg
+                  height="200"
+                  width="250"
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    opacity: 0.15,
+                  }}
+                >
+                  <Path
+                    d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
+                    fill={colorscheme == 'light' ? "purple" : 'transparent'}
+                  />
+                </Svg>
+
+                <View style={[stylesTaskCards.labelContainer,
+                task.priority == 'Moderate' ?
+                  { backgroundColor: '#D1C4E9' } : task.priority == 'Urgent' ?
+                    { backgroundColor: '#FFCDD2' } : { backgroundColor: '#F0F4C3' }]}>
+                  <ThemedText style={stylesTaskCards.labelText}>{task.priority}</ThemedText>
+                </View>
+
+                <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
+                {/* <ThemedText>{task.datetime.toLocaleString()}</ThemedText> */}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {/* <View style={{flexDirection:'row',gap:5, alignItems:'center'}}>
+        <AntDesign name='calendar' color={'black'}/>
+        <Text>{task.datetime.toLocaleDateString()}</Text>
+        </View> */}
+
+
+                  <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+                    <MaterialIcons name='access-time' color={'black'} />
+                    <Text>{task.datetime.toLocaleTimeString()}</Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <Animated.View>
+                      <MaterialCommunityIcons name={iconName} size={13} color="green" />
+                    </Animated.View>
+                    <TaskTimer task={task} />
+                  </View>
+
+                </View>
+
+                <View style={stylesTaskCards.progressContainer}>
+                  <View style={stylesTaskCards.progressBar}>
+                    <View style={[stylesTaskCards.progress, { width: '45%' }]} />
+                  </View>
+                  <ThemedText>{`${task.subTasks?.length || 0} Checklists`}</ThemedText>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+
+        </ScrollView>
+
+        <TouchableOpacity onPress={() => router.navigate('/(tabs)/tasks')}
           style={{
-            position: 'absolute',
-            // top: 35,
-            // right: 0,
-            borderRadius:20,
-            bottom:0,
-            opacity: 0.3,
-          }}
-        >
-          <Path
-            d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
-            fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
-          />
-        </Svg>
-
-        <Svg
-          height="200"
-          width="250"
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            opacity: 0.15,
-          }}
-        >
-          <Path
-            d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
-            fill={colorscheme == 'light' ? "purple" : 'transparent'}
-          />
-        </Svg>
-
-
-          <View style={stylesTaskCards.labelContainer}>
-            <ThemedText style={stylesTaskCards.labelText}>{task.label}</ThemedText>
-          </View>
-
-          <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
-          <ThemedText>{task.date}</ThemedText>
-
-          <View style={stylesTaskCards.progressContainer}>
-            <View style={stylesTaskCards.progressBar}>
-              <View style={[stylesTaskCards.progress, { width: '45%' }]} />
-            </View>
-            <ThemedText>{task.progress}</ThemedText>
-          </View>
-        </View>
+            flexDirection: 'row', justifyContent: 'flex-end',
+            alignItems: 'center', gap: 5, marginTop: -30, marginBottom: 10,
+          }} >
+          <ThemedText style={{ padding: 7, backgroundColor: '#f5f5f5', borderRadius: 20 }}>See All
+            <AntDesign name='right' color={colorscheme == 'light' ? 'black' : 'white'} />
+          </ThemedText>
         </TouchableOpacity>
-      ))}
-    </ScrollView>
+      </View>}
 
-   <TouchableOpacity onPress={()=>router.navigate('/(tabs)/tasks')} style={{position:'absolute',right:10,top:'34%',flexDirection:'row',justifyContent:'center',alignItems:'center',gap:5}}>
-    <ThemedText >See All</ThemedText>
-    <AntDesign  name='right' color={colorscheme=='light'?'black':'white'}/>
-    </TouchableOpacity>
+      {tasks.length == 0 && <>
+        <TouchableOpacity style={{ alignItems: 'center' }} activeOpacity={0.8}
+        >
+          <View style={[stylesTaskCards.card, { height: 100 }, colorscheme == 'light' ?
+            { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
+            <View style={stylesTaskCards.logoContainer}>
+              <View style={stylesTaskCards.logoBackground}>
+                <Text>No Tasks Today</Text>
+              </View>
+            </View>
+
+            <Svg
+              height="160"
+              width="250"
+              style={{
+                position: 'absolute',
+                borderRadius: 20,
+                bottom: 0,
+                opacity: 0.3,
+              }}
+            >
+              <Path
+                d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
+                fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
+              />
+            </Svg>
+
+            <Svg
+              height="200"
+              width="250"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                opacity: 0.15,
+              }}
+            >
+              <Path
+                d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
+                fill={colorscheme == 'light' ? "purple" : 'transparent'}
+              />
+            </Svg>
+
+            <Lottie
+              source={require('../assets/Animation/Animation-no_data.json')}
+              autoPlay
+              loop
+              style={styles.animation_no_data}
+            />
+          </View>
+        </TouchableOpacity>
+      </>}
     </>
   );
 };
@@ -346,7 +363,7 @@ const stylesTaskCards = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight:'400',
+    fontWeight: '400',
     marginBottom: 10,
     marginTop: 40,
   },
@@ -370,26 +387,55 @@ const stylesTaskCards = StyleSheet.create({
   },
 });
 
-interface AllTasksProps{
-  title:string
+interface AllTasksProps {
+  title: string,
+  taskCount: number
 }
 
-const AllTasks:FunctionComponent<AllTasksProps> = ({
-  title
+const AllTasks: FunctionComponent<AllTasksProps> = ({
+  title,
+  taskCount
 }) => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const today = new Date();
+  const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+  const lastDayOfWeek = new Date(firstDayOfWeek);
+  lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+
   return (
     <View style={stylesAllTasks.allTasksContainer}>
       <View style={stylesCurrentDate.dateContainer}>
-      <Text style={stylesCurrentDate.todayText}>{title}</Text>
-     {title=='Tomorrow' && <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-        <TouchableOpacity>
-          <Ionicons name='calendar-number-outline' size={24} color="black" />
-        </TouchableOpacity>
-        <Text>{new Date().toLocaleDateString()}</Text>
-      </View>}
-    </View>
+        <Text style={stylesCurrentDate.todayText}>{title}</Text>
+        {title == 'Tomorrow' &&
+          <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <TouchableOpacity>
+              <Ionicons name='calendar-number-outline' size={24} color="black" />
+            </TouchableOpacity>
+            <Text>{tomorrow.toLocaleDateString()}</Text>
+          </View>}
+        {title == 'This Week' &&
+          <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <TouchableOpacity>
+              <Ionicons name='calendar-number-outline' size={24} color="black" />
+            </TouchableOpacity>
+            <Text>{`(${firstDayOfWeek.toLocaleDateString()} - ${lastDayOfWeek.toLocaleDateString()})`}</Text>
+          </View>}
+        {title == 'This Month' &&
+          <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <TouchableOpacity>
+              <Ionicons name='calendar-number-outline' size={24} color="black" />
+            </TouchableOpacity>
+            <Text>{`(${firstDayOfMonth.toLocaleDateString()} - ${lastDayOfMonth.toLocaleDateString()})`}</Text>
+          </View>}
+      </View>
       <View style={stylesAllTasks.taskRow}>
-        <Text style={{marginLeft:17}}>10 Tasks</Text>
+        <Text style={{ marginLeft: 17 }}>{taskCount} Tasks</Text>
         <Ionicons name="arrow-forward-outline" size={24} color="black" />
       </View>
     </View>
@@ -470,7 +516,7 @@ const TaskCarousel = () => {
     };
   });
 
-  const handleScroll = (event:any) => {
+  const handleScroll = (event: any) => {
     translateX.value = -event.nativeEvent.contentOffset.x;
   };
 
@@ -495,10 +541,10 @@ const TaskCarousel = () => {
 
 const stylesTaskComponent = StyleSheet.create({
   card: {
-    width: screenWidth * 0.8, 
+    width: screenWidth * 0.8,
     height: 200,
     marginHorizontal: 10,
-    marginVertical:20,
+    marginVertical: 20,
     borderRadius: 10,
     backgroundColor: '#f2f2f2',
     justifyContent: 'center',
@@ -517,48 +563,23 @@ const stylesTaskComponent = StyleSheet.create({
 });
 
 
-const testTasks = [
-  {
-    id: 1,
-    category: 'Urgent',
-    tasks: [
-      { title: 'Submit report', dueDate: '2024-10-12', status: 'In progress', progress: 0.4, count:3 },
-    ],
-    color: '#F0F4C3', 
-  },
-  {
-    id: 2,
-    category: 'Moderate',
-    tasks: [
-      { title: 'Review code', dueDate: '2024-10-15', status: 'In progress', progress: 0.6, count:1 },
-    ],
-    color: '#FFCDD2', 
-  },
-  {
-    id: 3,
-    category: 'Normal',
-    tasks: [
-      { title: 'Write documentation', dueDate: '2024-10-17', status: 'Not started', progress: 0.0,count:2 },
-    ],
-    color: '#D1C4E9', 
-  },
-];
 
 
-const AnimatedCount = ({ finalCount }:any) => {
+
+const AnimatedCount = ({ finalCount }: any) => {
   const [displayCount, setDisplayCount] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(animatedValue, {
       toValue: finalCount,
-      duration: 2000, 
-      easing: Easing.out(Easing.cubic), 
-      useNativeDriver: false, 
+      duration: 2000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
     }).start();
 
     animatedValue.addListener((v) => {
-      setDisplayCount(Math.round(v.value)); 
+      setDisplayCount(Math.round(v.value));
     });
 
     return () => {
@@ -574,20 +595,65 @@ const AnimatedCount = ({ finalCount }:any) => {
 };
 
 
-const TaskCarousel1 = () => {
-  const renderItem = ({ item }:any) => (
-    <TouchableOpacity activeOpacity={0.8}>
-    <View style={[stylesNew.card, { backgroundColor: item.color }]}>
-      <Text style={stylesNew.title}>{item.category}</Text>
+interface TaskCarouselProps {
+  tasks: Task[]
+}
+const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
+  tasks
+}) => {
+  const { urgent, moderate, normal } = tasks.reduce(
+    (prev, curr) => {
+      if (curr.priority === 'Urgent') {
+        prev.urgent += 1;
+      } else if (curr.priority === 'Moderate') {
+        prev.moderate += 1;
+      } else if (curr.priority === 'Normal') {
+        prev.normal += 1;
+      }
+      return prev;
+    },
+    { urgent: 0, moderate: 0, normal: 0 }
+  );
 
-      {item.tasks.map((task:any, index:any) => (
-        <View key={index} style={stylesNew.taskContainer}>
-      <AnimatedCount finalCount={task.count} />
-           <Ionicons name='arrow-forward-outline' 
-           style={{margin:'auto',}} size={15} color="black" />
+  const testTasks = [
+    {
+      id: 1,
+      category: 'Urgent',
+      tasks: [
+        { count: urgent },
+      ],
+      color: '#FFCDD2',
+    },
+    {
+      id: 2,
+      category: 'Moderate',
+      tasks: [
+        { count: moderate },
+      ],
+      color: '#D1C4E9',
+    },
+    {
+      id: 3,
+      category: 'Normal',
+      tasks: [
+        { count: normal },
+      ],
+      color: '#F0F4C3',
+    },
+  ];
+  const renderItem = ({ item }: any) => (
+    <TouchableOpacity activeOpacity={0.8}>
+      <View style={[stylesNew.card, { backgroundColor: item.color }]}>
+        <Text style={stylesNew.title}>{item.category}</Text>
+
+        {item.tasks.map((task: any, index: any) => (
+          <View key={index} style={stylesNew.taskContainer}>
+            <AnimatedCount finalCount={task.count} />
+            <Ionicons name='arrow-forward-outline'
+              style={{ margin: 'auto', }} size={15} color="black" />
           </View>
-      ))}
-    </View>
+        ))}
+      </View>
     </TouchableOpacity>
   );
 
@@ -597,7 +663,7 @@ const TaskCarousel1 = () => {
       renderItem={renderItem}
       keyExtractor={item => item.id.toString()}
       horizontal
-      
+
       showsHorizontalScrollIndicator={false}
     />
   );
@@ -605,7 +671,7 @@ const TaskCarousel1 = () => {
 
 const stylesNew = StyleSheet.create({
   card: {
-    width: screenWidth / 3.5, 
+    width: screenWidth / 3.5,
     height: 150,
     marginHorizontal: 10,
     borderRadius: 15,
@@ -614,13 +680,13 @@ const stylesNew = StyleSheet.create({
   title: {
     fontSize: 14,
     // fontWeight: 'bold',
-    textAlign:'center',
+    textAlign: 'center',
     color: 'black',
     marginBottom: 10,
   },
-  count:{
-   fontSize:35,
-   fontWeight:'200'
+  count: {
+    fontSize: 35,
+    fontWeight: '200'
   },
   taskContainer: {
     marginTop: 10,
@@ -646,3 +712,4 @@ const stylesNew = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

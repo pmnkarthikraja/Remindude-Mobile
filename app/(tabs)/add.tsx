@@ -49,8 +49,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       customReminderDates: []
     }
   });
-  
-  const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && true);
+  const {loading,user,officeMode} = useUser()
+  const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && officeMode && true);
   const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
     startDate: false,
@@ -67,7 +67,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-  const {loading,user,officeMode} = useUser()
   const {isLoading:addFormDataLoading,isError:isAddFormdataErr,mutateAsync:addFormData} = useCreateFormDataMutation()
   const {isLoading:updateFormDataLoading,isError:isUpdateFormdataErr,mutateAsync:updateFormData} = useUpdateFormDataMutation()
 

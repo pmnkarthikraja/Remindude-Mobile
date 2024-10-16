@@ -137,6 +137,11 @@ const CategoryPage = () => {
   });
 
   const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
+
+  function searchItem(text: string, searchText: string): boolean {
+    return text.toLowerCase().includes(searchText.toLowerCase())
+  }
+
   const handleSearch = (text: string) => {
     const payload= got.filter(item => {
        if (item.category == 'Agreements') {
@@ -228,9 +233,6 @@ const CategoryPage = () => {
     </ThemedView>
   );
 
-  function searchItem(text: string, searchText: string): boolean {
-    return text.toLowerCase().includes(searchText.toLowerCase())
-  }
 
 
   function onClearFilter(){
