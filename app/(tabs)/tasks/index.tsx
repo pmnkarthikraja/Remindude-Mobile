@@ -1,13 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect, FunctionComponent } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Platform, Pressable, useColorScheme, Alert } from 'react-native';
-import moment from 'moment';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Animated, { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Animated as AnimatedNative } from 'react-native'
+import moment from 'moment';
+import React, { FunctionComponent, useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated as AnimatedNative, FlatList, Platform, StyleProp, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 const TaskScreen = () => {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
-  // const [tasks, setTasks] = useState(dummyTasks[selectedDate] || []);
   const {tasks:contextTasks,setTasks:setcontexttasks} =useUser()
   const [tasks,setTasks]=useState<Task[]>(contextTasks)
   const [isMonthListVisible, setMonthListVisible] = useState(false);
@@ -46,7 +44,6 @@ const TaskScreen = () => {
     setYearListVisible(false);
   };
 
-
   function searchItem(text: string, searchText: string): boolean {
     return text.toLowerCase().includes(searchText.toLowerCase())
   }
@@ -80,6 +77,10 @@ const TaskScreen = () => {
  }
 
 
+ const handleFilters = (filters:Filters) => {
+  
+ }
+
   const getDatesForSelectedMonth = useCallback((tasks: Task[]) => {
     const startOfMonth = moment(selectedDate).startOf('month');
     const endOfMonth = moment(selectedDate).endOf('month');
@@ -100,6 +101,8 @@ const TaskScreen = () => {
     setSelectedDate(date);
   };
 
+  const iconColor = colorscheme=='light'?'black':'white'
+
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
@@ -118,20 +121,20 @@ const TaskScreen = () => {
 
       <View style={styles.header}>
         <View style={{ justifyContent: 'space-between', flexDirection: 'row' }}>
-          <Text style={styles.dateText}>{moment(selectedDate).format('DD MMM Y')}</Text>
+          <ThemedText style={styles.dateText}>{moment(selectedDate).format('DD MMM Y')}</ThemedText>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-              <Text>{selectedMonth}</Text>
+              <ThemedText>{selectedMonth}</ThemedText>
               <TouchableOpacity onPress={toggleMonthList}>
-                <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
+                <MaterialIcons name="keyboard-arrow-down" size={24} color={iconColor} />
               </TouchableOpacity>
             </View>
 
             <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-              <Text>{selectedYear}</Text>
+              <ThemedText>{selectedYear}</ThemedText>
               <TouchableOpacity onPress={toggleYearList}>
-                <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
+                <MaterialIcons name="keyboard-arrow-down" size={24} color={iconColor} />
               </TouchableOpacity>
             </View>
           </View>
@@ -145,7 +148,7 @@ const TaskScreen = () => {
             keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => selectMonth(item)}>
-                <Text style={styles.monthText}>{item}</Text>
+                <ThemedText style={styles.monthText}>{item}</ThemedText>
               </TouchableOpacity>
             )}
           />
@@ -160,20 +163,14 @@ const TaskScreen = () => {
             keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => selectYear(item)}>
-                <Text style={styles.monthText}>{item}</Text>
+                <ThemedText style={styles.monthText}>{item}</ThemedText>
               </TouchableOpacity>
             )}
           />
         </View>
       )}
 
-
-      <View style={styles.searchContainer}>
-        <TextInput style={styles.searchInput} onChangeText={e=>handleSearch(e)} placeholder="Search" />
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="options-outline" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+      <FilterComponent onApplyFilters={(filters)=>{console.log("filters: ",filters)}}  onSearch={handleSearch}/>
 
       <RenderCalender getDatesForSelectedMonth={()=>getDatesForSelectedMonth(tasks)}
         handleDateChange={handleDateChange} selectedDate={selectedDate} tasks={tasks}/>
@@ -249,22 +246,22 @@ const RenderCalender: FunctionComponent<RenderCalenderProps> = ({
           <View style={[styles.dateCard, selectedDate === date.date.format('YYYY-MM-DD') ?
             { backgroundColor: Colors.light.tint, borderRadius: 25 } : {}
           ]}>
-            <Text style={[
+            <ThemedText style={[
               styles.dayText,
               moment().format('YYYY-MM-DD') === date.date.format('YYYY-MM-DD') ? { color: 'green' } : {},
               selectedDate === date.date.format('YYYY-MM-DD') ? { color: 'white' } : {}
             ]}>
               {date.date.format('DD')}
-            </Text>
-            <Text style={[
+            </ThemedText>
+            <ThemedText style={[
               styles.weekDayText,
               moment().format('YYYY-MM-DD') === date.date.format('YYYY-MM-DD') ? { color: 'green' } : {},
               selectedDate === date.date.format('YYYY-MM-DD') ? { color: 'white' } : {}
             ]}>
               {date.date.format('ddd')}
-            </Text>
-            {selectedDate === date.date.format('YYYY-MM-DD') && <Text style={{ margin: 'auto', fontSize: 30, color: 'white' }}>.</Text>}
-            {(date.isExist && selectedDate!==date.date.format('YYYY-MM-DD')) && <Text style={{ margin: 'auto', fontSize: 40, color:'orange' }}>.</Text>}
+            </ThemedText>
+            {selectedDate === date.date.format('YYYY-MM-DD') && <ThemedText style={{ margin: 'auto', fontSize: 30, color: 'white' }}>.</ThemedText>}
+            {(date.isExist && selectedDate!==date.date.format('YYYY-MM-DD')) && <ThemedText style={{ margin: 'auto', fontSize: 40, color:'orange' }}>.</ThemedText>}
           </View>
         </TouchableOpacity>
       ))}
@@ -346,7 +343,6 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     marginTop: 20,
     paddingHorizontal: 20,
-    // backgroundColor:'red'
   },
   calendarDay: {
     marginRight: 15,
@@ -381,7 +377,6 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     marginLeft: 10,
-    // backgroundColor: '#4CAF50',
     backgroundColor: Colors.light.tint,
     padding: 10,
     borderRadius: 10,
@@ -395,15 +390,16 @@ const styles = StyleSheet.create({
 
 export default TaskScreen;
 
-import { AntDesign, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/constants/Colors';
-import { useUser } from '@/components/userContext';
 import { ThemedText } from '@/components/ThemedText';
-import Lottie from 'lottie-react-native';
+import { useUser } from '@/components/userContext';
+import { Colors } from '@/constants/Colors';
 import { Task } from '@/utils/task';
+import { AntDesign, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import Lottie from 'lottie-react-native';
+import FilterComponent, { Filters } from '@/components/FilterTasks';
 
 interface ListTasksProps{
   tab:number,
@@ -418,7 +414,8 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
   tasks,
   handleOnDelete
 }) => {
-  // const {  setTasks,tasks:contextTasks } = useUser()
+  const colorscheme = useColorScheme()
+  const iconColor = colorscheme=='light'?'black':'white'
 
   const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0]; 
@@ -441,16 +438,24 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
     }
   };
 
+    const cardBorderOnDark :StyleProp<ViewStyle> = colorscheme=='dark' ? {
+   borderWidth:0.5,
+    borderStyle:'solid',
+    borderColor:'grey',
+    }:{}
+
   return <>
     {filterTasks().length > 0 && <FlatList data={filterTasks()} renderItem={({ item: task, index }) => <>
       <TouchableOpacity activeOpacity={0.9} onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
-        <View key={index} style={stylesTaskCards.card}>
+        <View key={index} style={[stylesTaskCards.card,cardBorderOnDark, colorscheme=='light'?{backgroundColor:'white'}:{}]}>
           <View style={stylesTaskCards.logoContainer}>
             <View style={stylesTaskCards.logoBackground}>
               {/* <Image source={task.logo} style={stylesTaskCards.logo} /> */}
               <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <Text>{task.status}</Text>
+              <ThemedText >{task.status}</ThemedText>
               {task.status=='Completed' && <MaterialIcons name='check' color={'green'} size={20}/>}
+              {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
+              {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
               </View>
             </View>
           </View>
@@ -464,7 +469,7 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
 
-            <Text style={stylesTaskCards.cardTitle}>{task.title}</Text>
+            <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 30 }}>
               <TouchableOpacity onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
                 <MaterialIcons name="edit" size={15} color={'green'} style={{ padding: 5 }} />
@@ -495,13 +500,13 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
-              <AntDesign name='calendar' color={'black'} />
-              <Text>{task.datetime.toLocaleDateString()}</Text>
+              <AntDesign name='calendar' color={iconColor} />
+              <ThemedText>{task.datetime.toLocaleDateString()}</ThemedText>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
-              <MaterialIcons name='access-time' color={'black'} />
-              <Text>{task.datetime.toLocaleTimeString()}</Text>
+              <MaterialIcons name='access-time' color={iconColor} />
+              <ThemedText>{task.datetime.toLocaleTimeString()}</ThemedText>
             </View>
           </View>
 
@@ -537,7 +542,6 @@ const stylesTaskCards = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 16,
     marginRight: 10,
@@ -552,7 +556,6 @@ const stylesTaskCards = StyleSheet.create({
     left: 10,
   },
   logoBackground: {
-    backgroundColor: '#f0f0f0',
     borderRadius: 25,
     padding: 5,
   },
@@ -629,16 +632,16 @@ const TaskTabs:FunctionComponent<TaskTabsProps> = ({
     <View style={{marginBottom:15}}>
       <View style={stylesTab.tabsContainer}>
         <TouchableOpacity onPress={() => handleTabPress(0)} style={stylesTab.tab}>
-          <Text style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks</Text>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => handleTabPress(1)} style={stylesTab.tab}>
-          <Text style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]}>Pending</Text>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]}>Pending</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => handleTabPress(2)} style={stylesTab.tab}>
-          <Text style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]}>Completed</Text>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]}>Completed</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => handleTabPress(3)} style={stylesTab.tab}>
-          <Text style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]}>In-Progress</Text>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]}>In-Progress</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -666,7 +669,6 @@ const stylesTab = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#333',
   },
   activeTabText: {
     fontWeight: 'bold',

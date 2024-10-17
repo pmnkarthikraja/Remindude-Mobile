@@ -119,13 +119,14 @@ interface HeaderProps{
         />
         <ThemedText>{officeMode ? 'Task':'Office'}</ThemedText>
   
-        <Switch
+        {/* <Switch
           value={switchOn}
           onValueChange={toggleTheme}
           trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={switchOn ? '#f5dd4b' : '#f4f3f4'}
           style={styles.switch}
-        />
+        /> */}
+        
         <Animated.View>
           {systemTheme == 'dark' ? (
             <MoonStar fill={'white'} color="white" size={20} />

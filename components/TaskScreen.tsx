@@ -4,18 +4,19 @@ import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
 import { filterTasks, Task } from '@/utils/task';
-import { AntDesign, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, EvilIcons, Feather, FontAwesome, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, FlatList, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Animated, Dimensions, Easing, FlatList, ScrollView, StyleProp, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
 import 'react-native-gesture-handler';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { ThemedText } from './ThemedText';
 import TaskTimer from './TaskTimer';
+import { ThemedText } from './ThemedText';
+import FilterComponent from './FilterTasks';
 
 const TaskPage: FunctionComponent = () => {
   const colorscheme = useColorScheme()
@@ -46,14 +47,22 @@ const TaskPage: FunctionComponent = () => {
   }
 
   return <ScrollView style={styles.container} showsVerticalScrollIndicator>
-    <ThemedText style={{ paddingLeft: 15, color: 'grey' }}>you have {tasks.length} tasks due today</ThemedText>
-
-    <ThemedView style={styles.searchContainer}>
-      <TextInput style={[styles.searchInput, colorscheme == 'light' ? { color: 'black', backgroundColor: 'white' } : { color: 'white', backgroundColor: 'black' }]} placeholder="Search" />
+    <View style={styles.caution}>
+    <Ionicons name='alert-circle' size={21} color={'yellow'}/>
+    <ThemedText style={{  color: 'grey' }}>you have {todayTasks.length} tasks due today</ThemedText>
+    </View>
+    
+    {/* <ThemedView style={styles.searchContainer}>
+      <TextInput placeholderTextColor={colorscheme=='light'?'black':'white'} style={[styles.searchInput, 
+        colorscheme == 'light' ? { color: 'black', backgroundColor: 'white',elevation:5 } : { color: 'white', backgroundColor: 'transparent', borderStyle:'solid',borderWidth:0.7,borderColor:'grey' }]} placeholder="Search" />
       <TouchableOpacity style={styles.filterButton}>
         <Ionicons name="options-outline" size={24} color="white" />
       </TouchableOpacity>
-    </ThemedView>
+    </ThemedView> */}
+
+<FilterComponent onApplyFilters={(filters)=>{console.log("filters: ",filters)}}  onSearch={(text)=>{console.log("searching...",text)}}/>
+  <View style={{height:20}}/>
+
 
     <CurrentDate />
     <TaskCards tasks={todayTasks} />
@@ -73,6 +82,12 @@ export default TaskPage
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  caution:{
+    flexDirection:'row',
+    alignItems:'center',
+    gap:5,
+    paddingLeft:10
   },
   loadingAnimation: {
     flex: 1,
@@ -94,7 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     fontSize: 16,
-    elevation: 5,
+    // elevation: 5,
   },
   filterButton: {
     marginLeft: 10,
@@ -169,8 +184,11 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
                 <View style={stylesTaskCards.logoContainer}>
                   <View style={stylesTaskCards.logoBackground}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Text>{task.status}</Text>
+                      <ThemedText>{task.status}</ThemedText>
                       {task.status == 'Completed' && <MaterialIcons name='check' color={'green'} size={20} />}
+                      {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
+                      {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
+
                     </View>
                   </View>
                 </View>
@@ -219,13 +237,13 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   {/* <View style={{flexDirection:'row',gap:5, alignItems:'center'}}>
         <AntDesign name='calendar' color={'black'}/>
-        <Text>{task.datetime.toLocaleDateString()}</Text>
+        <ThemedText>{task.datetime.toLocaleDateString()}</ThemedText>
         </View> */}
 
 
                   <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
                     <MaterialIcons name='access-time' color={'black'} />
-                    <Text>{task.datetime.toLocaleTimeString()}</Text>
+                    <ThemedText>{task.datetime.toLocaleTimeString()}</ThemedText>
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -252,9 +270,9 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
         <TouchableOpacity onPress={() => router.navigate('/(tabs)/tasks')}
           style={{
             flexDirection: 'row', justifyContent: 'flex-end',
-            alignItems: 'center', gap: 5, marginTop: -30, marginBottom: 10,
+            alignItems: 'center', gap: 5, marginTop: -40, marginBottom: 10,
           }} >
-          <ThemedText style={{ padding: 7, backgroundColor: '#f5f5f5', borderRadius: 20 }}>See All
+          <ThemedText style={{ padding: 7,  borderRadius: 20 }}>See All
             <AntDesign name='right' color={colorscheme == 'light' ? 'black' : 'white'} />
           </ThemedText>
         </TouchableOpacity>
@@ -267,7 +285,7 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
             { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
             <View style={stylesTaskCards.logoContainer}>
               <View style={stylesTaskCards.logoBackground}>
-                <Text>No Tasks Today</Text>
+                <ThemedText>No Tasks Today</ThemedText>
               </View>
             </View>
 
@@ -339,7 +357,7 @@ const stylesTaskCards = StyleSheet.create({
     left: 10,
   },
   logoBackground: {
-    backgroundColor: '#f0f0f0',
+    // backgroundColor: '#f0f0f0',
     borderRadius: 25,
     padding: 5,
   },
@@ -396,6 +414,8 @@ const AllTasks: FunctionComponent<AllTasksProps> = ({
   title,
   taskCount
 }) => {
+  const colorscheme = useColorScheme()
+  const iconColor = colorscheme == 'light' ? 'black':'white'
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -409,43 +429,42 @@ const AllTasks: FunctionComponent<AllTasksProps> = ({
 
 
   return (
-    <View style={stylesAllTasks.allTasksContainer}>
+    <ThemedView style={stylesAllTasks.allTasksContainer}>
       <View style={stylesCurrentDate.dateContainer}>
-        <Text style={stylesCurrentDate.todayText}>{title}</Text>
+        <ThemedText style={stylesCurrentDate.todayText}>{title}</ThemedText>
         {title == 'Tomorrow' &&
           <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <TouchableOpacity>
-              <Ionicons name='calendar-number-outline' size={24} color="black" />
+              <Ionicons name='calendar-number-outline' size={24} color={iconColor} />
             </TouchableOpacity>
-            <Text>{tomorrow.toLocaleDateString()}</Text>
+            <ThemedText>{tomorrow.toLocaleDateString()}</ThemedText>
           </View>}
         {title == 'This Week' &&
           <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <TouchableOpacity>
-              <Ionicons name='calendar-number-outline' size={24} color="black" />
+              <Ionicons name='calendar-number-outline' size={24} color={iconColor} />
             </TouchableOpacity>
-            <Text>{`(${firstDayOfWeek.toLocaleDateString()} - ${lastDayOfWeek.toLocaleDateString()})`}</Text>
+            <ThemedText>{`(${firstDayOfWeek.toLocaleDateString()} - ${lastDayOfWeek.toLocaleDateString()})`}</ThemedText>
           </View>}
         {title == 'This Month' &&
           <View style={{ justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <TouchableOpacity>
-              <Ionicons name='calendar-number-outline' size={24} color="black" />
+              <Ionicons name='calendar-number-outline' size={24} color={iconColor} />
             </TouchableOpacity>
-            <Text>{`(${firstDayOfMonth.toLocaleDateString()} - ${lastDayOfMonth.toLocaleDateString()})`}</Text>
+            <ThemedText>{`(${firstDayOfMonth.toLocaleDateString()} - ${lastDayOfMonth.toLocaleDateString()})`}</ThemedText>
           </View>}
       </View>
       <View style={stylesAllTasks.taskRow}>
-        <Text style={{ marginLeft: 17 }}>{taskCount} Tasks</Text>
-        <Ionicons name="arrow-forward-outline" size={24} color="black" />
+        <ThemedText style={{ marginLeft: 17 }}>{taskCount} Tasks</ThemedText>
+        <Ionicons name="arrow-forward-outline" size={24} color={iconColor} />
       </View>
-    </View>
+    </ThemedView>
   );
 };
 
 const stylesAllTasks = StyleSheet.create({
   allTasksContainer: {
     borderRadius: 20,
-    backgroundColor: '#fff',
     padding: 16,
     marginHorizontal: 10,
     elevation: 3,
@@ -529,10 +548,10 @@ const TaskCarousel = () => {
     >
       {categories.map((item, index) => (
         <View key={index} style={stylesTaskComponent.card}>
-          <Text style={stylesTaskComponent.title}>{item.category}</Text>
-          <Text style={stylesTaskComponent.analytics}>
+          <ThemedText style={stylesTaskComponent.title}>{item.category}</ThemedText>
+          <ThemedText style={stylesTaskComponent.analytics}>
             {item.completed}/{item.tasks} Tasks Completed
-          </Text>
+          </ThemedText>
         </View>
       ))}
     </ScrollView>
@@ -564,9 +583,12 @@ const stylesTaskComponent = StyleSheet.create({
 
 
 
+interface AnimatedCountProps{
+  finalCount:number,
+  textcolor:string
+}
 
-
-const AnimatedCount = ({ finalCount }: any) => {
+const AnimatedCount:FunctionComponent<AnimatedCountProps> = ({ finalCount, textcolor }) => {
   const [displayCount, setDisplayCount] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -588,9 +610,12 @@ const AnimatedCount = ({ finalCount }: any) => {
   }, [finalCount]);
 
   return (
-    <Text style={[stylesNew.title, stylesNew.count]}>
+    <View style={{flexDirection:'row',alignItems:'baseline',justifyContent:'center',gap:5,marginTop:7}}>
+    <Text style={[stylesNew.count,{color:textcolor}]}>
       {displayCount}
     </Text>
+    <Text style={{color:textcolor}}>Tasks</Text>
+    </View>
   );
 };
 
@@ -601,6 +626,12 @@ interface TaskCarouselProps {
 const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
   tasks
 }) => {
+  const colorscheme = useColorScheme()
+  const borderOnDarkMode=(borderColor:string):StyleProp<ViewStyle>=> colorscheme=='dark' ?{
+    borderStyle:'solid',
+    borderWidth:0.7,
+    borderColor:borderColor
+  }:{}
   const { urgent, moderate, normal } = tasks.reduce(
     (prev, curr) => {
       if (curr.priority === 'Urgent') {
@@ -619,40 +650,44 @@ const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
     {
       id: 1,
       category: 'Urgent',
-      tasks: [
-        { count: urgent },
-      ],
-      color: '#FFCDD2',
+      count:urgent,
+      color:colorscheme=='light'?'#FCECEF':'transparent', //#FCECEF   //text: #CF3F6C  //old: #FFCDD2
+      textcolor:'#CF3F6C'
     },
     {
       id: 2,
       category: 'Moderate',
-      tasks: [
-        { count: moderate },
-      ],
-      color: '#D1C4E9',
+      count:moderate,
+      color: colorscheme=='light'?'#F1ECFA':'transparent', //#F1ECFA  //text: #703FC7   //old: #D1C4E9
+      textcolor:'#703FC7'
     },
     {
       id: 3,
       category: 'Normal',
-      tasks: [
-        { count: normal },
-      ],
-      color: '#F0F4C3',
+      count: normal,
+      color:colorscheme=='light'? '#E6F7F7':'transparent', //#E6F7F7  //text: #22A79F  //old: #F0F4C3
+      textcolor:'#22A79F'
     },
   ];
+
   const renderItem = ({ item }: any) => (
     <TouchableOpacity activeOpacity={0.8}>
-      <View style={[stylesNew.card, { backgroundColor: item.color }]}>
-        <Text style={stylesNew.title}>{item.category}</Text>
+      <View style={[stylesNew.card, borderOnDarkMode(item.textcolor), { backgroundColor: item.color }]}>
+        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-evenly',gap:5}}>
+        {item.category=='Urgent' &&<Feather name='alert-circle' size={15} color={item.textcolor}/>}
+        {item.category=='Moderate' &&<Feather name='clock' size={15} color={item.textcolor}/>}
+        {item.category=='Normal' &&<MaterialCommunityIcons name='dots-horizontal' size={15} color={item.textcolor}/>}
+        <Text style={[stylesNew.title, {color:item.textcolor}]}>{item.category}</Text>
+        </View>
 
-        {item.tasks.map((task: any, index: any) => (
-          <View key={index} style={stylesNew.taskContainer}>
-            <AnimatedCount finalCount={task.count} />
+        <AnimatedCount finalCount={item.count} textcolor={item.textcolor}/>
+
+        {/* <View style={stylesNew.taskContainer}>
+            <AnimatedCount finalCount={item.count} textcolor={item.textcolor}/>
             <Ionicons name='arrow-forward-outline'
               style={{ margin: 'auto', }} size={15} color="black" />
-          </View>
-        ))}
+          </View> */}
+
       </View>
     </TouchableOpacity>
   );
@@ -671,25 +706,25 @@ const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
 
 const stylesNew = StyleSheet.create({
   card: {
-    width: screenWidth / 3.5,
-    height: 150,
+    // width: screenWidth / 3.5,
+    // minWidth:screenWidth/3.7,
+    height: 110,
     marginHorizontal: 10,
     borderRadius: 15,
     padding: 15,
   },
   title: {
-    fontSize: 14,
-    // fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: 'bold',
     textAlign: 'center',
-    color: 'black',
-    marginBottom: 10,
+    // marginBottom: 10,
   },
   count: {
-    fontSize: 35,
-    fontWeight: '200'
+    fontSize: 36,
+    fontWeight: '600',
   },
   taskContainer: {
-    marginTop: 10,
+    // marginTop: 10,
   },
   taskTitle: {
     fontSize: 16,

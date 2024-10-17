@@ -1,12 +1,12 @@
 
-import { ThemedView } from "@/components/ThemedView"
+// import { View } from "@/components/View"
 import { SubTask, Task } from "@/utils/task"
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons"
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { router, useLocalSearchParams, useNavigation } from "expo-router"
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react"
 import { Controller, useForm, UseFormSetValue } from "react-hook-form"
-import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableHighlight, TouchableOpacity, useColorScheme, View } from "react-native"
+import { Platform, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableHighlight, TouchableOpacity, useColorScheme, View, ViewStyle } from "react-native"
 import { Calendar, CalendarList, CalendarUtils } from 'react-native-calendars'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import uuid from 'react-native-uuid';
@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useUser } from "./userContext"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import Lottie from 'lottie-react-native';
+import { ThemedText } from "./ThemedText"
 
 const lightColors = ['#F0F4C3', '#FFCDD2', '#D1C4E9'];
 
@@ -88,68 +89,74 @@ const TaskAddEditForm: FunctionComponent = () => {
           />
         }
            
-
+    const inputStylesOnDarkTheme:StyleProp<TextStyle> = colorscheme == 'light' ? 
+    { color: 'black', backgroundColor: 'white' } : 
+    { color: 'white', backgroundColor: 'transparent',
+        elevation:0,borderStyle:'solid',borderWidth:0.7,borderColor:'grey' }
     return <>
         <LinearGradient
             colors={linearGradientUnified}
             style={{ flex: 1 }}>
             <ScrollView style={{ flex: 1, padding: 10, marginTop: !id.taskid ? 50 : 0 }}>
-                {!id.taskid && <Text style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}>Add Task/Meeting</Text>}
-                <Text>Title</Text>
+                {!id.taskid && <ThemedText style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}>
+                    Add Task/Meeting</ThemedText>}
+                <ThemedText>Title</ThemedText>
 
                 <Controller
                     control={control}
                     name="title"
                     rules={{ required: "Title is required" }}
                     render={({ field: { onChange, value } }) => (
-                        <ThemedView style={styles.searchContainer}>
+                        <View style={styles.searchContainer}>
                             <TextInput
                                 style={[styles.searchInput,
-                                colorscheme == 'light' ? { color: 'black', backgroundColor: 'white' } : { color: 'white', backgroundColor: 'black' }]}
+                                    inputStylesOnDarkTheme]}
+                                    placeholderTextColor={colorscheme=='light'?'black':'white'}
                                 placeholder="Enter task title"
                                 onChangeText={onChange}
                                 value={value}
                             />
-                        </ThemedView>
+                        </View>
                     )}
                 />
 
-                {errors.title && <Text style={{ color: 'red' }}>{errors.title.message}</Text>}
+                {errors.title && <ThemedText style={{ color: 'red' }}>{errors.title.message}</ThemedText>}
 
 
-                <Text>Description</Text>
+                <ThemedText>Description</ThemedText>
                 <Controller
                     control={control}
                     name="description"
                     rules={{ required: "Description is required" }}
                     render={({ field: { onChange, value } }) => (
-                        <ThemedView style={styles.searchContainer}>
+                        <View style={styles.searchContainer}>
                             <TextInput
                                 style={[styles.searchInput,
-                                colorscheme == 'light' ? { color: 'black', backgroundColor: 'white' } : { color: 'white', backgroundColor: 'black' }]}
+                                    inputStylesOnDarkTheme]}
+                                    placeholderTextColor={colorscheme=='light'?'black':'white'}
                                 placeholder="Enter task description"
                                 onChangeText={onChange}
                                 value={value}
                                 multiline
                             />
-                        </ThemedView>
+                        </View>
                     )}
                 />
-                {errors.description && <Text style={{ color: 'red' }}>{errors.description.message}</Text>}
+                {errors.description && <ThemedText style={{ color: 'red' }}>{errors.description.message}</ThemedText>}
 
-                <Text>Kind</Text>
+                <ThemedText>Kind</ThemedText>
                 <Controller
                     control={control}
                     name="kind"
                     render={({ field: { onChange, value } }) => (
-                        <ThemedView style={styles.categoryStyle}>
+                        <View style={styles.categoryStyle}>
 
                             <TouchableHighlight onPress={() => onChange('Task')} activeOpacity={0.7}
                                 style={{ borderRadius: 10 }}>
                                 <View style={[styles.kind, value == 'Task' && styles.kindSelected,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'black' }]} >
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
                                     <MaterialIcons name="task" size={18} color={'green'} />
-                                    <Text style={{ margin: 'auto' }}>Task</Text>
+                                    <ThemedText style={{ margin: 'auto' }}>Task</ThemedText>
                                 </View>
                             </TouchableHighlight>
 
@@ -157,31 +164,33 @@ const TaskAddEditForm: FunctionComponent = () => {
                             <TouchableHighlight onPress={() => onChange('Meeting')} activeOpacity={0.7}
                                 style={{ borderRadius: 10 }}>
                                 <View style={[styles.kind, value == 'Meeting' && styles.kindSelected,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'black' }]} >
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
                                     <MaterialIcons name="meeting-room" size={18} color={'green'} />
-                                    <Text style={{ margin: 'auto' }}>Meeting</Text>
+                                    <ThemedText style={{ margin: 'auto' }}>Meeting</ThemedText>
                                 </View>
                             </TouchableHighlight>
-                        </ThemedView>
+                        </View>
                     )}
                 />
 
 
-                <Text>Priority Level</Text>
+                <ThemedText>Priority Level</ThemedText>
 
                 <Controller
                     control={control}
                     name="priority"
                     render={({ field: { onChange, value } }) => (
-                        <ThemedView style={styles.categoryStyle}>
+                        <View style={styles.categoryStyle}>
                             <TouchableHighlight
                                 activeOpacity={0.7}
                                 style={{ borderRadius: 10 }}
                                 onPress={() => onChange('Urgent')}>
                                 <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[1] } : { width: 'auto', backgroundColor: 'black' }]} >
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[1] } 
+                                : { width: 'auto', backgroundColor: lightColors[1] }]} >
                                     <Text style={{ margin: 'auto' }}>Urgent</Text>
-                                    {value == 'Urgent' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
+                                    {value == 'Urgent' && <FontAwesome6 name="check" 
+                                    style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green'  }} />}
                                 </View>
                             </TouchableHighlight>
 
@@ -190,9 +199,10 @@ const TaskAddEditForm: FunctionComponent = () => {
                                 style={{ borderRadius: 10 }}
                                 onPress={() => onChange('Moderate')}>
                                 <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[2] } : { width: 'auto', backgroundColor: 'black' }]} >
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[2] } 
+                                : { width: 'auto', backgroundColor: lightColors[2] }]} >
                                     <Text style={{ margin: 'auto' }}>Moderate</Text>
-                                    {value == 'Moderate' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
+                                    {value == 'Moderate' && <FontAwesome6 name="check"  style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green' }} />}
                                 </View>
                             </TouchableHighlight>
 
@@ -201,28 +211,28 @@ const TaskAddEditForm: FunctionComponent = () => {
                                 style={{ borderRadius: 10 }}
                                 onPress={() => onChange('Normal')}>
                                 <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[0] } : { width: 'auto', backgroundColor: 'black' }]} >
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[0] } : { width: 'auto', backgroundColor: lightColors[0] }]} >
                                     <Text style={{ margin: 'auto' }}>Normal</Text>
-                                    {value == 'Normal' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
+                                    {value == 'Normal' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green'  }} />}
                                 </View>
                             </TouchableHighlight>
-                        </ThemedView>
+                        </View>
                     )}
                 />
                 {gotTask && <>
-                    <Text>Change Status</Text>
+                    <ThemedText>Change Status</ThemedText>
                     <Controller
                         control={control}
                         name='status'
                         render={({ field: { onChange, value } }) => (
-                            <ThemedView style={styles.categoryStyle}>
+                            <View style={styles.categoryStyle}>
                                 <TouchableHighlight
                                     activeOpacity={0.7}
                                     style={{ borderRadius: 10 }}
                                     onPress={() => onChange('Completed')}>
                                     <View style={[styles.categoryLabel,
                                     colorscheme == 'light' ? { width: 'auto', backgroundColor: 'lightgreen' } : { width: 'auto', backgroundColor: 'black' }]} >
-                                        <Text style={{ margin: 'auto' }}>Completed</Text>
+                                        <ThemedText style={{ margin: 'auto' }}>Completed</ThemedText>
                                         {value == 'Completed' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
                                     </View>
                                 </TouchableHighlight>
@@ -233,22 +243,22 @@ const TaskAddEditForm: FunctionComponent = () => {
                                     onPress={() => onChange('Pending')}>
                                     <View style={[styles.categoryLabel,
                                     colorscheme == 'light' ? { width: 'auto', backgroundColor: '#FFD580' } : { width: 'auto', backgroundColor: 'black' }]} >
-                                        <Text style={{ margin: 'auto' }}>Pending</Text>
+                                        <ThemedText style={{ margin: 'auto' }}>Pending</ThemedText>
                                         {value == 'Pending' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
                                     </View>
                                 </TouchableHighlight>
-                            </ThemedView>
+                            </View>
                         )}
                     />
                 </>}
 
-                <Text style={styles.header}>Set Time & Date</Text>
+                <ThemedText style={styles.header}>Set Time & Date</ThemedText>
                 <View style={styles.inputRow}>
                     <TouchableOpacity style={styles.pickerButton} onPress={() => setShowClock(true)}>
                         <MaterialIcons name="access-time" size={24} color="#fff" />
-                        <Text style={styles.pickerButtonText}>Set Time</Text>
+                        <ThemedText style={styles.pickerButtonText}>Set Time</ThemedText>
                     </TouchableOpacity>
-                    <Text style={styles.selectedText}>Selected Time: {datetime.toLocaleTimeString()}</Text>
+                    <ThemedText style={styles.selectedText}>Selected Time: {datetime.toLocaleTimeString()}</ThemedText>
                 </View>
 
                 <HolidayCalendar setValue={setValue} datetime={datetime} isEdit={id.taskid != undefined} />
@@ -318,7 +328,7 @@ const AddSubtasks: FunctionComponent<AddSubTasksProps> = ({
     return (
         <ScrollView contentContainerStyle={stylesSubTasks.container}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                <Text style={stylesSubTasks.header}>Add Checklist 's</Text>
+                <ThemedText style={stylesSubTasks.header}>Add Checklist 's</ThemedText>
                 <TouchableOpacity onPress={handleAddSubtask}>
                     <Icon name="add-circle" size={40} color="#007AFF" />
                 </TouchableOpacity>
@@ -376,16 +386,11 @@ const HolidayCalendar: React.FC<HolidayCalendarProps> = ({
     setValue,
     isEdit
 }) => {
-    console.log("isEdit", isEdit)
     const INITIAL_DATE = CalendarUtils.getCalendarDateString((isEdit && datetime) || new Date())
     const navigation = useNavigation()
-    const holidays1: MarkedDatesType = {
-        '2024-12-25': { marked: true, dotColor: 'red', customStyles: { container: { backgroundColor: '#FFD700' } }, holiday: 'Christmas' },
-        '2024-01-01': { marked: true, dotColor: 'blue', customStyles: { container: { backgroundColor: '#87CEEB' } }, holiday: 'New Year' },
-        '2024-07-04': { marked: true, dotColor: 'green', customStyles: { container: { backgroundColor: '#32CD32' } }, holiday: 'Independence Day' },
-    };
 
     const [selected, setSelected] = useState<string>(INITIAL_DATE);
+    const colorscheme = useColorScheme()
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -463,11 +468,11 @@ const HolidayCalendar: React.FC<HolidayCalendarProps> = ({
         return (
             <View style={stylesHolidayCalendar.headerContainer}>
                 {holidayInfo ? (
-                    <Text style={stylesHolidayCalendar.holidayText}>
+                    <ThemedText style={stylesHolidayCalendar.holidayText}>
                         {`Holiday: ${holidayInfo.holiday} on ${selected}`}
-                    </Text>
+                    </ThemedText>
                 ) : (
-                    <Text style={stylesHolidayCalendar.noHolidayText}>{`Selected Date: ${selected}`}</Text>
+                    <ThemedText style={stylesHolidayCalendar.noHolidayText}>{`Selected Date: ${selected}`}</ThemedText>
                 )}
             </View>
         );
@@ -592,7 +597,6 @@ const stylesSubTasks = StyleSheet.create({
     header: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
         textAlign: 'center',
     },
     subtaskContainer: {
@@ -713,6 +717,5 @@ const styles = StyleSheet.create({
     },
     selectedText: {
         fontSize: 16,
-        color: '#333',
     },
 })

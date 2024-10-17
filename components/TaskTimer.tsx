@@ -1,6 +1,7 @@
 import { Task } from '@/utils/task';
 import React, { FunctionComponent, useEffect, useState } from 'react';
 import { Text } from 'react-native';
+import { ThemedText } from './ThemedText';
 
 const TaskTimer: FunctionComponent<{ task: Task }> = ({ task }) => {
     const [timeLeft, setTimeLeft] = useState<string>('00h 00m 00s');
@@ -48,7 +49,7 @@ const TaskTimer: FunctionComponent<{ task: Task }> = ({ task }) => {
         return () => clearInterval(interval);
     }, [task.datetime]);
 
-    return <Text>{timeLeft}</Text>
+    return <ThemedText>{timeLeft}</ThemedText>
 };
 
 export default TaskTimer
