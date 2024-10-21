@@ -1,13 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import moment from 'moment';
 import React, { FunctionComponent, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated as AnimatedNative, FlatList, Platform, StyleProp, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
+import { Alert, Animated as AnimatedNative, FlatList, Platform, StyleProp, StyleSheet, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 const TaskScreen = () => {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
-  const {tasks:contextTasks,setTasks:setcontexttasks} =useUser()
-  const [tasks,setTasks]=useState<Task[]>(contextTasks)
+  const { tasks: contextTasks, setTasks: setcontexttasks } = useUser()
+  const [tasks, setTasks] = useState<Task[]>(contextTasks)
   const [isMonthListVisible, setMonthListVisible] = useState(false);
   const [isYearListVisible, setYearListVisible] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(moment().format('MMMM'));
@@ -15,9 +15,22 @@ const TaskScreen = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const colorscheme = useColorScheme()
 
-  useEffect(()=>{
+  type dateRange = {
+    startDate: string,
+    endDate: string
+  }
+
+  const [isBunchOfTasks, setIsBunchOfTasks] = useState<{
+    isTrue: boolean,
+    type: 'This Week' | 'This Month' | 'All Tasks' | dateRange | null
+  }>({
+    isTrue: false,
+    type: null
+  })
+
+  useEffect(() => {
     setTasks(contextTasks)
-  },[contextTasks])
+  }, [contextTasks, setcontexttasks])
 
   const months = moment.months();
   const years = Array.from({ length: 15 }, (_, index) => (moment().year() + index).toString());
@@ -57,11 +70,11 @@ const TaskScreen = () => {
 
     switch (selectedTab) {
       case 0:
-        return dateFilteredTasks;    
+        return dateFilteredTasks;
       case 1:
-        return dateFilteredTasks.filter(task => task.status === 'Pending');   
+        return dateFilteredTasks.filter(task => task.status === 'Pending');
       case 2:
-        return dateFilteredTasks.filter(task => task.status === 'Completed');  
+        return dateFilteredTasks.filter(task => task.status === 'Completed');
       case 3:
         return dateFilteredTasks.filter(task => task.status === 'In-Progress');
       default:
@@ -70,48 +83,90 @@ const TaskScreen = () => {
   };
 
   const handleSearch = (text: string) => {
-    const payload= filterTasks().filter(item => {
-      return searchItem(item.title, text) || searchItem(item.kind ,text) || searchItem(item.priority,text) || searchItem(item.status,text)
-     })
-     setTasks(payload)
- }
+    const payload = filterTasks().filter(item => {
+      return searchItem(item.title, text) || searchItem(item.kind, text) || searchItem(item.priority, text) || searchItem(item.status, text)
+    })
+    setTasks(payload)
+  }
 
+  const handleFilters = (filters: Filters) => {
+    setIsBunchOfTasks({
+      isTrue: false,
+      type: null
+    })
+    const { timePeriod, startDate, endDate } = filters
 
- const handleFilters = (filters:Filters) => {
-  
- }
+    if (timePeriod && timePeriod == 'Tomorrow') {
+      setSelectedDate(moment().add(1, 'days').format('YYYY-MM-DD'))
+    } else if (timePeriod && timePeriod == 'Yesterday') {
+      setSelectedDate(moment().subtract(1, 'days').format('YYYY-MM-DD'))
+    } else if (timePeriod && timePeriod == 'Today') {
+      setSelectedDate(moment().format('YYYY-MM-DD'))
+    } else if (timePeriod && (timePeriod == 'This Week' || timePeriod == 'This Month' || timePeriod == 'All Tasks')) {
+      //need to set list of tasks.and remove side scroll calendar
+      setIsBunchOfTasks({
+        isTrue: true,
+        type: timePeriod
+      })
+    } else if (timePeriod && timePeriod == 'Calendar Range' && startDate && endDate) {
+      setIsBunchOfTasks({
+        isTrue: true,
+        type: {
+          endDate: endDate.toLocaleDateString(),
+          startDate: startDate.toLocaleDateString()
+        }
+      })
+    }
+
+    const filtered = filterTasksCategory(contextTasks, filters)
+    setTasks(filtered);
+  };
 
   const getDatesForSelectedMonth = useCallback((tasks: Task[]) => {
     const startOfMonth = moment(selectedDate).startOf('month');
     const endOfMonth = moment(selectedDate).endOf('month');
-  
+
     const dates = [];
     for (let date = startOfMonth; date.isBefore(endOfMonth) || date.isSame(endOfMonth); date.add(1, 'day')) {
-      const formattedDate = date.format('YYYY-MM-DD'); 
+      const formattedDate = date.format('YYYY-MM-DD');
       const isExist = tasks.some(task => {
-        return moment(task.datetime).format('YYYY-MM-DD') === formattedDate}); 
-  
+        return moment(task.datetime).format('YYYY-MM-DD') === formattedDate
+      });
+
       dates.push({ date: date.clone(), isExist });
     }
-  
-    return dates; 
+
+    return dates;
   }, [selectedDate]);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
   };
 
-  const iconColor = colorscheme=='light'?'black':'white'
+  const iconColor = colorscheme == 'light' ? 'black' : 'white'
 
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
 
-    const handleTaskDelete = async (id:string)=>{
-        setcontexttasks(items => {return items.filter(item=>item.taskId !== id)})
-        setTasks(items => items.filter(item=>item.taskId !== id))
-        await AsyncStorage.setItem('tasks',JSON.stringify(contextTasks))
+  const handleTaskDelete = async (id: string) => {
+    setcontexttasks(items => { return items.filter(item => item.taskId !== id) })
+    setTasks(items => items.filter(item => item.taskId !== id))
+    await AsyncStorage.setItem('tasks', JSON.stringify(contextTasks))
+  }
+
+  const dateLabel = () => {
+    const date = moment(selectedDate)
+    if (isDateToday(date)) {
+      return 'Today';
+    } else if (isDateYesterday(date)) {
+      return 'Yesterday';
+    } else if (isDateTomorrow(date)) {
+      return 'Tomorrow';
+    } else {
+      return date.format('DD-MM-YYYY');
     }
+  }
 
   return (
     <LinearGradient
@@ -121,7 +176,9 @@ const TaskScreen = () => {
 
       <View style={styles.header}>
         <View style={{ justifyContent: 'space-between', flexDirection: 'row' }}>
-          <ThemedText style={styles.dateText}>{moment(selectedDate).format('DD MMM Y')}</ThemedText>
+          {!isBunchOfTasks.isTrue && <ThemedText style={styles.dateText}>{dateLabel()}</ThemedText>}
+          {isBunchOfTasks.isTrue && (isBunchOfTasks.type == 'This Month' || isBunchOfTasks.type == 'This Week' || isBunchOfTasks.type == 'All Tasks') && <ThemedText style={styles.dateText}>{isBunchOfTasks.type}</ThemedText>}
+          {isBunchOfTasks.isTrue && (isBunchOfTasks.type != 'This Month' && isBunchOfTasks.type != 'This Week' && isBunchOfTasks.type != 'All Tasks') && <ThemedText style={[styles.dateText, { fontSize: 20 }]}>{`${isBunchOfTasks.type?.startDate} - ${isBunchOfTasks.type?.endDate}`}</ThemedText>}
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
@@ -142,7 +199,7 @@ const TaskScreen = () => {
       </View>
 
       {isMonthListVisible && (
-        <View style={styles.monthListContainer}>
+        <ThemedView style={styles.monthListContainer}>
           <FlatList
             data={months}
             keyExtractor={(item) => item}
@@ -152,11 +209,11 @@ const TaskScreen = () => {
               </TouchableOpacity>
             )}
           />
-        </View>
+        </ThemedView>
       )}
 
       {isYearListVisible && (
-        <View style={styles.yearListContainer}>
+        <ThemedView style={styles.yearListContainer}>
           <FlatList
             scrollEnabled={true}
             data={years}
@@ -167,17 +224,20 @@ const TaskScreen = () => {
               </TouchableOpacity>
             )}
           />
-        </View>
+        </ThemedView>
       )}
 
-      <FilterComponent onApplyFilters={(filters)=>{console.log("filters: ",filters)}}  onSearch={handleSearch}/>
+      <FilterComponent onApplyFilters={handleFilters} onSearch={handleSearch} />
 
-      <RenderCalender getDatesForSelectedMonth={()=>getDatesForSelectedMonth(tasks)}
-        handleDateChange={handleDateChange} selectedDate={selectedDate} tasks={tasks}/>
+      {!isBunchOfTasks.isTrue && <RenderCalender getDatesForSelectedMonth={() => getDatesForSelectedMonth(tasks)}
+        handleDateChange={handleDateChange} selectedDate={selectedDate} tasks={tasks} />}
 
-      <TaskTabs onChangeTab={(tab)=>{setSelectedTab(tab)}}/>
+      <TaskTabs onChangeTab={(tab) => { setSelectedTab(tab) }} />
 
-      <ListTasks tab={selectedTab} selectedDate={selectedDate} tasks={tasks} handleOnDelete={handleTaskDelete}/>
+      <ListTasks tab={selectedTab} selectedDate={selectedDate}
+        tasks={tasks}
+        isBunchOfTasks={isBunchOfTasks.isTrue}
+        handleOnDelete={handleTaskDelete} />
       {Platform.OS == 'android' && <View style={{ height: 60 }}></View>}
 
     </LinearGradient>
@@ -186,10 +246,10 @@ const TaskScreen = () => {
 
 
 interface RenderCalenderProps {
-  getDatesForSelectedMonth: () => {isExist:boolean,date:moment.Moment}[],
+  getDatesForSelectedMonth: () => { isExist: boolean, date: moment.Moment }[],
   handleDateChange: (date: string) => void,
   selectedDate: string,
-  tasks:Task[]
+  tasks: Task[]
 }
 
 const RenderCalender: FunctionComponent<RenderCalenderProps> = ({
@@ -203,20 +263,20 @@ const RenderCalender: FunctionComponent<RenderCalenderProps> = ({
   const dates = getDatesForSelectedMonth();
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  const todayIndex = dates.findIndex(date => date.date.isSame(moment(), 'day'));
+  const yesterdayIndex = dates.findIndex(date => date.date.isSame(moment().subtract(1, 'days'), 'day'));
 
   useEffect(() => {
-    if (isFirstLoad && todayIndex !== -1) {
+    if (isFirstLoad && (yesterdayIndex) !== -1) {
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({
-          x: todayIndex * 78,
+          x: (yesterdayIndex) * 78,
           animated: true,
         });
       }, 300);
 
       setIsFirstLoad(false);
     }
-  }, [isFirstLoad, todayIndex]);
+  }, [isFirstLoad, yesterdayIndex]);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -261,7 +321,7 @@ const RenderCalender: FunctionComponent<RenderCalenderProps> = ({
               {date.date.format('ddd')}
             </ThemedText>
             {selectedDate === date.date.format('YYYY-MM-DD') && <ThemedText style={{ margin: 'auto', fontSize: 30, color: 'white' }}>.</ThemedText>}
-            {(date.isExist && selectedDate!==date.date.format('YYYY-MM-DD')) && <ThemedText style={{ margin: 'auto', fontSize: 40, color:'orange' }}>.</ThemedText>}
+            {(date.isExist && selectedDate !== date.date.format('YYYY-MM-DD')) && <ThemedText style={{ margin: 'auto', fontSize: 40, color: 'red' }}>.</ThemedText>}
           </View>
         </TouchableOpacity>
       ))}
@@ -299,10 +359,11 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '500',
+    color: Colors.light.tint
   },
   monthListContainer: {
-    backgroundColor: '#f9f9f9',
+    // backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 8,
     elevation: 5,
@@ -316,7 +377,7 @@ const styles = StyleSheet.create({
     top: 100
   },
   yearListContainer: {
-    backgroundColor: '#f9f9f9',
+    // backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 8,
     elevation: 5,
@@ -390,47 +451,60 @@ const styles = StyleSheet.create({
 
 export default TaskScreen;
 
+import FilterComponent, { Filters } from '@/components/FilterTasks';
+import TaskTimer from '@/components/TaskTimer';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
-import { Task } from '@/utils/task';
+import { filterTasksCategory, isDateToday, isDateTomorrow, isDateYesterday, Task } from '@/utils/task';
 import { AntDesign, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
-import FilterComponent, { Filters } from '@/components/FilterTasks';
 
-interface ListTasksProps{
-  tab:number,
-  selectedDate:string    //YYY-MM-DD
-  tasks:Task[],
-  handleOnDelete:(id:string)=>void
+interface ListTasksProps {
+  tab: number,
+  selectedDate: string    //YYY-MM-DD
+  tasks: Task[],
+  handleOnDelete: (id: string) => void
+  isBunchOfTasks: boolean
 }
 
-const ListTasks:FunctionComponent<ListTasksProps> = ({
+const ListTasks: FunctionComponent<ListTasksProps> = ({
   tab,
   selectedDate,
   tasks,
-  handleOnDelete
+  handleOnDelete,
+  isBunchOfTasks
 }) => {
   const colorscheme = useColorScheme()
-  const iconColor = colorscheme=='light'?'black':'white'
+  const iconColor = colorscheme == 'light' ? 'black' : 'white'
+  const priorityColor = colorscheme == 'light' ? {
+    Urgent: '#FCECEF',
+    Moderate: '#F1ECFA',
+    Normal: '#E6F7F7'
+  } : {
+    Urgent: '#CF3F6C',
+    Moderate: '#703FC7',
+    Normal: '#22A79F'
+  }
 
   const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0]; 
+    return date.toISOString().split('T')[0];
   };
 
   const filterTasks = () => {
-    let dateFilteredTasks = tasks.filter(task => formatDate(task.datetime) === selectedDate);
+    let dateFilteredTasks = isBunchOfTasks ? tasks : tasks.filter(task => formatDate(task.datetime) === selectedDate);
 
     switch (tab) {
       case 0:
-        return dateFilteredTasks;    
+        return dateFilteredTasks;
       case 1:
-        return dateFilteredTasks.filter(task => task.status === 'Pending');   
+        return dateFilteredTasks.filter(task => task.status === 'Pending');
       case 2:
-        return dateFilteredTasks.filter(task => task.status === 'Completed');  
+        return dateFilteredTasks.filter(task => task.status === 'Completed');
       case 3:
         return dateFilteredTasks.filter(task => task.status === 'In-Progress');
       default:
@@ -438,32 +512,38 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
     }
   };
 
-    const cardBorderOnDark :StyleProp<ViewStyle> = colorscheme=='dark' ? {
-   borderWidth:0.5,
-    borderStyle:'solid',
-    borderColor:'grey',
-    }:{}
+  const cardBorderOnDark: StyleProp<ViewStyle> = colorscheme == 'dark' ? {
+    borderWidth: 0.5,
+    borderStyle: 'solid',
+    borderColor: 'grey',
+  } : {}
+
+  const filteredTasks = filterTasks()
 
   return <>
-    {filterTasks().length > 0 && <FlatList data={filterTasks()} renderItem={({ item: task, index }) => <>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
-        <View key={index} style={[stylesTaskCards.card,cardBorderOnDark, colorscheme=='light'?{backgroundColor:'white'}:{}]}>
+    {filteredTasks.length > 0 && <FlatList data={filteredTasks} renderItem={({ item: task, index }) => {
+      const totalsubtasks = task.subTasks?.length || 0
+      const completed = task.subTasks?.filter(check => check.isCompleted).length || 0
+      const progressPercentage = (completed / totalsubtasks) * 100
+
+      return (<TouchableOpacity activeOpacity={0.9} onPress={() => router.navigate(`/(tabs)/tasks/${task.taskId}`)}>
+        <View key={index} style={[stylesTaskCards.card, cardBorderOnDark, colorscheme == 'light' ? { backgroundColor: 'white' } : {}]}>
           <View style={stylesTaskCards.logoContainer}>
             <View style={stylesTaskCards.logoBackground}>
               {/* <Image source={task.logo} style={stylesTaskCards.logo} /> */}
-              <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-              <ThemedText >{task.status}</ThemedText>
-              {task.status=='Completed' && <MaterialIcons name='check' color={'green'} size={20}/>}
-              {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
-              {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ThemedText >{task.status}</ThemedText>
+                {task.status == 'Completed' && <MaterialIcons name='check' color={'green'} size={20} />}
+                {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
+                {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
               </View>
             </View>
           </View>
 
           <View style={[stylesTaskCards.labelContainer,
           task.priority == 'Moderate' ?
-            { backgroundColor: '#D1C4E9' } : task.priority == 'Urgent' ?
-              { backgroundColor: '#FFCDD2' } : { backgroundColor: '#F0F4C3' }]}>
+            { backgroundColor: priorityColor.Moderate } : task.priority == 'Urgent' ?
+              { backgroundColor: priorityColor.Urgent } : { backgroundColor: priorityColor.Normal }]}>
             <ThemedText style={stylesTaskCards.labelText}>{task.priority}</ThemedText>
           </View>
 
@@ -478,7 +558,7 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
               <TouchableOpacity onPress={() => Alert.alert("Confirm Delete?", "Do you want to delete it?", [
                 {
                   text: 'confirm',
-                  onPress:  () => {
+                  onPress: () => {
                     // const filtered = contextTasks.filter(it=>it.taskId!=task.taskId)
                     // await AsyncStorage.setItem('tasks',JSON.stringify(filtered))
                     // setTasks(r=>{return r.filter(it=>it.taskId!=task.taskId)})
@@ -487,11 +567,11 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
                 },
                 {
                   text: 'cancel',
-                  onPress:()=>{},
-          
+                  onPress: () => { },
+
                 }
-              ],{
-                cancelable:true
+              ], {
+                cancelable: true
               })}>
                 <AntDesign name="delete" size={15} color={'red'} style={{ padding: 5 }} />
               </TouchableOpacity>
@@ -501,7 +581,7 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
               <AntDesign name='calendar' color={iconColor} />
-              <ThemedText>{task.datetime.toLocaleDateString()}</ThemedText>
+              <ThemedText>{moment(task.datetime).format('ddd, DD-MM-YYYY')}</ThemedText>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
@@ -512,19 +592,28 @@ const ListTasks:FunctionComponent<ListTasksProps> = ({
 
           <View style={stylesTaskCards.progressContainer}>
             <View style={stylesTaskCards.progressBar}>
-              <View style={[stylesTaskCards.progress, { width: '45%' }]} />
+              <View style={[stylesTaskCards.progress,
+              { width: `${progressPercentage}%` }
+              ]} />
             </View>
-            <ThemedText>{`${task.subTasks?.length || 0} Checklists`}</ThemedText>
+            {task.subTasks && task.subTasks.length > 0 && (
+              <ThemedText>
+                {`${task.subTasks.filter(subTask => subTask.isCompleted).length}/${task.subTasks.length} Check's`}
+              </ThemedText>
+            )}
+            {task.subTasks && task.subTasks.length == 0 && (<ThemedText>No Check's</ThemedText>)}
+
           </View>
 
-
+          <TaskTimer task={task} />
 
         </View>
-      </TouchableOpacity>
-    </>} style={stylesTaskCards.taskScroll}>
+      </TouchableOpacity>)
+
+    }} style={stylesTaskCards.taskScroll}>
 
     </FlatList>}
-    {filterTasks().length == 0 &&
+    {filteredTasks.length == 0 &&
       <Lottie
         source={require('../../../assets/Animation/Animation-no_data.json')}
         autoPlay
@@ -575,7 +664,6 @@ const stylesTaskCards = StyleSheet.create({
   },
   labelText: {
     fontSize: 12,
-    color: '#333',
   },
   cardTitle: {
     fontSize: 20,
@@ -604,19 +692,19 @@ const stylesTaskCards = StyleSheet.create({
 });
 
 
-interface TaskTabsProps{
-  onChangeTab:(tab:number)=>void
+interface TaskTabsProps {
+  onChangeTab: (tab: number) => void
 }
 
-const TaskTabs:FunctionComponent<TaskTabsProps> = ({
+const TaskTabs: FunctionComponent<TaskTabsProps> = ({
   onChangeTab
 }) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const underlinePosition = useRef(new AnimatedNative.Value(0)).current;
 
-  useEffect(()=>{
+  useEffect(() => {
     onChangeTab(selectedTab)
-  },[selectedTab])
+  }, [selectedTab])
 
   const handleTabPress = (index: number) => {
     setSelectedTab(index);
@@ -629,7 +717,7 @@ const TaskTabs:FunctionComponent<TaskTabsProps> = ({
   };
 
   return (
-    <View style={{marginBottom:15}}>
+    <View style={{ marginBottom: 15 }}>
       <View style={stylesTab.tabsContainer}>
         <TouchableOpacity onPress={() => handleTabPress(0)} style={stylesTab.tab}>
           <ThemedText style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks</ThemedText>
@@ -672,11 +760,12 @@ const stylesTab = StyleSheet.create({
   },
   activeTabText: {
     fontWeight: 'bold',
+    color: Colors.light.tint
   },
   underline: {
     height: 3,
     width: 100,
-    backgroundColor: 'green',
+    backgroundColor: Colors.light.tint,
     position: 'absolute',
     bottom: 0,
   },

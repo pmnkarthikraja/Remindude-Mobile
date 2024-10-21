@@ -1,12 +1,12 @@
 
 // import { View } from "@/components/View"
-import { SubTask, Task } from "@/utils/task"
+import { SubTask, Task, TaskPriorityLevel } from "@/utils/task"
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons"
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { router, useLocalSearchParams, useNavigation } from "expo-router"
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react"
 import { Controller, useForm, UseFormSetValue } from "react-hook-form"
-import { Platform, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableHighlight, TouchableOpacity, useColorScheme, View, ViewStyle } from "react-native"
+import { Platform, ScrollView, StyleProp, StyleSheet, Switch, Text, TextInput, TextStyle, TouchableHighlight, TouchableOpacity, useColorScheme, View, ViewStyle } from "react-native"
 import { Calendar, CalendarList, CalendarUtils } from 'react-native-calendars'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import uuid from 'react-native-uuid';
@@ -15,6 +15,9 @@ import { useUser } from "./userContext"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import Lottie from 'lottie-react-native';
 import { ThemedText } from "./ThemedText"
+import { Colors } from "@/constants/Colors"
+import { XStack } from "tamagui"
+import Checklist from "./Checklist"
 
 const lightColors = ['#F0F4C3', '#FFCDD2', '#D1C4E9'];
 
@@ -36,7 +39,7 @@ const TaskAddEditForm: FunctionComponent = () => {
             status: 'In-Progress'
         }
     });
-    const [isLoading,setIsLoading]=useState(false)
+    const [isLoading, setIsLoading] = useState(false)
 
     const { datetime, subTasks } = watch()
 
@@ -51,14 +54,14 @@ const TaskAddEditForm: FunctionComponent = () => {
                 }
             })
             setTasks(alteredTasks)
-            await AsyncStorage.setItem('tasks',JSON.stringify(alteredTasks))
+            await AsyncStorage.setItem('tasks', JSON.stringify(alteredTasks))
             setIsLoading(false)
             router.back()
             reset()
         } else {
             const newData = { ...data, taskId: uuid.v4().toString() }
             setTasks(e => [...e, newData])
-            await AsyncStorage.setItem('tasks',JSON.stringify([...tasks,newData]))
+            await AsyncStorage.setItem('tasks', JSON.stringify([...tasks, newData]))
             setIsLoading(false)
             router.back()
             reset()
@@ -79,301 +82,263 @@ const TaskAddEditForm: FunctionComponent = () => {
         colorscheme == 'light' ? '#a1c4fd' : '#252C39',
         colorscheme == 'light' ? 'white' : 'transparent']
 
-         
-        if (isLoading){
-            <Lottie
+
+    if (isLoading) {
+        <Lottie
             source={require('../assets/Animation/Animation -loading1.json')}
             autoPlay
             loop
             style={styles.loadingAnimation}
-          />
+        />
+    }
+
+    const inputStylesOnDarkTheme: StyleProp<TextStyle> = colorscheme == 'light' ?
+        { color: 'black', backgroundColor: 'white' } :
+        {
+            color: 'white', backgroundColor: 'transparent',
+            elevation: 0, borderStyle: 'solid', borderWidth: 0.7, borderColor: 'grey'
         }
-           
-    const inputStylesOnDarkTheme:StyleProp<TextStyle> = colorscheme == 'light' ? 
-    { color: 'black', backgroundColor: 'white' } : 
-    { color: 'white', backgroundColor: 'transparent',
-        elevation:0,borderStyle:'solid',borderWidth:0.7,borderColor:'grey' }
-    return <>
-        <LinearGradient
-            colors={linearGradientUnified}
-            style={{ flex: 1 }}>
-            <ScrollView style={{ flex: 1, padding: 10, marginTop: !id.taskid ? 50 : 0 }}>
-                {!id.taskid && <ThemedText style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}>
-                    Add Task/Meeting</ThemedText>}
-                <ThemedText>Title</ThemedText>
 
-                <Controller
-                    control={control}
-                    name="title"
-                    rules={{ required: "Title is required" }}
-                    render={({ field: { onChange, value } }) => (
-                        <View style={styles.searchContainer}>
-                            <TextInput
-                                style={[styles.searchInput,
-                                    inputStylesOnDarkTheme]}
-                                    placeholderTextColor={colorscheme=='light'?'black':'white'}
-                                placeholder="Enter task title"
-                                onChangeText={onChange}
-                                value={value}
-                            />
-                        </View>
-                    )}
-                />
+    const priorityColor = colorscheme == 'light' ? {
+        Urgent: '#FCECEF',
+        Moderate: '#F1ECFA',
+        Normal: '#E6F7F7'
+    } : {
+        Urgent: '#CF3F6C',
+        Moderate: '#703FC7',
+        Normal: '#22A79F'
+    }
 
-                {errors.title && <ThemedText style={{ color: 'red' }}>{errors.title.message}</ThemedText>}
+    const priorityBorderColor = (priority: TaskPriorityLevel): StyleProp<ViewStyle> => {
+        return colorscheme == 'light' ? {
+            borderStyle: 'solid',
+            borderWidth: 2,
+            borderColor: priority == 'Urgent' ? '#CF3F6C' : priority == 'Moderate' ? '#703FC7' : '#22A79F',
+        } : {
+            borderStyle: 'solid',
+            borderWidth: 1.5,
+            borderColor: 'yellow',
 
+        }
+    }
 
-                <ThemedText>Description</ThemedText>
-                <Controller
-                    control={control}
-                    name="description"
-                    rules={{ required: "Description is required" }}
-                    render={({ field: { onChange, value } }) => (
-                        <View style={styles.searchContainer}>
-                            <TextInput
-                                style={[styles.searchInput,
-                                    inputStylesOnDarkTheme]}
-                                    placeholderTextColor={colorscheme=='light'?'black':'white'}
-                                placeholder="Enter task description"
-                                onChangeText={onChange}
-                                value={value}
-                                multiline
-                            />
-                        </View>
-                    )}
-                />
-                {errors.description && <ThemedText style={{ color: 'red' }}>{errors.description.message}</ThemedText>}
+    const CheckMark = (): JSX.Element => (<FontAwesome6 name="check"
+        style={{ position: 'absolute', right: 0, color: colorscheme == 'light' ? 'black' : 'white' }} />)
 
-                <ThemedText>Kind</ThemedText>
-                <Controller
-                    control={control}
-                    name="kind"
-                    render={({ field: { onChange, value } }) => (
-                        <View style={styles.categoryStyle}>
+    return <LinearGradient
+        colors={linearGradientUnified}
+        style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1, padding: 10, marginTop: !id.taskid ? 50 : 0 }}>
+            {!id.taskid && <ThemedText style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}>
+                Add Task/Meeting</ThemedText>}
+            <ThemedText style={styles.title}>Title</ThemedText>
 
-                            <TouchableHighlight onPress={() => onChange('Task')} activeOpacity={0.7}
-                                style={{ borderRadius: 10 }}>
-                                <View style={[styles.kind, value == 'Task' && styles.kindSelected,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
-                                    <MaterialIcons name="task" size={18} color={'green'} />
-                                    <ThemedText style={{ margin: 'auto' }}>Task</ThemedText>
-                                </View>
-                            </TouchableHighlight>
-
-
-                            <TouchableHighlight onPress={() => onChange('Meeting')} activeOpacity={0.7}
-                                style={{ borderRadius: 10 }}>
-                                <View style={[styles.kind, value == 'Meeting' && styles.kindSelected,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
-                                    <MaterialIcons name="meeting-room" size={18} color={'green'} />
-                                    <ThemedText style={{ margin: 'auto' }}>Meeting</ThemedText>
-                                </View>
-                            </TouchableHighlight>
-                        </View>
-                    )}
-                />
-
-
-                <ThemedText>Priority Level</ThemedText>
-
-                <Controller
-                    control={control}
-                    name="priority"
-                    render={({ field: { onChange, value } }) => (
-                        <View style={styles.categoryStyle}>
-                            <TouchableHighlight
-                                activeOpacity={0.7}
-                                style={{ borderRadius: 10 }}
-                                onPress={() => onChange('Urgent')}>
-                                <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[1] } 
-                                : { width: 'auto', backgroundColor: lightColors[1] }]} >
-                                    <Text style={{ margin: 'auto' }}>Urgent</Text>
-                                    {value == 'Urgent' && <FontAwesome6 name="check" 
-                                    style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green'  }} />}
-                                </View>
-                            </TouchableHighlight>
-
-                            <TouchableHighlight
-                                activeOpacity={0.7}
-                                style={{ borderRadius: 10 }}
-                                onPress={() => onChange('Moderate')}>
-                                <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[2] } 
-                                : { width: 'auto', backgroundColor: lightColors[2] }]} >
-                                    <Text style={{ margin: 'auto' }}>Moderate</Text>
-                                    {value == 'Moderate' && <FontAwesome6 name="check"  style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green' }} />}
-                                </View>
-                            </TouchableHighlight>
-
-                            <TouchableHighlight
-                                activeOpacity={0.7}
-                                style={{ borderRadius: 10 }}
-                                onPress={() => onChange('Normal')}>
-                                <View style={[styles.categoryLabel,
-                                colorscheme == 'light' ? { width: 'auto', backgroundColor: lightColors[0] } : { width: 'auto', backgroundColor: lightColors[0] }]} >
-                                    <Text style={{ margin: 'auto' }}>Normal</Text>
-                                    {value == 'Normal' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0,color:colorscheme=='light'?'black':'green'  }} />}
-                                </View>
-                            </TouchableHighlight>
-                        </View>
-                    )}
-                />
-                {gotTask && <>
-                    <ThemedText>Change Status</ThemedText>
-                    <Controller
-                        control={control}
-                        name='status'
-                        render={({ field: { onChange, value } }) => (
-                            <View style={styles.categoryStyle}>
-                                <TouchableHighlight
-                                    activeOpacity={0.7}
-                                    style={{ borderRadius: 10 }}
-                                    onPress={() => onChange('Completed')}>
-                                    <View style={[styles.categoryLabel,
-                                    colorscheme == 'light' ? { width: 'auto', backgroundColor: 'lightgreen' } : { width: 'auto', backgroundColor: 'black' }]} >
-                                        <ThemedText style={{ margin: 'auto' }}>Completed</ThemedText>
-                                        {value == 'Completed' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
-                                    </View>
-                                </TouchableHighlight>
-
-                                <TouchableHighlight
-                                    activeOpacity={0.7}
-                                    style={{ borderRadius: 10 }}
-                                    onPress={() => onChange('Pending')}>
-                                    <View style={[styles.categoryLabel,
-                                    colorscheme == 'light' ? { width: 'auto', backgroundColor: '#FFD580' } : { width: 'auto', backgroundColor: 'black' }]} >
-                                        <ThemedText style={{ margin: 'auto' }}>Pending</ThemedText>
-                                        {value == 'Pending' && <FontAwesome6 name="check" style={{ position: 'absolute', right: 0 }} />}
-                                    </View>
-                                </TouchableHighlight>
-                            </View>
-                        )}
-                    />
-                </>}
-
-                <ThemedText style={styles.header}>Set Time & Date</ThemedText>
-                <View style={styles.inputRow}>
-                    <TouchableOpacity style={styles.pickerButton} onPress={() => setShowClock(true)}>
-                        <MaterialIcons name="access-time" size={24} color="#fff" />
-                        <ThemedText style={styles.pickerButtonText}>Set Time</ThemedText>
-                    </TouchableOpacity>
-                    <ThemedText style={styles.selectedText}>Selected Time: {datetime.toLocaleTimeString()}</ThemedText>
-                </View>
-
-                <HolidayCalendar setValue={setValue} datetime={datetime} isEdit={id.taskid != undefined} />
-
-                <AddSubtasks setValue={setValue} initialSubTasks={subTasks || []} />
-
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                    <TouchableOpacity onPress={handleSubmit(onSubmit)} style={{ padding: 10, width: 100, alignItems: 'center', backgroundColor: 'lightgreen', borderRadius: 10, elevation: 5 }}>
-                        <Text>{gotTask ? 'Update' : 'Submit'}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => reset()} style={{ padding: 10, width: 100, alignItems: 'center', backgroundColor: 'orange', borderRadius: 10, elevation: 5 }}>
-                        <Text>Clear</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={{ height: 200 }}></View>
-
-                {showClock && (
-                    <DateTimePicker
-                        value={datetime}
-                        mode="time"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-                        onChange={onTimeChange}
-                        is24Hour={false}
-                    />
+            <Controller
+                control={control}
+                name="title"
+                rules={{ required: "Title is required" }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={[styles.searchInput,
+                                inputStylesOnDarkTheme]}
+                            placeholderTextColor={colorscheme == 'light' ? 'black' : 'white'}
+                            placeholder="Enter task title"
+                            onChangeText={onChange}
+                            value={value}
+                        />
+                    </View>
                 )}
-                {/* {showDate && (
+            />
+
+            {errors.title && <ThemedText style={{ color: 'red' }}>{errors.title.message}</ThemedText>}
+
+
+            <ThemedText style={styles.title}>Description</ThemedText>
+            <Controller
+                control={control}
+                name="description"
+                rules={{ required: "Description is required" }}
+                render={({ field: { onChange, value } }) => (
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={[styles.searchInput,
+                                inputStylesOnDarkTheme]}
+                            placeholderTextColor={colorscheme == 'light' ? 'black' : 'white'}
+                            placeholder="Enter task description"
+                            onChangeText={onChange}
+                            value={value}
+                            multiline
+                        />
+                    </View>
+                )}
+            />
+            {errors.description && <ThemedText style={{ color: 'red' }}>{errors.description.message}</ThemedText>}
+
+            <ThemedText style={styles.title}>Kind</ThemedText>
+            <Controller
+                control={control}
+                name="kind"
+                render={({ field: { onChange, value } }) => (
+                    <View style={styles.categoryStyle}>
+
+                        <TouchableHighlight onPress={() => onChange('Task')} activeOpacity={0.7}
+                            style={{ borderRadius: 10 }}>
+                            <View style={[styles.kind, value == 'Task' && styles.kindSelected,
+                            colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
+                                <MaterialIcons name="task" size={18} color={'green'} />
+                                <ThemedText style={{ margin: 'auto' }}>Task</ThemedText>
+                            </View>
+                        </TouchableHighlight>
+
+
+                        <TouchableHighlight onPress={() => onChange('Meeting')} activeOpacity={0.7}
+                            style={{ borderRadius: 10 }}>
+                            <View style={[styles.kind, value == 'Meeting' && styles.kindSelected,
+                            colorscheme == 'light' ? { width: 'auto', backgroundColor: '#E5F3EA' } : { width: 'auto', backgroundColor: 'transparent' }]} >
+                                <MaterialIcons name="meeting-room" size={18} color={'green'} />
+                                <ThemedText style={{ margin: 'auto' }}>Meeting</ThemedText>
+                            </View>
+                        </TouchableHighlight>
+                    </View>
+                )}
+            />
+
+
+            <ThemedText style={styles.title}>Priority Level</ThemedText>
+
+            <Controller
+                control={control}
+                name="priority"
+                render={({ field: { onChange, value } }) => (
+                    <View style={styles.categoryStyle}>
+                        <TouchableHighlight
+                            activeOpacity={0.7}
+                            style={{ borderRadius: 10 }}
+                            onPress={() => onChange('Urgent')}>
+                            <View style={[styles.categoryLabel,
+                            value == 'Urgent' && priorityBorderColor('Urgent'),
+                            colorscheme == 'light' ? {
+                                width: 'auto', backgroundColor: priorityColor.Urgent
+                            }
+                                : { width: 'auto', backgroundColor: priorityColor.Urgent }]} >
+                                <ThemedText style={{ margin: 'auto' }}>Urgent</ThemedText>
+                                {value == 'Urgent' && <CheckMark />}
+                            </View>
+                        </TouchableHighlight>
+
+                        <TouchableHighlight
+                            activeOpacity={0.7}
+                            style={{ borderRadius: 10 }}
+                            onPress={() => onChange('Moderate')}>
+                            <View style={[styles.categoryLabel,
+                            value == 'Moderate' && priorityBorderColor('Moderate'),
+                            colorscheme == 'light' ? { width: 'auto', backgroundColor: priorityColor.Moderate }
+                                : { width: 'auto', backgroundColor: priorityColor.Moderate }]} >
+                                <ThemedText style={{ margin: 'auto' }}>Moderate</ThemedText>
+                                {value == 'Moderate' && <CheckMark />}
+                            </View>
+                        </TouchableHighlight>
+
+                        <TouchableHighlight
+                            activeOpacity={0.7}
+                            style={{ borderRadius: 10 }}
+                            onPress={() => onChange('Normal')}>
+                            <View style={[styles.categoryLabel,
+                            value == 'Normal' && priorityBorderColor('Normal'),
+                            colorscheme == 'light' ? { width: 'auto', backgroundColor: priorityColor.Normal } : { width: 'auto', backgroundColor: priorityColor.Normal }]} >
+                                <ThemedText style={{ margin: 'auto' }}>Normal</ThemedText>
+                                {value == 'Normal' && <CheckMark />}
+                            </View>
+                        </TouchableHighlight>
+                    </View>
+                )}
+            />
+            {gotTask && <>
+                <ThemedText>Change Status</ThemedText>
+                <Controller
+                    control={control}
+                    name='status'
+                    render={({ field: { onChange, value } }) => (
+                        <View style={styles.categoryStyle}>
+                            <TouchableHighlight
+                                activeOpacity={0.7}
+                                style={{ borderRadius: 10 }}
+                                onPress={() => onChange('Completed')}>
+                                <View style={[styles.categoryLabel,
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: 'lightgreen' } : { width: 'auto', backgroundColor: '#568E57' }]} >
+                                    <ThemedText style={{ margin: 'auto' }}>Completed</ThemedText>
+                                    {value == 'Completed' && <CheckMark />}
+                                </View>
+                            </TouchableHighlight>
+
+                            <TouchableHighlight
+                                activeOpacity={0.7}
+                                style={{ borderRadius: 10 }}
+                                onPress={() => onChange('Pending')}>
+                                <View style={[styles.categoryLabel,
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: '#FFD580' } : { width: 'auto', backgroundColor: '#99804D' }]} >
+                                    <ThemedText style={{ margin: 'auto' }}>Pending</ThemedText>
+                                    {value == 'Pending' && <CheckMark />}
+                                </View>
+                            </TouchableHighlight>
+
+                            <TouchableHighlight
+                                activeOpacity={0.7}
+                                style={{ borderRadius: 10 }}
+                                onPress={() => onChange('In-Progress')}>
+                                <View style={[styles.categoryLabel,
+                                colorscheme == 'light' ? { width: 'auto', backgroundColor: 'skyblue' } : { width: 'auto', backgroundColor: '#517B8D' }]} >
+                                    <ThemedText style={{ margin: 'auto' }}>In-Progress</ThemedText>
+                                    {value == 'In-Progress' && <CheckMark />}
+                                </View>
+                            </TouchableHighlight>
+                        </View>
+                    )}
+                />
+            </>}
+
+            <ThemedText style={[styles.header,styles.title]}>Set Time & Date</ThemedText>
+            <View style={styles.inputRow}>
+                <TouchableOpacity style={styles.pickerButton} onPress={() => setShowClock(true)}>
+                    <MaterialIcons name="access-time" size={24} color="#fff" />
+                    <ThemedText style={styles.pickerButtonText}>Set Time</ThemedText>
+                </TouchableOpacity>
+                <ThemedText style={styles.selectedText}>Selected Time: {datetime.toLocaleTimeString()}</ThemedText>
+            </View>
+
+            <HolidayCalendar setValue={setValue} datetime={datetime} isEdit={id.taskid != undefined} />
+
+            <Checklist initialSubTasks={subTasks || []} isEdit={!!gotTask} setValue={setValue}/>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <TouchableOpacity onPress={handleSubmit(onSubmit)} style={{ padding: 10, width: 100, alignItems: 'center', backgroundColor: 'lightgreen', borderRadius: 10, elevation: 5 }}>
+                    <Text>{gotTask ? 'Update' : 'Submit'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => reset()} style={{ padding: 10, width: 100, alignItems: 'center', backgroundColor: 'orange', borderRadius: 10, elevation: 5 }}>
+                    <Text>Clear</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={{ height: 200 }}></View>
+
+            {showClock && (
                 <DateTimePicker
                     value={datetime}
-                    mode="date"
-                    display="default"
-                    onChange={onDateChange}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+                    onChange={onTimeChange}
+                    is24Hour={false}
                 />
-            )} */}
-            </ScrollView>
-        </LinearGradient>
-    </>
+            )}
+        </ScrollView>
+    </LinearGradient>
 }
 
 export default TaskAddEditForm
 
 
-interface AddSubTasksProps {
-    setValue: UseFormSetValue<Task>,
-    initialSubTasks: SubTask[]
-}
 
-const AddSubtasks: FunctionComponent<AddSubTasksProps> = ({
-    setValue,
-    initialSubTasks: subtasks
-}) => {
-    const handleAddSubtask = () => {
-        setValue('subTasks', [...subtasks, { title: '', description: '', id: uuid.v4().toString() }])
-    };
-
-    const handleSubtaskChange = (index: number, field: 'title' | 'description', value: string) => {
-        const updatedSubtasks = [...subtasks];
-        updatedSubtasks[index][field] = value;
-        setValue('subTasks', updatedSubtasks)
-    };
-
-    const handleDeleteSubtask = (index: number) => {
-        const updatedSubtasks = subtasks.filter((_, i) => i !== index);
-        setValue('subTasks', updatedSubtasks)
-    };
-
-    return (
-        <ScrollView contentContainerStyle={stylesSubTasks.container}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                <ThemedText style={stylesSubTasks.header}>Add Checklist 's</ThemedText>
-                <TouchableOpacity onPress={handleAddSubtask}>
-                    <Icon name="add-circle" size={40} color="#007AFF" />
-                </TouchableOpacity>
-            </View>
-
-            {subtasks.map((subtask, index) => (
-                <View key={index} style={stylesSubTasks.subtaskContainer}>
-                    <View style={stylesSubTasks.subtaskHeader}>
-                        <TextInput
-                            style={stylesSubTasks.input}
-                            placeholder={`Subtask Title ${index + 1}`}
-                            value={subtask.title}
-                            onChangeText={(value) => handleSubtaskChange(index, 'title', value)}
-                        />
-                        <TouchableOpacity onPress={() => handleDeleteSubtask(index)}>
-                            <Icon name="delete" size={25} color="red" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <TextInput
-                        style={[stylesSubTasks.input, stylesSubTasks.descriptionInput]}
-                        placeholder={`Subtask Description ${index + 1}`}
-                        value={subtask.description}
-                        onChangeText={(value) => handleSubtaskChange(index, 'description', value)}
-                        multiline
-                    />
-                </View>
-            ))}
-        </ScrollView>
-    );
-};
-
-type HolidayInfo = {
-    marked: boolean;
-    dotColor?: string;
-    customStyles?: {
-        container?: object;
-        text?: object;
-    };
-    holiday: string;
-};
-
-type MarkedDatesType = {
-    [key: string]: HolidayInfo;
-};
 
 interface HolidayCalendarProps {
     setValue: UseFormSetValue<Task>;
@@ -558,93 +523,24 @@ const stylesHolidayCalendar = StyleSheet.create({
     },
 });
 
-const stylesHolidayCalendar1 = StyleSheet.create({
-    container: {
-        padding: 10,
-        backgroundColor: '#2b2b2b',
-        borderRadius: 10,
-        marginTop: 10,
-    },
-    headerContainer: {
-        backgroundColor: '#4B0082',
-        padding: 10,
-        marginBottom: 10,
-        borderRadius: 10,
-    },
-    holidayText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFD700',
-        textAlign: 'center',
-    },
-    noHolidayText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-        textAlign: 'center',
-    },
-    calendar: {
-        borderRadius: 10,
-        backgroundColor: '#333333',
-        elevation: 4,
-    },
-});
-
-const stylesSubTasks = StyleSheet.create({
-    container: {
-        padding: 20,
-    },
-    header: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    subtaskContainer: {
-        marginBottom: 20,
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    input: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 10,
-        borderRadius: 5,
-        fontSize: 16,
-        marginBottom: 10,
-    },
-    subtaskHeader: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-    },
-    descriptionInput: {
-        height: 80,
-        textAlignVertical: 'top',
-    },
-    addButton: {
-    },
-});
-
-
 const styles = StyleSheet.create({
+    title:{
+        fontSize: 18,
+        // fontWeight: 'bold',
+        // color: '#007BFF',
+    },
     calendar: {
         marginBottom: 10,
         borderRadius: 20,
         backgroundColor: 'black',
         color: 'blue'
     },
-    loadingAnimation:{
-        flex:1,
-        justifyContent:'center',
-        width:'auto',
-        height:150
-      },
+    loadingAnimation: {
+        flex: 1,
+        justifyContent: 'center',
+        width: 'auto',
+        height: 150
+    },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',

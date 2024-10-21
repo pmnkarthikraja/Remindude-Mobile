@@ -1,9 +1,9 @@
 import { Colors } from '@/constants/Colors';
 import { TaskKind, TaskPriorityLevel, TaskStatus } from '@/utils/task';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
-import { View as NativeView, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { View as NativeView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import {
     Button,
     Checkbox,
@@ -16,6 +16,7 @@ import {
     YStack
 } from 'tamagui';
 import { ThemedText } from './ThemedText';
+import moment from 'moment';
 
 
 const icons = (color: string) => {
@@ -35,7 +36,7 @@ const icons = (color: string) => {
 export interface Filters {
     priority?: TaskPriorityLevel;
     status?: TaskStatus;
-    timePeriod?: 'Today' | 'Tomorrow' | 'ThisWeek' | 'ThisMonth' | 'CalendarRange';
+    timePeriod?: 'All Tasks'|'Today' | 'Tomorrow' | 'Yesterday' | 'This Week' | 'This Month' | 'Calendar Range';
     kind?: TaskKind;
     startDate?: Date;
     endDate?: Date;
@@ -50,7 +51,6 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState<Filters>({});
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const [position, setPosition] = useState(1); // Start in the middle of snap points
     const [isStartDateOpen, setIsStartDateOpen] = useState(false)
     const [isEndDateOpen, setIsEndDateOpen] = useState(false)
     const colorscheme = useColorScheme()
@@ -60,17 +60,17 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
         onSearch(text);
     };
 
-    const handleApplyFilters = () => {
-        onApplyFilters(filters);
-        setIsSheetOpen(false);
-        setPosition(1); // Reset position when closed
+    const handleApplyFilters = (isClear: boolean) => {
+        if (isClear) {
+            onApplyFilters({})
+        } else {
+            onApplyFilters(filters);
+            setIsSheetOpen(false);
+        }
     };
 
     const handleOpenChange = (open: boolean) => {
         setIsSheetOpen(open);
-        if (!open) {
-            setPosition(1); // Reset to middle position when sheet is closed
-        }
     };
 
     const handleDateChange = (field: 'startDate' | 'endDate', date: Date) => {
@@ -83,12 +83,25 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
     const iconColor = 'white'
     return (
         <>
-            <NativeView style={{
-                flexDirection: 'row', alignItems: 'center',
-                marginTop: 10,
-                paddingHorizontal: 10
-            }}>
-                <TextInput style={styles.searchInput}
+            <NativeView style={styles.nativeViewContainer}>
+                {Object.keys(filters).length > 0 && <Text style={{
+                    position: 'absolute',
+                    right: 0,
+                    zIndex: 2,
+                    borderRadius: 25,
+                    width: 22,
+                    height: 22,
+                    textAlign: 'center',
+                    backgroundColor: 'orange',
+                    justifyContent: 'center',
+                    top: -10,
+                    color: 'white',
+                    fontSize: 12,
+                }}>{Object.keys(filters).filter(r => r !== 'startDate' && r !== 'endDate').length}+</Text>}
+                <TextInput
+                    placeholderTextColor={colorscheme == 'light' ? 'black' : 'grey'}
+                    style={[styles.searchInput,
+                    colorscheme == 'light' ? { elevation: 5, backgroundColor: 'white', color: 'black' } : { color: 'white' }]}
                     onChangeText={handleSearch} placeholder="Search" />
                 <TouchableOpacity style={styles.filterButton} onPress={() => setIsSheetOpen(true)}>
                     <Ionicons name="options-outline" size={24} color="white" />
@@ -100,7 +113,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                     modal
                     open={isSheetOpen}
                     onOpenChange={handleOpenChange}
-                    snapPoints={[60, 20, 0]}
+                    snapPoints={[65, 20, 0]}
                     position={isSheetOpen ? 0 : 1}
                     onPositionChange={() => setIsSheetOpen(false)}
                 >
@@ -115,7 +128,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                 </XStack>
 
                                 {/* Priority Filter */}
-                                <XStack alignItems='center' gap={50}>
+                                <XStack alignItems='center' gap={60}>
                                     <YStack space="$3">
                                         <XStack alignItems='center' gap={10}>
                                             {icons(iconColor).priority}
@@ -181,10 +194,9 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                             {icons(iconColor).duration}
                                             <H6 style={[styles.filterTitle, colorscheme == 'light' ? { color: 'white' } : { color: 'white' }]}>Duration</H6>
                                         </XStack>
-                                        {['Today', 'Tomorrow', 'ThisWeek', 'ThisMonth', 'CalendarRange'].map((timePeriod) => (
+                                        {['All Tasks','Yesterday','Today', 'Tomorrow', 'This Week', 'This Month', 'Calendar Range'].map((timePeriod) => (
                                             <XStack space='$5' key={timePeriod} alignItems='center'>
                                                 <Checkbox
-                                                    // label={timePeriod}
                                                     checked={filters.timePeriod === timePeriod}
                                                     onCheckedChange={() =>
                                                         setFilters({
@@ -204,7 +216,6 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                         ))}
                                     </YStack>
 
-                                    {/* Task Kind Filter */}
                                     <YStack space="$3">
                                         {/* <H6 style={[styles.filterTitle,colorscheme=='light'?{color:'white'}:{color:'white'}]}>Kind</H6> */}
                                         <XStack alignItems='center' gap={10}>
@@ -214,7 +225,6 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                         {['Task', 'Meeting'].map((kind) => (
                                             <XStack space='$5' key={kind} alignItems='center'>
                                                 <Checkbox
-                                                    // label={kind}
                                                     checked={filters.kind === kind}
                                                     onCheckedChange={() =>
                                                         setFilters({
@@ -235,72 +245,68 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                     </YStack>
                                 </XStack>
 
-                                {/* Date Range Filter */}
-                                {filters.timePeriod === 'CalendarRange' && (
+                                {filters.timePeriod === 'Calendar Range' && (
                                     <YStack space="$4" paddingTop="$4">
-                                        <H6 style={[styles.filterTitle, colorscheme == 'light' ? { color: 'white' } : { color: 'white' }]}>Select Date Range</H6>
-                                        <XStack alignItems="center" space="$3" >
-                                            <Ionicons name="calendar-outline" size={24} color="gray" onPress={() => setIsStartDateOpen(true)} />
-                                            <ThemedText darkColor='white' lightColor='white'>{filters.startDate?.toLocaleString() || new Date().toLocaleString()}</ThemedText>
-                                            {/* <DatePicker
-                      date={filters.startDate}
-                      onDateChange={(date) => handleDateChange('startDate', date)}
-                      placeholder="Start Date"
-                      style={styles.datePicker}
-                    /> */}
-                                            {isStartDateOpen && <DateTimePicker
-                                                id='customReminderDate'
-                                                value={new Date() || filters.startDate}
-                                                mode="date"
-                                                display="default"
-                                                minimumDate={new Date()}
-                                                onChange={(e, date) => {
-                                                    if (e.type == 'dismissed') {
+                                        <XStack alignItems='center' gap={10}>
+                                            {icons(iconColor).calendarRange}
+                                            <H6 style={[styles.filterTitle, colorscheme == 'light' ? { color: 'white' } : { color: 'white' }]}>Select Date Range</H6>
+                                        </XStack>
+
+                                        <XStack alignItems='center' gap={15}>
+                                            <XStack alignItems="center" space="$3" >
+                                                <MaterialIcons name="edit-calendar" size={24} color={iconColor} onPress={() => setIsStartDateOpen(true)} />
+                                                <ThemedText darkColor='white' lightColor='white'>{moment(filters.startDate).format('ddd, DD-MM-YYYY') || moment().format('ddd, DD-MM-YYYY')}</ThemedText>
+                                            </XStack>
+
+                                            <ThemedText>-</ThemedText>
+
+                                            <XStack alignItems="center" space="$3">
+                                                <MaterialIcons name="edit-calendar" size={24} color={iconColor} onPress={() => setIsEndDateOpen(true)} />
+                                                <ThemedText darkColor='white' lightColor='white'>{moment(filters.endDate).format('ddd, DD-MM-YYYY') || moment().format('ddd, DD-MM-YYYY')}</ThemedText>
+                                            </XStack>
+                                        </XStack>
+
+                                        {isStartDateOpen && <DateTimePicker
+                                            id='customReminderDate'
+                                            value={new Date() || filters.startDate}
+                                            mode="date"
+                                            display="default"
+                                            minimumDate={new Date()}
+                                            onChange={(e, date) => {
+                                                if (e.type == 'dismissed') {
+                                                    setIsStartDateOpen(false)
+                                                } else {
+                                                    if (date) {
+                                                        handleDateChange('startDate', date)
                                                         setIsStartDateOpen(false)
-                                                    } else {
-                                                        if (date) {
-                                                            handleDateChange('startDate', date)
-                                                            setIsStartDateOpen(false)
-                                                        }
                                                     }
+                                                }
 
-                                                }}
-                                            />}
-                                        </XStack>
-
-                                        <XStack alignItems="center" space="$3">
-                                            <Ionicons name="calendar-outline" size={24} color="gray" onPress={() => setIsEndDateOpen(true)} />
-                                            <ThemedText darkColor='white' lightColor='white'>{filters.endDate?.toLocaleString() || new Date().toLocaleString()}</ThemedText>
-                                            {/* <DatePicker
-                      date={filters.endDate}
-                      onDateChange={(date) => handleDateChange('endDate', date)}
-                      placeholder="End Date"
-                      style={styles.datePicker}
-                    /> */}
-                                            {isEndDateOpen && <DateTimePicker
-                                                id='customReminderDate'
-                                                value={new Date() || filters.endDate}
-                                                mode="date"
-                                                display="default"
-                                                minimumDate={new Date()}
-                                                onChange={(e, date) => {
-                                                    if (e.type == 'dismissed') {
+                                            }}
+                                        />}
+                                        {isEndDateOpen && <DateTimePicker
+                                            id='customReminderDate'
+                                            value={new Date() || filters.endDate}
+                                            mode="date"
+                                            display="default"
+                                            minimumDate={new Date()}
+                                            onChange={(e, date) => {
+                                                if (e.type == 'dismissed') {
+                                                    setIsEndDateOpen(false)
+                                                } else {
+                                                    if (date) {
+                                                        handleDateChange('endDate', date)
                                                         setIsEndDateOpen(false)
-                                                    } else {
-                                                        if (date) {
-                                                            handleDateChange('endDate', date)
-                                                            setIsEndDateOpen(false)
-                                                        }
                                                     }
+                                                }
 
-                                                }}
-                                            />}
-                                        </XStack>
+                                            }}
+                                        />}
                                     </YStack>
                                 )}
 
                                 <XStack alignItems='center' justifyContent='space-around'>
-                                    <Button theme={'blue_active'} onPress={handleApplyFilters} marginTop="$4" borderRadius="$4">
+                                    <Button theme={'blue_active'} onPress={() => handleApplyFilters(false)} marginTop="$4" borderRadius="$4">
                                         Apply Filters
 
                                         {Object.keys(filters).length > 0 && <Text style={{
@@ -316,7 +322,10 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
                                             color: 'white'
                                         }}>{Object.keys(filters).filter(r => r !== 'startDate' && r !== 'endDate').length}+</Text>}
                                     </Button>
-                                    <Button theme={'yellow_surface4'} onPress={() => setFilters({})} marginTop="$4" borderRadius="$4">
+                                    <Button theme={'yellow_surface4'} onPress={() => {
+                                        setFilters({});
+                                        handleApplyFilters(true)
+                                    }} marginTop="$4" borderRadius="$4">
                                         Clear Filters
                                     </Button>
                                 </XStack>
@@ -329,7 +338,13 @@ const FilterComponent: React.FC<FilterComponentProps> = ({ onSearch, onApplyFilt
     );
 };
 
-const styles = {
+const styles = StyleSheet.create({
+    nativeViewContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+        paddingHorizontal: 10
+    },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -341,9 +356,10 @@ const styles = {
         height: 50,
         borderRadius: 10,
         paddingHorizontal: 16,
-        backgroundColor: '#fff',
         fontSize: 16,
-        elevation: 5,
+        borderWidth: 0.7,
+        borderStyle: 'solid',
+        borderColor: 'white'
     },
     filterButton: {
         marginLeft: 10,
@@ -355,12 +371,10 @@ const styles = {
         fontSize: 20,
         fontWeight: 'bold',
         color: '#333',
-        // marginBottom: 10,
     },
     filterTitle: {
         fontSize: 16,
         fontWeight: '600',
-        // color: 'white',
     },
     checkboxLabel: {
         fontSize: 14,
@@ -374,6 +388,6 @@ const styles = {
         borderRadius: 4,
         color: '#333',
     },
-};
+});
 
 export default FilterComponent;

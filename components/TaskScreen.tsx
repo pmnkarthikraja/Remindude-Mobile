@@ -3,25 +3,31 @@ import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
-import { filterTasks, Task } from '@/utils/task';
-import { AntDesign, EvilIcons, Feather, FontAwesome, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { filterTasks, filterTasksCategory, Task } from '@/utils/task';
+import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, FlatList, ScrollView, StyleProp, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
+import { Animated, Dimensions, Easing, FlatList, ScrollView, StyleProp, StyleSheet, Text, TouchableOpacity, useColorScheme, View, ViewStyle } from 'react-native';
 import 'react-native-gesture-handler';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import FilterComponent, { Filters } from './FilterTasks';
 import TaskTimer from './TaskTimer';
 import { ThemedText } from './ThemedText';
-import FilterComponent from './FilterTasks';
 
 const TaskPage: FunctionComponent = () => {
   const colorscheme = useColorScheme()
   const [isloading, setloading] = useState(false)
-  const { loading, user, officeMode, tasks } = useUser()
+  const { loading, user, officeMode, tasks: contextTasks, setTasks: contextSetTasks } = useUser()
+  const [tasks, setTasks] = useState(contextTasks)
+
+  useEffect(() => {
+    setTasks(contextTasks)
+  }, [contextTasks, contextSetTasks])
+
   const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
 
   const { thisMonthTasks, thisWeekTasks, todayTasks, tomorrowTasks } = filterTasks(tasks)
@@ -46,22 +52,20 @@ const TaskPage: FunctionComponent = () => {
     );
   }
 
+  const handleFilters = (filters: Filters) => {
+    const filtered = filterTasksCategory(contextTasks, filters)
+    setTasks(filtered);
+  };
+
   return <ScrollView style={styles.container} showsVerticalScrollIndicator>
     <View style={styles.caution}>
-    <Ionicons name='alert-circle' size={21} color={'yellow'}/>
-    <ThemedText style={{  color: 'grey' }}>you have {todayTasks.length} tasks due today</ThemedText>
+      <Ionicons name='alert-circle' size={21} color={'yellow'} />
+      <ThemedText style={{ color: 'grey' }}>You have {todayTasks.length} tasks due today</ThemedText>
     </View>
-    
-    {/* <ThemedView style={styles.searchContainer}>
-      <TextInput placeholderTextColor={colorscheme=='light'?'black':'white'} style={[styles.searchInput, 
-        colorscheme == 'light' ? { color: 'black', backgroundColor: 'white',elevation:5 } : { color: 'white', backgroundColor: 'transparent', borderStyle:'solid',borderWidth:0.7,borderColor:'grey' }]} placeholder="Search" />
-      <TouchableOpacity style={styles.filterButton}>
-        <Ionicons name="options-outline" size={24} color="white" />
-      </TouchableOpacity>
-    </ThemedView> */}
 
-<FilterComponent onApplyFilters={(filters)=>{console.log("filters: ",filters)}}  onSearch={(text)=>{console.log("searching...",text)}}/>
-  <View style={{height:20}}/>
+
+    <FilterComponent onApplyFilters={handleFilters} onSearch={(text) => { console.log("searching...", text) }} />
+    <View style={{ height: 20 }} />
 
 
     <CurrentDate />
@@ -83,11 +87,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  caution:{
-    flexDirection:'row',
-    alignItems:'center',
-    gap:5,
-    paddingLeft:10
+  caution: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingLeft: 10
   },
   loadingAnimation: {
     flex: 1,
@@ -120,9 +124,9 @@ const styles = StyleSheet.create({
   },
   animation_no_data: {
     width: 'auto',
-    height: 120,
-    marginLeft: 100,
-    marginTop: -20
+    height: 100,
+    // marginLeft: 100,
+    marginTop: -80
     // flex:1
   }
 });
@@ -171,164 +175,161 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
   const colorscheme = useColorScheme()
   const iconName = useTimeElapseAnimation()
 
+  const linearGradientColor = colorscheme == 'light' ? [Colors.light.tint, Colors.light.background] :
+    [Colors.light.tint, Colors.dark.background]
+
+  const priorityColor = colorscheme == 'light' ? {
+    Urgent: '#FCECEF',
+    Moderate: '#F1ECFA',
+    Normal: '#E6F7F7'
+  } : {
+    Urgent: '#CF3F6C',
+    Moderate: '#703FC7',
+    Normal: '#22A79F'
+  }
+
+
+
   return (
     <>
-      {tasks.length > 0 && <View style={{ flexDirection: 'column', alignItems: tasks.length == 1 ? 'center' : 'stretch' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={stylesTaskCards.taskScroll}>
-          {tasks.map((task, index) => (
-            <TouchableOpacity onPress={() => router.navigate(`/(tabs)/category/task/${task.taskId}`)}
-              activeOpacity={0.8}
-              key={index}
-            >
-              <View key={index} style={[stylesTaskCards.card, colorscheme == 'light' ? { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
-                <View style={stylesTaskCards.logoContainer}>
-                  <View style={stylesTaskCards.logoBackground}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <ThemedText>{task.status}</ThemedText>
-                      {task.status == 'Completed' && <MaterialIcons name='check' color={'green'} size={20} />}
-                      {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
-                      {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
+      {tasks.length > 0 &&
+
+        <View style={{ flexDirection: 'column', alignItems: tasks.length == 1 ? 'center' : 'stretch' }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={stylesTaskCards.taskScroll}>
+            {tasks.map((task, index) => {
+              const difference = task.datetime.getTime() - new Date().getTime();
+
+              //calculate progress percentage
+
+              const totalsubtasks = task.subTasks?.length || 0
+              const completed = task.subTasks?.filter(check => check.isCompleted).length || 0
+              const progressPercentage = (completed / totalsubtasks) * 100
+
+              return (
+                <TouchableOpacity onPress={() => router.navigate(`/(tabs)/category/task/${task.taskId}`)}
+                  activeOpacity={0.8}
+                  key={index}
+                >
+                  <View key={index} style={[stylesTaskCards.card, colorscheme == 'light' ? { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
+                    <View style={stylesTaskCards.logoContainer}>
+                      <View style={stylesTaskCards.logoBackground}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <ThemedText>{task.status}</ThemedText>
+                          {task.status == 'Completed' && <MaterialIcons name='check' color={'green'} size={20} />}
+                          {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
+                          {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />}
+
+                        </View>
+                      </View>
+                    </View>
+
+                    <Svg
+                      height="160"
+                      width="250"
+                      style={{
+                        position: 'absolute',
+                        borderRadius: 20,
+                        bottom: 0,
+                        opacity: 0.3,
+                      }}
+                    >
+                      <Path
+                        d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
+                        fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
+                      />
+                    </Svg>
+
+                    <Svg
+                      height="200"
+                      width="250"
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        opacity: 0.15,
+                      }}
+                    >
+                      <Path
+                        d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
+                        fill={colorscheme == 'light' ? "purple" : 'transparent'}
+                      />
+                    </Svg>
+
+                    <View style={[stylesTaskCards.labelContainer,
+                    task.priority == 'Moderate' ?
+                      { backgroundColor: priorityColor.Moderate } : task.priority == 'Urgent' ?
+                        { backgroundColor: priorityColor.Urgent } : { backgroundColor: priorityColor.Normal }]}>
+                      <ThemedText style={stylesTaskCards.labelText}>{task.priority}</ThemedText>
+                    </View>
+
+                    <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
+                    {/* <ThemedText>{task.datetime.toLocaleString()}</ThemedText> */}
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+
+
+                      <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+                        <MaterialIcons name='access-time' color={colorscheme == 'light' ? 'black' : 'white'} />
+                        <ThemedText>{task.datetime.toLocaleTimeString()}</ThemedText>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                        <Animated.View>
+                          <MaterialCommunityIcons name={iconName} size={13} color={difference > 0 ? 'green' : 'red'} />
+                        </Animated.View>
+                        <TaskTimer task={task} />
+                      </View>
+
+                    </View>
+
+                    <View style={stylesTaskCards.progressContainer}>
+                      <View style={stylesTaskCards.progressBar}>
+                        <View style={[stylesTaskCards.progress,
+                        { width: `${progressPercentage}%` }
+                        ]} />
+                      </View>
+                      {task.subTasks && task.subTasks.length > 0 && (
+                        <ThemedText>
+                          {`${task.subTasks.filter(subTask => subTask.isCompleted).length}/${task.subTasks.length} Check's`}
+                        </ThemedText>
+                      )}
+                      {task.subTasks && task.subTasks.length == 0 && (<ThemedText>No Check's</ThemedText>)}
 
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
+              )
+            }
+            )}
 
-                <Svg
-                  height="160"
-                  width="250"
-                  style={{
-                    position: 'absolute',
-                    borderRadius: 20,
-                    bottom: 0,
-                    opacity: 0.3,
-                  }}
-                >
-                  <Path
-                    d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
-                    fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
-                  />
-                </Svg>
+          </ScrollView>
 
-                <Svg
-                  height="200"
-                  width="250"
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    opacity: 0.15,
-                  }}
-                >
-                  <Path
-                    d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
-                    fill={colorscheme == 'light' ? "purple" : 'transparent'}
-                  />
-                </Svg>
-
-                <View style={[stylesTaskCards.labelContainer,
-                task.priority == 'Moderate' ?
-                  { backgroundColor: '#D1C4E9' } : task.priority == 'Urgent' ?
-                    { backgroundColor: '#FFCDD2' } : { backgroundColor: '#F0F4C3' }]}>
-                  <ThemedText style={stylesTaskCards.labelText}>{task.priority}</ThemedText>
-                </View>
-
-                <ThemedText style={stylesTaskCards.cardTitle}>{task.title}</ThemedText>
-                {/* <ThemedText>{task.datetime.toLocaleString()}</ThemedText> */}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  {/* <View style={{flexDirection:'row',gap:5, alignItems:'center'}}>
-        <AntDesign name='calendar' color={'black'}/>
-        <ThemedText>{task.datetime.toLocaleDateString()}</ThemedText>
-        </View> */}
-
-
-                  <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
-                    <MaterialIcons name='access-time' color={'black'} />
-                    <ThemedText>{task.datetime.toLocaleTimeString()}</ThemedText>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <Animated.View>
-                      <MaterialCommunityIcons name={iconName} size={13} color="green" />
-                    </Animated.View>
-                    <TaskTimer task={task} />
-                  </View>
-
-                </View>
-
-                <View style={stylesTaskCards.progressContainer}>
-                  <View style={stylesTaskCards.progressBar}>
-                    <View style={[stylesTaskCards.progress, { width: '45%' }]} />
-                  </View>
-                  <ThemedText>{`${task.subTasks?.length || 0} Checklists`}</ThemedText>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-
-        </ScrollView>
-
-        <TouchableOpacity onPress={() => router.navigate('/(tabs)/tasks')}
-          style={{
-            flexDirection: 'row', justifyContent: 'flex-end',
-            alignItems: 'center', gap: 5, marginTop: -40, marginBottom: 10,
-          }} >
-          <ThemedText style={{ padding: 7,  borderRadius: 20 }}>See All
-            <AntDesign name='right' color={colorscheme == 'light' ? 'black' : 'white'} />
-          </ThemedText>
-        </TouchableOpacity>
-      </View>}
+          <TouchableOpacity onPress={() => router.navigate('/(tabs)/tasks')}
+            style={{
+              flexDirection: 'row', justifyContent: 'flex-end',
+              alignItems: 'center', gap: 5, marginTop: -40, marginBottom: 10,
+            }} >
+            <ThemedText style={{ padding: 7, borderRadius: 20 }}>See All
+              <AntDesign name='right' color={colorscheme == 'light' ? 'black' : 'white'} />
+            </ThemedText>
+          </TouchableOpacity>
+        </View>}
 
       {tasks.length == 0 && <>
-        <TouchableOpacity style={{ alignItems: 'center' }} activeOpacity={0.8}
-        >
-          <View style={[stylesTaskCards.card, { height: 100 }, colorscheme == 'light' ?
-            { backgroundColor: '#fff' } : { backgroundColor: 'transparent' }]}>
-            <View style={stylesTaskCards.logoContainer}>
+        <View style={{ flexDirection: 'column', alignItems: 'center', borderRadius: 10 }}>
+          <LinearGradient colors={linearGradientColor} style={{ borderRadius: 20, marginBottom: 20 }}>
+            <View style={[stylesTaskCards.card, { height: 100 }]}>
               <View style={stylesTaskCards.logoBackground}>
-                <ThemedText>No Tasks Today</ThemedText>
+                <ThemedText style={{ fontWeight: '400', fontSize: 18, color: 'white', textAlign: 'center' }}>No Tasks Today</ThemedText>
               </View>
             </View>
-
-            <Svg
-              height="160"
-              width="250"
-              style={{
-                position: 'absolute',
-                borderRadius: 20,
-                bottom: 0,
-                opacity: 0.3,
-              }}
-            >
-              <Path
-                d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z"
-                fill={colorscheme == 'light' ? "blue" : '#CCE3F3'}
-              />
-            </Svg>
-
-            <Svg
-              height="200"
-              width="250"
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                opacity: 0.15,
-              }}
-            >
-              <Path
-                d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z"
-                fill={colorscheme == 'light' ? "purple" : 'transparent'}
-              />
-            </Svg>
-
             <Lottie
               source={require('../assets/Animation/Animation-no_data.json')}
               autoPlay
               loop
               style={styles.animation_no_data}
             />
-          </View>
-        </TouchableOpacity>
+          </LinearGradient>
+        </View>
       </>}
     </>
   );
@@ -377,7 +378,6 @@ const stylesTaskCards = StyleSheet.create({
   },
   labelText: {
     fontSize: 12,
-    color: '#333',
   },
   cardTitle: {
     fontSize: 20,
@@ -415,7 +415,7 @@ const AllTasks: FunctionComponent<AllTasksProps> = ({
   taskCount
 }) => {
   const colorscheme = useColorScheme()
-  const iconColor = colorscheme == 'light' ? 'black':'white'
+  const iconColor = colorscheme == 'light' ? 'black' : 'white'
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -583,12 +583,12 @@ const stylesTaskComponent = StyleSheet.create({
 
 
 
-interface AnimatedCountProps{
-  finalCount:number,
-  textcolor:string
+interface AnimatedCountProps {
+  finalCount: number,
+  textcolor: string
 }
 
-const AnimatedCount:FunctionComponent<AnimatedCountProps> = ({ finalCount, textcolor }) => {
+const AnimatedCount: FunctionComponent<AnimatedCountProps> = ({ finalCount, textcolor }) => {
   const [displayCount, setDisplayCount] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -610,11 +610,11 @@ const AnimatedCount:FunctionComponent<AnimatedCountProps> = ({ finalCount, textc
   }, [finalCount]);
 
   return (
-    <View style={{flexDirection:'row',alignItems:'baseline',justifyContent:'center',gap:5,marginTop:7}}>
-    <Text style={[stylesNew.count,{color:textcolor}]}>
-      {displayCount}
-    </Text>
-    <Text style={{color:textcolor}}>Tasks</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginTop: 7 }}>
+      <Text style={[stylesNew.count, { color: textcolor }]}>
+        {displayCount}
+      </Text>
+      <Text style={{ color: textcolor }}>Tasks</Text>
     </View>
   );
 };
@@ -627,11 +627,11 @@ const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
   tasks
 }) => {
   const colorscheme = useColorScheme()
-  const borderOnDarkMode=(borderColor:string):StyleProp<ViewStyle>=> colorscheme=='dark' ?{
-    borderStyle:'solid',
-    borderWidth:0.7,
-    borderColor:borderColor
-  }:{}
+  const borderOnDarkMode = (borderColor: string): StyleProp<ViewStyle> => colorscheme == 'dark' ? {
+    borderStyle: 'solid',
+    borderWidth: 0.7,
+    borderColor: borderColor
+  } : {}
   const { urgent, moderate, normal } = tasks.reduce(
     (prev, curr) => {
       if (curr.priority === 'Urgent') {
@@ -650,37 +650,37 @@ const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
     {
       id: 1,
       category: 'Urgent',
-      count:urgent,
-      color:colorscheme=='light'?'#FCECEF':'transparent', //#FCECEF   //text: #CF3F6C  //old: #FFCDD2
-      textcolor:'#CF3F6C'
+      count: urgent,
+      color: colorscheme == 'light' ? '#FCECEF' : 'transparent', //#FCECEF   //text: #CF3F6C  //old: #FFCDD2
+      textcolor: '#CF3F6C'
     },
     {
       id: 2,
       category: 'Moderate',
-      count:moderate,
-      color: colorscheme=='light'?'#F1ECFA':'transparent', //#F1ECFA  //text: #703FC7   //old: #D1C4E9
-      textcolor:'#703FC7'
+      count: moderate,
+      color: colorscheme == 'light' ? '#F1ECFA' : 'transparent', //#F1ECFA  //text: #703FC7   //old: #D1C4E9
+      textcolor: '#703FC7'
     },
     {
       id: 3,
       category: 'Normal',
       count: normal,
-      color:colorscheme=='light'? '#E6F7F7':'transparent', //#E6F7F7  //text: #22A79F  //old: #F0F4C3
-      textcolor:'#22A79F'
+      color: colorscheme == 'light' ? '#E6F7F7' : 'transparent', //#E6F7F7  //text: #22A79F  //old: #F0F4C3
+      textcolor: '#22A79F'
     },
   ];
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity activeOpacity={0.8}>
       <View style={[stylesNew.card, borderOnDarkMode(item.textcolor), { backgroundColor: item.color }]}>
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-evenly',gap:5}}>
-        {item.category=='Urgent' &&<Feather name='alert-circle' size={15} color={item.textcolor}/>}
-        {item.category=='Moderate' &&<Feather name='clock' size={15} color={item.textcolor}/>}
-        {item.category=='Normal' &&<MaterialCommunityIcons name='dots-horizontal' size={15} color={item.textcolor}/>}
-        <Text style={[stylesNew.title, {color:item.textcolor}]}>{item.category}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', gap: 5 }}>
+          {item.category == 'Urgent' && <Feather name='alert-circle' size={15} color={item.textcolor} />}
+          {item.category == 'Moderate' && <Feather name='clock' size={15} color={item.textcolor} />}
+          {item.category == 'Normal' && <MaterialCommunityIcons name='dots-horizontal' size={15} color={item.textcolor} />}
+          <Text style={[stylesNew.title, { color: item.textcolor }]}>{item.category}</Text>
         </View>
 
-        <AnimatedCount finalCount={item.count} textcolor={item.textcolor}/>
+        <AnimatedCount finalCount={item.count} textcolor={item.textcolor} />
 
         {/* <View style={stylesNew.taskContainer}>
             <AnimatedCount finalCount={item.count} textcolor={item.textcolor}/>
