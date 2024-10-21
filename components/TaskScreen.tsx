@@ -188,8 +188,6 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
     Normal: '#22A79F'
   }
 
-
-
   return (
     <>
       {tasks.length > 0 &&
@@ -200,7 +198,6 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
               const difference = task.datetime.getTime() - new Date().getTime();
 
               //calculate progress percentage
-
               const totalsubtasks = task.subTasks?.length || 0
               const completed = task.subTasks?.filter(check => check.isCompleted).length || 0
               const progressPercentage = (completed / totalsubtasks) * 100
@@ -274,7 +271,8 @@ const TaskCards: FunctionComponent<TaskCardsProps> = ({
 
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <Animated.View>
-                          <MaterialCommunityIcons name={iconName} size={13} color={difference > 0 ? 'green' : 'red'} />
+                          <MaterialCommunityIcons 
+                          name={iconName} size={13} color={difference > 0 ? 'green' : 'red'} />
                         </Animated.View>
                         <TaskTimer task={task} />
                       </View>
@@ -681,12 +679,6 @@ const TaskCarousel1: FunctionComponent<TaskCarouselProps> = ({
         </View>
 
         <AnimatedCount finalCount={item.count} textcolor={item.textcolor} />
-
-        {/* <View style={stylesNew.taskContainer}>
-            <AnimatedCount finalCount={item.count} textcolor={item.textcolor}/>
-            <Ionicons name='arrow-forward-outline'
-              style={{ margin: 'auto', }} size={15} color="black" />
-          </View> */}
 
       </View>
     </TouchableOpacity>

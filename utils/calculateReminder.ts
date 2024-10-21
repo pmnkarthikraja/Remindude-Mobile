@@ -54,6 +54,13 @@ export const calculateReminderDates = (formdata: FormData): FormData => {
             break;
         }
 
+        case 'House Rental Renewal': {
+            const { endDate } = formdata;
+            const dates = [subtractDays(endDate, 40),subtractDays(endDate, 20),subtractDays(endDate, 5)].filter(d=>!!d)
+            formdata.reminderDates=dates   
+            break;
+        }
+
         default:
             throw new Error('Unsupported document category');
     }

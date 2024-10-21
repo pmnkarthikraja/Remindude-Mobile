@@ -5,7 +5,7 @@ import { useProfileContext } from '@/hooks/useProfile';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TouchableHighlight, useColorScheme, Switch as NativeSwitch, Appearance } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, TouchableHighlight, useColorScheme, Switch as NativeSwitch, Appearance, Platform } from 'react-native';
 import { Avatar, Button, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
 
 export default function SettingsScreen() {

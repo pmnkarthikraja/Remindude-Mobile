@@ -9,7 +9,8 @@ export interface Agreements {
   endDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
-  reminderDates:Date[]
+  reminderDates:Date[],
+  completed:boolean
 }
 
 export interface PurchaseOrder {
@@ -25,7 +26,8 @@ export interface PurchaseOrder {
   entryDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
-  reminderDates:Date[]
+  reminderDates:Date[],
+  completed:boolean
 }
 
 export interface VisaDetails {
@@ -39,9 +41,11 @@ export interface VisaDetails {
   remarks:string;
   visaEndDate: Date;
   visaEntryDate: Date;
+  visaExpiryDate:Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
-  reminderDates:Date[]
+  reminderDates:Date[],
+  completed:boolean
 }
 
 export interface IQAMARenewals {
@@ -54,7 +58,8 @@ export interface IQAMARenewals {
   expiryDate: Date;
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
-  reminderDates:Date[]
+  reminderDates:Date[],
+  completed:boolean
 }
 
 export interface InsuranceRenewals {
@@ -70,10 +75,28 @@ export interface InsuranceRenewals {
   value: string; 
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
-  reminderDates:Date[]
+  reminderDates:Date[],
+  completed:boolean
 }
 
-export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals;
+export interface HouseRentalRenewal {
+  id:string,
+  email:string,
+  category: 'House Rental Renewal';
+  houseOwnerName:string,
+  location:string,
+  consultantName:string,
+  startDate:Date,
+  endDate:Date,
+  rentAmount:string,  
+  remarks:string;
+  wantsCustomReminders:boolean;
+  customReminderDates:Date[];
+  reminderDates:Date[],
+  completed:boolean
+}
+
+export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals | HouseRentalRenewal;
 
 
 export type Category =
@@ -81,7 +104,8 @@ export type Category =
   | "Purchase Order"
   | "Visa Details"
   | "IQAMA Renewals"
-  | "Insurance Renewals"
+  | "Insurance Renewals" 
+  | "House Rental Renewal"
   
 
 // | "IQAMA Renewals"
@@ -245,6 +269,17 @@ export const parseResponse = (data:any):FormData[]=>{
           value: item.value,
         } as InsuranceRenewals;
 
+        case "House Rental Renewal":
+          return {
+            ...baseData,
+            consultantName:item.consultantName,
+            startDate:item.startDate,
+            endDate:item.endDate,
+            houseOwnerName:item.houseOwnerName,
+            location:item.location,
+            rentAmount:item.rentAmount,
+          } as HouseRentalRenewal;
+
       default:
         throw new Error(`Unknown category: ${item.category}`);
     }
@@ -295,6 +330,14 @@ export const parseDates = (data: FormData[]): FormData[] => {
           customReminderDates: item.customReminderDates.map((date) => new Date(date)),
           reminderDates: item.reminderDates.map((date) => new Date(date)),
         };
+      case 'House Rental Renewal':
+        return {
+          ...item,
+          endDate: new Date(item.endDate),
+          startDate:new Date(item.startDate),
+          customReminderDates:item.customReminderDates.map((date)=>new Date(date)),
+          reminderDates: item.reminderDates.map((date) => new Date(date)),
+        }
       default:
         return item;
     }

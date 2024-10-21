@@ -1,19 +1,19 @@
+import { wait } from '@/components/OfficeScreen';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useCategoryDataContext } from '@/hooks/useCategoryData';
+import { useGetFormData } from '@/hooks/formDataHooks';
+import useBlinkingAnimation from '@/hooks/useAnimations';
 import { categorizeData, FormData, getEndDate } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
-import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
+import Lottie from 'lottie-react-native';
+import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
+import { Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Button, ScrollView, Sheet, Text, } from 'tamagui';
 import Item from './Item';
-import Lottie from 'lottie-react-native';
-import { useGetFormData } from '@/hooks/formDataHooks';
-import { wait } from '@/components/OfficeScreen';
-import useBlinkingAnimation from '@/hooks/useAnimations';
 
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
@@ -22,7 +22,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
 
   React.useEffect(() => {
     borderColor.value = withRepeat(
-      withTiming(colorscheme == 'light' ? '#ff7f50' : 'orange', { duration: 700, easing: Easing.linear,reduceMotion:ReduceMotion.Never }),
+      withTiming(colorscheme == 'light' ? '#ff7f50' : 'orange', { duration: 700, easing: Easing.linear, reduceMotion: ReduceMotion.Never }),
       -1,
       true
     );
@@ -38,13 +38,13 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
 
   return (
     <Animated.View style={animatedBorderStyle}>
-     { item && <Item item={item} key={item.id}/>}
+      {item && <Item item={item} key={item.id} />}
     </Animated.View>
   );
 };
 
- interface State {
-  initialData:FormData[]
+interface State {
+  initialData: FormData[]
   data: FormData[];
   modalVisible: boolean;
   startDate: Date | null;
@@ -53,7 +53,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
   showEndPicker: boolean;
   refreshing: boolean;
 }
- type Action =
+type Action =
   | { type: 'SET_MODAL_VISIBLE'; payload: boolean }
   | { type: 'SET_START_DATE'; payload: Date | null }
   | { type: 'SET_END_DATE'; payload: Date | null }
@@ -63,8 +63,8 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
   | { type: 'SET_DATA'; payload: FormData[] }
   | { type: 'SET_INITIAL_DATA'; payload: FormData[] };
 
-  const initialState: State = {
-  initialData:[],
+const initialState: State = {
+  initialData: [],
   data: [],
   modalVisible: false,
   startDate: null,
@@ -92,7 +92,7 @@ const reducer = (state: State, action: Action): State => {
     case 'SET_DATA':
       return { ...state, data: action.payload };
     case 'SET_INITIAL_DATA':
-      return {...state,  initialData: action.payload}
+      return { ...state, initialData: action.payload }
     default:
       return state;
   }
@@ -100,57 +100,60 @@ const reducer = (state: State, action: Action): State => {
 
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
-  const [state, dispatch] = useReducer(reducer, { ...initialState});
-  const { data:formData, isLoading:formDataLoading, error:getFormDataError,refetch } = useGetFormData();
-  const {initialData:got,data,endDate,modalVisible,refreshing,showEndPicker,showStartPicker,startDate} = state
+  const [state, dispatch] = useReducer(reducer, { ...initialState });
+  const { data: formData, isLoading: formDataLoading, error: getFormDataError, refetch } = useGetFormData();
+  const { initialData: got, data, endDate, modalVisible, refreshing, showEndPicker, showStartPicker, startDate } = state
   const colourscheme = useColorScheme();
-  const [isLoading,setIsLoading]=useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
   const animatedStyle = useBlinkingAnimation()
 
   useEffect(() => {
-   const doRefetch = async () =>{
+    const doRefetch = async () => {
       const result = await refetch()
-      if (result.data){
+      if (result.data) {
         const filteredFormData = result.data.filter(d => d.category === category);
-        dispatch({type:'SET_INITIAL_DATA',payload:filteredFormData || []})
-        dispatch({type:'SET_DATA',payload:filteredFormData || []})
+        dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
+        dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
         setIsLoading(false)
       }
-   }
-   doRefetch()
+    }
+    doRefetch()
   }, [category, colourscheme, navigation]);
 
-  const onRefresh= useCallback(()=>{
-    dispatch({type:'SET_REFRESHING',payload:true})
+  const onRefresh = useCallback(() => {
+    dispatch({ type: 'SET_REFRESHING', payload: true })
     wait(2000).then(() => dispatch({ type: 'SET_REFRESHING', payload: false }));
-  },[])
+  }, [])
 
-  const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
+  const hasFilterApplied = startDate && endDate && (!modalVisible || got.length !== data.length)
 
   function searchItem(text: string, searchText: string): boolean {
     return text.toLowerCase().includes(searchText.toLowerCase())
   }
 
   const handleSearch = (text: string) => {
-    const payload= got.filter(item => {
-       if (item.category == 'Agreements') {
-         return searchItem(item.clientName, text) || searchItem(item.vendorCode, text)
-       } else if (item.category == 'Insurance Renewals') {
-         return searchItem(item.employeeName, text) || searchItem(item.insuranceCategory, text) || searchItem(item.insuranceCompany, text) || searchItem(item.value, text)
-       } else if (item.category == 'IQAMA Renewals') {
-         return searchItem(item.employeeName, text) || searchItem(item.iqamaNumber, text)
-       } else if (item.category == 'Purchase Order') {
-         return searchItem(item.clientName, text) || searchItem(item.consultant, text) || searchItem(item.poNumber, text)
-       } else {
-         return searchItem(item.clientName, text) || searchItem(item.consultantName, text) || searchItem(item.sponsor, text) || searchItem(item.visaNumber, text)
-       }
-     })
-   dispatch({type:'SET_DATA',payload:payload})
- }
+    const payload = got.filter(item => {
+      if (item.category == 'Agreements') {
+        return searchItem(item.clientName, text) || searchItem(item.vendorCode, text)
+      } else if (item.category == 'Insurance Renewals') {
+        return searchItem(item.employeeName, text) || searchItem(item.insuranceCategory, text) || searchItem(item.insuranceCompany, text) || searchItem(item.value, text)
+      } else if (item.category == 'IQAMA Renewals') {
+        return searchItem(item.employeeName, text) || searchItem(item.iqamaNumber, text)
+      } else if (item.category == 'Purchase Order') {
+        return searchItem(item.clientName, text) || searchItem(item.consultant, text) || searchItem(item.poNumber, text)
+      } else if (item.category == 'House Rental Renewal') {
+        return searchItem(item.houseOwnerName, text) || searchItem(item.consultantName, text) || searchItem(item.rentAmount, text)
+      }
+      else {
+        return searchItem(item.clientName, text) || searchItem(item.consultantName, text) || searchItem(item.sponsor, text) || searchItem(item.visaNumber, text)
+      }
+    })
+    dispatch({ type: 'SET_DATA', payload: payload })
+  }
 
   useLayoutEffect(() => {
-    if (Platform.OS=='ios'){
+    if (Platform.OS == 'ios') {
       navigation.setOptions({
         title: `${category} Details`,
         headerSearchBarOptions: {
@@ -159,7 +162,7 @@ const CategoryPage = () => {
           textColor: colourscheme === 'light' ? 'black' : 'white',
           shouldShowHintSearchIcon: true,
           placement: 'stacked',
-          onChangeText: (e:any) => handleSearch(e.nativeEvent.text),
+          onChangeText: (e: any) => handleSearch(e.nativeEvent.text),
         },
         headerRight: () => (
           <Button
@@ -176,8 +179,8 @@ const CategoryPage = () => {
         ),
       });
     }
-    
-  }, [navigation, category, colourscheme,hasFilterApplied,handleSearch]);
+
+  }, [navigation, category, colourscheme, hasFilterApplied, handleSearch]);
 
   const handleFilter = (startDate: Date | null, endDate: Date | null) => {
     const filteredData = got.filter(item => {
@@ -186,28 +189,28 @@ const CategoryPage = () => {
         return itemDate >= startDate && itemDate <= endDate;
       }
     });
-    dispatch({type:'SET_DATA', payload:filteredData})
-    dispatch({type:'SET_MODAL_VISIBLE',payload:false})
+    dispatch({ type: 'SET_DATA', payload: filteredData })
+    dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })
   };
-  
+
   const {
     next30Days,
     next30to60Days,
     next60to90Days,
     laterThan90Days,
     renewal
-  } =  categorizeData(data);
+  } = categorizeData(data);
 
   const categories = [
     { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
     { title: 'Next 30 days', data: next30Days, color: 'green' },
-    { title: 'Next 30 - 60 days', data: next30to60Days, color: 'orange' },
-    { title: 'Next 60 - 90 days', data: next60to90Days, color: '#bdb76b' },
+    { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
+    { title: 'Next 60 - 90 days', data: next60to90Days, color: colourscheme == 'light' ? 'purple' : 'orange' },
     { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
   ];
 
   const renderCategoryList = (title: string, data: FormData[], index: number, color: string) => (
-    <ThemedView key={index} style={{ gap: 5 }}>
+    <View key={index} style={{ gap: 5 }}>
       {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
         <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
       </Animated.View>}
@@ -220,60 +223,68 @@ const CategoryPage = () => {
           <Item key={item.id} item={item} />
         )
       ))}
-    </ThemedView>
+    </View>
   );
 
-
-
-  function onClearFilter(){
-    dispatch({type:'SET_START_DATE',payload:null})
-    dispatch({type:'SET_END_DATE',payload:null})
-    dispatch({type:'SET_DATA',payload:got})
-    dispatch({type:'SET_MODAL_VISIBLE',payload:false})
+  function onClearFilter() {
+    dispatch({ type: 'SET_START_DATE', payload: null })
+    dispatch({ type: 'SET_END_DATE', payload: null })
+    dispatch({ type: 'SET_DATA', payload: got })
+    dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })
   }
 
+  const linearGradientUnified = [
+    colourscheme == 'light' ? '#a1c4fd' : '#252C39',
+    colourscheme == 'light' ? 'white' : 'transparent']
+
+
   return (
-    <ThemedView style={styles.container}>
+    <LinearGradient colors={linearGradientUnified} style={styles.container}>
       <Stack.Screen options={{
-        title: `${category} Details`,
-        headerSearchBarOptions:Platform.OS=='android' ? {
+        title: `${category}`,
+        headerSearchBarOptions: Platform.OS == 'android' ? {
           placeholder: 'search..',
           headerIconColor: colourscheme == 'light' ? 'black' : 'white',
           textColor: colourscheme == 'light' ? 'black' : 'white',
           shouldShowHintSearchIcon: true,
-          disableBackButtonOverride:true,
+          disableBackButtonOverride: true,
           placement: 'automatic',
-          obscureBackground:true,
+          obscureBackground: true,
+          hintTextColor: colourscheme == 'light' ? 'black' : 'white',
+          tintColor: colourscheme == 'light' ? 'black' : 'white',
           onChangeText: (e) => { handleSearch(e.nativeEvent.text) }
-        }:undefined,
-        headerRight:Platform.OS=='android' ? () => <Button
-          onPress={() => dispatch({type:'SET_MODAL_VISIBLE',payload:true})}
+        } : undefined,
+        headerStyle: {
+          backgroundColor: colourscheme == 'light' ? '#a1c4fd' : '#252C39',
+        },
+        headerRight: Platform.OS == 'android' ? () => <Button
+          onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
           icon={
-          <>
-          {!hasFilterApplied && <Filter color={colourscheme=='light'?'black':'white'} />} 
-          {hasFilterApplied && <Filter fill={colourscheme=='light'?'black':'white'} color={colourscheme=='light'?'black':'white'} />} 
-         {hasFilterApplied && <Text color={colourscheme=='light'?'black':'white'}>1</Text>}
-          </>
+            <>
+              {!hasFilterApplied && <Filter color={colourscheme == 'light' ? 'black' : 'white'} />}
+              {hasFilterApplied && <Filter fill={colourscheme == 'light' ? 'black' : 'white'} color={colourscheme == 'light' ? 'black' : 'white'} />}
+              {hasFilterApplied && <Text color={colourscheme == 'light' ? 'black' : 'white'}>1</Text>}
+            </>
           }
-          style={{ marginRight: 10 ,backgroundColor:'transparent'}}
+          style={{ marginRight: 10, backgroundColor: 'transparent' }}
         /> : undefined
-      }} /> 
+      }} />
 
-      <Sheet modal open={modalVisible} onOpenChange={() => dispatch({type:'SET_MODAL_VISIBLE',payload:false})} snapPointsMode='fit' >
+      <Sheet modal open={modalVisible} onOpenChange={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })} snapPointsMode='fit' >
         <ThemedView style={styles.sheetContainer}>
           <Text>Select Date Range:</Text>
 
           <ThemedView style={styles.datePickerRow}>
             <CalendarRange />
-            <Button onPress={() => dispatch({type:'SET_SHOW_START_PICKER',payload:true})}>
-              From: {startDate ? startDate.toLocaleDateString(): <Text>-</Text>}
+            <Button onPress={() => dispatch({ type: 'SET_SHOW_START_PICKER', payload: true })}>
+              From: {startDate ? startDate.toLocaleDateString() : <Text>-</Text>}
             </Button>
             <Text>-</Text>
-            <Button onPress={() =>dispatch({type:'SET_SHOW_END_PICKER',payload:true})}>
-              To: {endDate ? endDate.toLocaleDateString(): <Text>-</Text>}
+            <Button onPress={() => dispatch({ type: 'SET_SHOW_END_PICKER', payload: true })}>
+              To: {endDate ? endDate.toLocaleDateString() : <Text>-</Text>}
             </Button>
           </ThemedView>
-          
+
           <Button onPress={() => handleFilter(startDate, endDate)} style={styles.clearButton}>
             Apply Filter
           </Button>
@@ -289,8 +300,8 @@ const CategoryPage = () => {
           mode="date"
           display="default"
           onChange={(event, selectedDate) => {
-            dispatch({type:'SET_SHOW_START_PICKER',payload:!showStartPicker});
-            if (selectedDate) dispatch({type:'SET_START_DATE',payload:selectedDate})
+            dispatch({ type: 'SET_SHOW_START_PICKER', payload: !showStartPicker });
+            if (selectedDate) dispatch({ type: 'SET_START_DATE', payload: selectedDate })
           }}
         />
       )}
@@ -301,34 +312,37 @@ const CategoryPage = () => {
           mode="date"
           display="default"
           onChange={(event, selectedDate) => {
-            dispatch({type:'SET_SHOW_END_PICKER',payload:false});
-            if (selectedDate) dispatch({type:'SET_END_DATE',payload:selectedDate})
+            dispatch({ type: 'SET_SHOW_END_PICKER', payload: false });
+            if (selectedDate) dispatch({ type: 'SET_END_DATE', payload: selectedDate })
           }}
         />
       )}
 
 
-      {!isLoading && data.length>0 && <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>}>
-        {categories.map(({ title, data, color }, index) => data.length > 0 && 
-        renderCategoryList(title, data, index, color))}
+      {!isLoading && data.length > 0 && <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {categories.map(({ title, data, color }, index) => data.length > 0 &&
+          renderCategoryList(title, data, index, color)
+        )}
       </ScrollView>}
-      {!isLoading && data.length==0 && <>
+      {!isLoading && data.length == 0 && <>
         <Lottie
-                source={require('../../../assets/Animation/Animation-no_data.json')}
-                autoPlay
-                loop
-                style={styles.animation_no_data}
-              />
+          source={require('../../../assets/Animation/Animation-no_data.json')}
+          autoPlay
+          loop
+          style={styles.animation_no_data}
+        />
       </>}
-      {(isLoading || formDataLoading || formData==undefined) && <Lottie
-                source={require('../../../assets/Animation/Animation -loading1.json')}
-                autoPlay
-                loop
-                style={styles.animation}
-              />}
-      <ThemedView style={{ height: 80 }}></ThemedView>
-    </ThemedView>
+      {(isLoading || formDataLoading || formData == undefined) && <Lottie
+        source={require('../../../assets/Animation/Animation -loading1.json')}
+        autoPlay
+        loop
+        style={styles.animation}
+      />}
+      <View style={{ height: 80 }}></View>
+    </LinearGradient>
   );
 };
 
@@ -339,7 +353,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-    paddingTop:Platform.OS=='ios' ? 80:0
+    paddingTop: Platform.OS == 'ios' ? 80 : 0,
   },
   category: {
     color: 'grey',
@@ -366,14 +380,14 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     padding: 20,
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
   },
   datePickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 10,
-    backgroundColor: '#fff',
-    gap:10
+    // backgroundColor: '#fff',
+    gap: 10
   },
   clearButton: {
     marginVertical: 10,
@@ -383,22 +397,22 @@ const styles = StyleSheet.create({
   loadingContainer: {
     padding: 16,
   },
-  skeletonContainer:{
+  skeletonContainer: {
     justifyContent: 'center',
     height: 250,
     width: 250,
     borderRadius: 25,
     marginRight: 10,
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
   },
   animation: {
     width: 'auto',
     height: 250,
   },
-  animation_no_data:{
+  animation_no_data: {
     width: 'auto',
     height: 250,
-    flex:1
+    flex: 1
   }
 });
 

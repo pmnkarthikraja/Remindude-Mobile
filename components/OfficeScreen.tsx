@@ -1,13 +1,68 @@
+import { Colors } from '@/constants/Colors';
 import useBlinkingAnimation from '@/hooks/useAnimations';
 import { categorizeData, Category, FormData } from '@/utils/category';
 import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
-import React, { FunctionComponent } from 'react';
-import { FlatList, Image, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
+import { Easing, FlatList, Image, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { Animated as NativeAnimated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
 import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
+
+
+import { ThemedView } from '@/components/ThemedView';
+import { useUser } from '@/components/userContext';
+import { useGetFormData } from '@/hooks/formDataHooks';
+import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
+import { filterTasks, filterTasksCategory, Task } from '@/utils/task';
+import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import FilterComponent, { Filters } from './FilterTasks';
+import TaskTimer from './TaskTimer';
+import { ThemedText } from './ThemedText';
+
+
+
+interface AnimatedCountProps {
+  finalCount: number,
+  textcolor: string
+}
+
+const AnimatedCount: FunctionComponent<AnimatedCountProps> = ({ finalCount, textcolor }) => {
+  const [displayCount, setDisplayCount] = useState(0);
+  const animatedValue = useRef(new NativeAnimated.Value(0)).current;
+
+  useEffect(() => {
+    NativeAnimated.timing(animatedValue, {
+      toValue: finalCount,
+      duration: 2000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    animatedValue.addListener((v) => {
+      setDisplayCount(Math.round(v.value));
+    });
+
+    return () => {
+      animatedValue.removeAllListeners();
+    };
+  }, [finalCount]);
+
+  return (
+
+    <TextTamagui style={{ marginTop: -10 }} padding={15} fontSize={'$8'}
+      color={textcolor}>
+      {displayCount}
+    </TextTamagui>
+  );
+};
+
+
 
 const categories: Category[] = [
   "Agreements",
@@ -18,6 +73,7 @@ const categories: Category[] = [
   // "VAT Submission",
   "IQAMA Renewals",
   "Insurance Renewals",
+  'House Rental Renewal'
   // "Bills Payments",
   // "Room Rent Collection",
   // "Room Rent Pay",
@@ -48,7 +104,8 @@ export const categoryImagePaths: Record<string, any> = {
   "WithHolding Tax": require('../assets/images/categories/WithHolding Tax.png'),
   "GOSI Payments": require('../assets/images/categories/Room Rent Pay.png'),
   "Saudization Payment collection": require('../assets/images/categories/Rental Collectin.png'),
-  "Employee Issue Tracking": require('../assets/images/categories/Employment Issue.png')
+  "Employee Issue Tracking": require('../assets/images/categories/Employment Issue.png'),
+  'House Rental Renewal':require('../assets/images/categories/Rental Collectin.png'),
 };
 
 export const CategoryCardWrapper: FunctionComponent<{ category: Category, items: FormData[] }> = ({
@@ -79,6 +136,8 @@ interface CategoryCardProps extends CardProps {
 
 export function CategoryCard(props: CategoryCardProps) {
   const { items, category } = props
+
+
   const colorscheme = useColorScheme();
   const animatedStyle = useBlinkingAnimation()
   const image = categoryImagePaths[props.category];
@@ -86,6 +145,13 @@ export function CategoryCard(props: CategoryCardProps) {
   const getCardBackgroundColor = (index: number) => {
     const lightColors = ['#F0F4C3', '#FFCDD2', '#D1C4E9'];
     const darkColors = ['#4CAF50', '#E57373', '#9575CD'];
+
+    return colorscheme === 'light' ? lightColors[index] : darkColors[index];
+  };
+
+  const getCountColor = (index: number) => {
+    const darkColors = ['#F0F4C3', '#FFCDD2', '#D1C4E9'];
+    const lightColors = ['#4CAF50', '#E57373', '#9575CD'];
 
     return colorscheme === 'light' ? lightColors[index] : darkColors[index];
   };
@@ -110,19 +176,20 @@ export function CategoryCard(props: CategoryCardProps) {
         <View style={styles.cardHeader}>
           <Image source={image} style={styles.cardHeadImg} />
           <H3 theme={'alt2'}
-            color={'$black050'}
+            color={colorscheme == 'light' ? Colors.light.tint : 'white'}
             size={'$8'}>
             {props.category}
           </H3>
         </View>
 
-        {renewal.length > 0 && <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' },animatedStyle]}>
+        {renewal.length > 0 && <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, animatedStyle]}>
           <Text adjustsFontSizeToFit
             style={{ fontSize: 12, color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 10 }}>
             Renewal Pending:
           </Text>
           <Text style={{ fontWeight: 'bold', color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 5, fontSize: 20 }}>{renewal.length}</Text>
         </Animated.View>}
+        
       </Card.Header>
 
       <Card.Footer padded>
@@ -186,10 +253,9 @@ export function CategoryCard(props: CategoryCardProps) {
               jc="center"
             >
               <View style={{ height: 20 }}></View>
-              <TextTamagui fontSize={10} color={'$black'} >{item.label}</TextTamagui>
-              <TextTamagui style={{ marginTop: -10 }} padding={15} fontSize={'$8'} color={'$accentColor'}>
-                {item.count}
-              </TextTamagui>
+              <TextTamagui fontSize={10} color={colorscheme == 'light' ? 'black' : 'white'} >{item.label}</TextTamagui>
+
+              <AnimatedCount finalCount={item.count} textcolor={getCountColor(index)} />
 
               {index == 0 && <Svg
                 height="50"
