@@ -1,5 +1,4 @@
 import { Filters } from '@/components/FilterTasks';
-import { isSameDay, startOfYesterday } from 'date-fns';
 import moment from 'moment';
 
 export type TaskKind = 'Task' | 'Meeting'
@@ -25,33 +24,13 @@ export interface Task {
   subTasks?: SubTask[]
 }
 
-
-
-
-
-// const isToday = (date: Date) => isSameDay(date, new Date());
-const isYesterday = (date: Date) => isSameDay(date, startOfYesterday());
-// const isTomorrow = (date: Date) => isSameDay(date, startOfTomorrow());
-// const isThisWeek = (date: Date) => isWithinInterval(date, { start: startOfWeek(new Date()), end: endOfWeek(new Date()) });
-// const isThisMonth = (date: Date) => isWithinInterval(date, { start: startOfMonth(new Date()), end: endOfMonth(new Date()) });
-
-
-// const isDateToday = (date: Date) => isToday(date);
-// const isDateTomorrow = (date: Date) => isTomorrow(date);
-// const isDateThisWeek = (date: Date) => isThisWeek(date);
-// const isDateThisMonth = (date: Date) => isThisMonth(date);
-// export const isDateYesterday = (date: Date|moment.Moment) => isYesterday(date);
 export const isDateToday = (date: Date | moment.Moment) => moment().isSame(date, 'day');
 export const isDateTomorrow = (date: Date | moment.Moment) => moment().add(1, 'days').isSame(date, 'day');
 export const isDateYesterday = (date: Date | moment.Moment) => moment().subtract(1, 'days').isSame(date, 'day')
 const isDateThisWeek = (date: Date | moment.Moment) => moment().isSame(date, 'week');
 const isDateThisMonth = (date: Date | moment.Moment) => moment().isSame(date, 'month');
 
-
-
-
 export type FilterType = 'Today' | 'Yesterday' | 'Tomorrow' | 'ThisWeek' | 'ThisMonth' | 'DateRange' | 'All'
-
 
 export const filterDateRangeTasks = (tasks: Task[], startDate?: Date, endDate?: Date): Task[] => {
   return tasks.filter(task => {
@@ -97,10 +76,6 @@ export const filterTasks = (tasks: Task[]) => {
   );
 };
 
-
-
-
-
 export const parseTaskDates = (data: Task[]): Task[] => {
   return data.map((item) => {
     return {
@@ -109,7 +84,6 @@ export const parseTaskDates = (data: Task[]): Task[] => {
     }
   });
 };
-
 
 
 export const filterTasksCategory = (contextTasks: Task[], filters: Filters) => {

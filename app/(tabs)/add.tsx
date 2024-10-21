@@ -14,10 +14,13 @@ import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
-import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
+import moment from 'moment';
+import HolidayCalendarOffice from '@/components/HolidayCalenderOffice';
+import { Ionicons } from '@expo/vector-icons';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -38,7 +41,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   editItem
 }) => {
   // const [isLoading, setLoading] = useState(false)
-  const { control, handleSubmit, setValue, watch, reset, formState:{errors} } = useForm<FormData>({
+  const { control, handleSubmit, setValue, watch, reset, formState, trigger } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
@@ -49,7 +52,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       customReminderDates: []
     }
   });
-  const {loading,user,officeMode} = useUser()
+  const { loading, user, officeMode } = useUser()
   const [isSheetOpen, setIsSheetOpen] = useState(!isEdit && officeMode && true);
   const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
@@ -67,8 +70,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-  const {isLoading:addFormDataLoading,isError:isAddFormdataErr,mutateAsync:addFormData} = useCreateFormDataMutation()
-  const {isLoading:updateFormDataLoading,isError:isUpdateFormdataErr,mutateAsync:updateFormData} = useUpdateFormDataMutation()
+  const { isLoading: addFormDataLoading, isError: isAddFormdataErr, mutateAsync: addFormData } = useCreateFormDataMutation()
+  const { isLoading: updateFormDataLoading, isError: isUpdateFormdataErr, mutateAsync: updateFormData } = useUpdateFormDataMutation()
+  const { errors } = formState
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -87,7 +91,15 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }));
   };
 
+
+
   const data = watch()
+
+  const doSetReminderDates = () => {
+    const newWatch = watch()
+    const reminderDates = calculateReminderDates(newWatch).reminderDates
+    setValue('reminderDates', reminderDates)
+  }
 
   const debouncedReset = debounce((category: string) => {
     if (!isEdit) {
@@ -112,8 +124,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             insuranceEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
-            remarks:'',
-            reminderDates:[]
+            remarks: '',
+            reminderDates: []
           });
           break;
         case 'IQAMA Renewals':
@@ -124,8 +136,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             iqamaNumber: '',
             wantsCustomReminders: false,
             customReminderDates: [],
-            remarks:'',
-            reminderDates:[]
+            remarks: '',
+            reminderDates: []
           });
           break;
         case 'Purchase Order':
@@ -138,8 +150,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             poEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
-            remarks:'',
-            reminderDates:[]
+            remarks: '',
+            reminderDates: []
           });
           break;
         default:
@@ -152,8 +164,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             visaEndDate: new Date(),
             wantsCustomReminders: false,
             customReminderDates: [],
-            remarks:'',
-            reminderDates:[]
+            remarks: '',
+            reminderDates: []
           });
           break;
       }
@@ -166,39 +178,40 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const colorScheme = useColorScheme()
 
-if (officeMode){
-  return <TaskEditScreen/>
-}
 
-  if (loading){
-    return <ActivityIndicator size={'large'}/>
+  if (officeMode) {
+    return <TaskEditScreen />
+  }
+
+  if (loading) {
+    return <ActivityIndicator size={'large'} />
   }
 
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (data: FormData) => {
-    if (user!=null){
-    if (!isEdit) {
-      const id = uuid.v4().toString()
-      const withId: FormData = { ...data, id,email:user.email }
-      const withReminderDates = calculateReminderDates(withId)
-      await buildNotifications(withReminderDates,'Add')
-      try{
-        await addFormData(withReminderDates)
-      }catch(e){
-        console.log("error on axios:",e)
-      }
-    } else {
-      const withReminderDates = calculateReminderDates(data)
-      await buildNotifications(withReminderDates,'Update')
-      const updateData:FormData = {...withReminderDates,email:user.email}
+    if (user != null) {
+      if (!isEdit) {
+        const id = uuid.v4().toString()
+        const withId: FormData = { ...data, id, email: user.email }
+        // const withReminderDates = calculateReminderDates(withId)
+        await buildNotifications(withId, 'Add')
+        try {
+          await addFormData(withId)
+        } catch (e) {
+          console.log("error on axios:", e)
+        }
+      } else {
+        // const withReminderDates = calculateReminderDates(data)
+        await buildNotifications(data, 'Update')
+        const updateData: FormData = { ...data, email: user.email }
 
-      try{
-      await updateFormData(updateData)
-      }catch(e){
-        console.log("error on axios:",e)
+        try {
+          await updateFormData(updateData)
+        } catch (e) {
+          console.log("error on axios:", e)
+        }
       }
-      }
-  }
+    }
     setTimeout(() => {
       reset()
       router.navigate('/')
@@ -219,7 +232,7 @@ if (officeMode){
     control: Control<FormData>,
     label: string,
     placeholder: string,
-    errorss: FieldErrors<FormData>, 
+    errorss: FieldErrors<FormData>,
     rules?: object
   ) => {
     return (
@@ -229,31 +242,31 @@ if (officeMode){
           control={control}
           name={name}
           rules={{
-            required: 'This field is required', 
+            required: 'This field is required',
             ...rules,
           }}
           render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
-                    color: colorScheme === 'light' ? 'black' : 'white',
-                  },
-                ]}
-                placeholder={placeholder}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={typeof value === 'string' ? value : ''}
-              />
+            <Input
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
+                  color: colorScheme === 'light' ? 'black' : 'white',
+                },
+              ]}
+              placeholder={placeholder}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={typeof value === 'string' ? value : ''}
+            />
           )}
         />
-  
-      {errorss[name as keyof FieldErrors<FormData>] && (
-        <ThemedText style={styles.errorText}>
-          {errorss[name as keyof FieldErrors<FormData>]?.message || ''}
-        </ThemedText>
-      )}      
+
+        {errorss[name as keyof FieldErrors<FormData>] && (
+          <ThemedText style={styles.errorText}>
+            {errorss[name as keyof FieldErrors<FormData>]?.message || ''}
+          </ThemedText>
+        )}
       </>
     );
   };
@@ -332,13 +345,16 @@ if (officeMode){
                   display='spinner'
                   onChange={(e, date) => {
                     if (Platform.OS == 'ios' && date) {
-                    date.setHours(10,0,0,0) //set 10 am
+                      date.setHours(10, 0, 0, 0) //set 10 am
                       setIosDate(date)
                     } else {
                       if (date) {
-                        date.setHours(10,0,0,0) //set 10 am
+                        date.setHours(10, 0, 0, 0) //set 10 am
                         toggleDatePickerVisibility(fieldName, false);
                         setValue(fieldName, date)
+                        // const updatedform = calculateReminderDates(data)
+                        // setValue('reminderDates',updatedform.reminderDates)
+                        doSetReminderDates()
                       }
                       toggleDatePickerVisibility(fieldName, false);
                     }
@@ -349,6 +365,7 @@ if (officeMode){
             </Sheet.Frame>
           </Sheet>
         )}
+
         {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && (
           <DateTimePicker
             value={selectedDate || new Date()}
@@ -356,9 +373,12 @@ if (officeMode){
             display='default'
             onChange={(e, date) => {
               if (date) {
-                date.setHours(10,0,0,0) //set 10 am
+                date.setHours(10, 0, 0, 0) //set 10 am
                 toggleDatePickerVisibility(fieldName, false);
                 setValue(fieldName, date)
+                // const updatedform = calculateReminderDates(data)
+                // setValue('reminderDates',updatedform.reminderDates)
+                doSetReminderDates()
               }
               toggleDatePickerVisibility(fieldName, false);
             }}
@@ -368,26 +388,38 @@ if (officeMode){
     </>
   }
 
-  const renderInstantDate = (fieldName:AcceptedDateFields)=>{
+  const renderInstantDate = (fieldName: AcceptedDateFields) => {
     return <>
-      {fieldName !== 'customReminderDate' &&<XStack paddingVertical={10}>
-            <TouchableOpacity style={styles.box} activeOpacity={0.7} 
-            onPress={()=>setValue(fieldName,addDays(new Date(), 30))}>
-              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+30days</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.box} activeOpacity={0.7}
-             onPress={()=>setValue(fieldName,addDays(new Date(), 60))}>
-              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+60days</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.box} activeOpacity={0.7}
-             onPress={()=>setValue(fieldName,addDays(new Date(), 90))}>
-              <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+90days</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.box,{backgroundColor:'orange',borderColor:'white'}]} activeOpacity={0.7}
-             onPress={()=>setValue(fieldName,addDays(new Date(), 0))}>
-              <Text fontSize={11} textAlign='center' color={'red'} fontWeight={'bold'}>Reset</Text>
-            </TouchableOpacity>
-          </XStack>}
+      {fieldName !== 'customReminderDate' && <XStack marginBottom={20}>
+        <TouchableOpacity style={styles.box} activeOpacity={0.7}
+          onPress={async () => {
+            setValue(fieldName, addDays(new Date(), 30));
+            doSetReminderDates()
+          }}>
+          <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+30days</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.box} activeOpacity={0.7}
+          onPress={() => {
+            setValue(fieldName, addDays(new Date(), 60));
+            doSetReminderDates()
+          }}>
+          <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+60days</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.box} activeOpacity={0.7}
+          onPress={() => {
+            setValue(fieldName, addDays(new Date(), 90));
+            doSetReminderDates()
+          }}>
+          <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+90days</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.box, { backgroundColor: 'orange', borderColor: 'white' }]} activeOpacity={0.7}
+          onPress={() => {
+            setValue(fieldName, addDays(new Date(), 0));
+            doSetReminderDates()
+          }}>
+          <Text fontSize={11} textAlign='center' color={'red'} fontWeight={'bold'}>Reset</Text>
+        </TouchableOpacity>
+      </XStack>}
     </>
   }
 
@@ -452,7 +484,8 @@ if (officeMode){
                 toggleDatePickerVisibility('customReminderDate', false);
                 const dates = data.customReminderDates || []
                 if (e.type == 'set') {
-                  dates.push(date)
+                  const newDate = new Date(date.setHours(10, 0, 0))
+                  dates.push(newDate)
                   setValue('customReminderDates', dates)
                 }
               }
@@ -483,7 +516,8 @@ if (officeMode){
                     minimumDate={new Date()}
                     onChange={(e, date) => {
                       if (date && Platform.OS == 'ios' && e.type == 'set') {
-                        setIosDate(date)
+                        const newDate = new Date(date.setHours(10, 0, 0))
+                        setIosDate(newDate)
                       }
                     }}
                   />
@@ -492,47 +526,99 @@ if (officeMode){
               </Sheet.Frame>
             </Sheet>
           </>)}
-        {data.customReminderDates?.length > 0 && data.customReminderDates.map((date, idx) =>
-          <XStack alignItems='center' key={idx}><CalendarRange size={20} color={Colors.light.tint} marginHorizontal={10} />
-            <ThemedText key={idx}>{date.toLocaleDateString()}</ThemedText>
-            <X size={20} color={'orange'} onPress={() => {
-              const dates = data.customReminderDates
-              setValue('customReminderDates', dates.filter((date, index) => index != idx))
-            }} />
-          </XStack>)}
+
+
+        <YStack>
+          {data.customReminderDates?.length > 0 && (
+            <XStack flexWrap="wrap" justifyContent="space-between">
+              {data.customReminderDates.map((date, idx) => (
+                <XStack
+                  key={idx}
+                  width="48%"
+                  paddingVertical={5}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      gap: 10,
+                      backgroundColor: 'orange',
+                      borderRadius: 10,
+                      padding: 5,
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <CalendarRange size={20} color={'white'} marginHorizontal={10} />
+                    <Text color={'white'}>{date.toLocaleDateString()}</Text>
+                    <X
+                      size={20}
+                      color={'red'}
+                      onPress={() => {
+                        const dates = data.customReminderDates;
+                        setValue(
+                          'customReminderDates',
+                          dates.filter((_, index) => index !== idx)
+                        );
+                      }}
+                    />
+                  </View>
+                </XStack>
+              ))}
+            </XStack>
+          )}
+        </YStack>
       </>}
     </>
   }
 
   const renderFormFields = () => {
-    const id = `checkbox-${(10 || '').toString().slice(1)}`
-
     switch (data.category) {
       case 'Agreements':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
-          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code',errors)}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
+          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-        
-
-          <ThemedText style={styles.label}>Start Date and End Date</ThemedText>
-          {renderInstantDate('endDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
+          {/* <ThemedText style={styles.label}>Start Date and End Date</ThemedText> */}
+          {/* <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
             {renderDatePicker(new Date(data.startDate), 'startDate')}
             <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            color: '#007BFF',
             {renderDatePicker(new Date(data.endDate), 'endDate')}
-          </ThemedView>
+          </ThemedView> */}
+
+
+          <ThemedText style={styles.label}>Start Date:</ThemedText>
+
+          <HolidayCalendarOffice
+            datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>End Date:</ThemedText>
+
+          {renderInstantDate('endDate')}
+
+          <HolidayCalendarOffice
+            triggerReminderDates={doSetReminderDates}
+            datetime={data.endDate} isEdit={!!isEdit} setValue={setValue} fieldname='endDate' />
 
           {renderCustomReminderDates()}
 
 
+          <View style={styles.caution}>
+            <Ionicons name='alert-circle' size={21} color={'yellow'} />
+            <ThemedText style={{ color: 'grey' }}>You will get notified on these dates below.</ThemedText>
+          </View>
+
+          {data.reminderDates?.concat(data.customReminderDates).map((value, index) =>
+            <ThemedText style={{ paddingHorizontal: 30 }} key={index}>{index + 1}{'.'}{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
         </>
       case 'Purchase Order':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
-          {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name',errors)}
-          {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number',errors)}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
+          {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name', errors)}
+          {renderTextInput('poNumber', control, 'PO Number', 'Enter PO Number', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
           <ThemedText style={styles.label}>PO Issue Date and End Date</ThemedText>
           {renderInstantDate('poEndDate')}
@@ -543,11 +629,20 @@ if (officeMode){
             {renderDatePicker(new Date(data.poEndDate), 'poEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
+          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+          {data.reminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+          {data.customReminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
         </>
       case 'IQAMA Renewals':
         return <>
-          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name',errors)}
-          {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number',errors)}
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
+          {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number', errors)}
+          {renderTextInput('iqamaNumber', control, 'Contract Start Date', 'Enter IQAMA Number', errors)}
+          {renderTextInput('iqamaNumber', control, 'Contract End Date', 'Enter IQAMA Number', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
@@ -558,15 +653,22 @@ if (officeMode){
           </ThemedView>
 
           {renderCustomReminderDates()}
+          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+          {data.reminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+          {data.customReminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
         </>
       case 'Visa Details':
         return <>
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name',errors)}
-          {renderTextInput('visaNumber', control, 'Visa Number', 'Enter Visa Number',errors)}
-          {renderTextInput('sponsor', control, 'Sponsor', 'Enter Sponsor',errors)}
-          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name',errors)}
+          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
+          {renderTextInput('visaNumber', control, 'Visa Number', 'Enter Visa Number', errors)}
+          {renderTextInput('sponsor', control, 'Sponsor', 'Enter Sponsor', errors)}
+          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-          <ThemedText style={styles.label}>Visa Entry Date and End Date</ThemedText>
+          <ThemedText style={styles.label}>Visa Entry Date and Exit Before Date</ThemedText>
           {renderInstantDate('visaEndDate')}
           <ThemedView style={styles.dateDisplayContainer}>
             <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
@@ -575,13 +677,20 @@ if (officeMode){
             {renderDatePicker(new Date(data.visaEndDate), 'visaEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
+          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+          {data.reminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+          {data.customReminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
         </>
       case 'Insurance Renewals':
         return <>
-          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name',errors)}
-          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company',errors)}
-          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category',errors)}
-          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value',errors)}
+          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
+          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company', errors)}
+          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category', errors)}
+          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
@@ -593,6 +702,13 @@ if (officeMode){
             {renderDatePicker(new Date(data.insuranceEndDate), 'insuranceEndDate')}
           </ThemedView>
           {renderCustomReminderDates()}
+          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+          {data.reminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+          {data.customReminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
         </>
     }
   }
@@ -698,6 +814,12 @@ const styles = StyleSheet.create({
     marginVertical: 50,
     color: 'black'
   },
+  caution: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    // paddingLeft: 10
+  },
   input: {
     height: 40,
     borderColor: 'gray',
@@ -772,17 +894,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  box:{
-    width:60,
-    height:30,
-    backgroundColor:'skyblue',
-    padding:6,
-    borderRadius:25,
-    elevation:3,
-    borderWidth:2,
-    borderStyle:'solid',
-    borderColor:Colors.light.tint,
-    justifyContent:'center',
-    marginRight:10,
+  box: {
+    width: 60,
+    height: 30,
+    backgroundColor: 'skyblue',
+    padding: 6,
+    borderRadius: 25,
+    elevation: 3,
+    borderWidth: 2,
+    borderStyle: 'solid',
+    borderColor: Colors.light.tint,
+    justifyContent: 'center',
+    marginRight: 10,
   }
 });

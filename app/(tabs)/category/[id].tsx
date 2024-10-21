@@ -13,6 +13,7 @@ import Item from './Item';
 import Lottie from 'lottie-react-native';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import { wait } from '@/components/OfficeScreen';
+import useBlinkingAnimation from '@/hooks/useAnimations';
 
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
@@ -101,11 +102,11 @@ const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
   const [state, dispatch] = useReducer(reducer, { ...initialState});
   const { data:formData, isLoading:formDataLoading, error:getFormDataError,refetch } = useGetFormData();
-  const opacity = useSharedValue(1);
   const {initialData:got,data,endDate,modalVisible,refreshing,showEndPicker,showStartPicker,startDate} = state
   const colourscheme = useColorScheme();
   const [isLoading,setIsLoading]=useState(true)
   const navigation = useNavigation()
+  const animatedStyle = useBlinkingAnimation()
 
   useEffect(() => {
    const doRefetch = async () =>{
@@ -120,21 +121,10 @@ const CategoryPage = () => {
    doRefetch()
   }, [category, colourscheme, navigation]);
 
-  React.useEffect(() => {
-    opacity.value = withRepeat(withTiming(0, { duration: 500, easing: Easing.linear, reduceMotion:ReduceMotion.Never }), -1, true);
-  }, [opacity]);
-
   const onRefresh= useCallback(()=>{
     dispatch({type:'SET_REFRESHING',payload:true})
     wait(2000).then(() => dispatch({ type: 'SET_REFRESHING', payload: false }));
   },[])
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      borderColor: 'red',
-    };
-  });
 
   const hasFilterApplied = startDate && endDate && (!modalVisible || got.length!==data.length)
 

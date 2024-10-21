@@ -1,8 +1,10 @@
+import useBlinkingAnimation from '@/hooks/useAnimations';
 import { categorizeData, Category, FormData } from '@/utils/category';
 import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent } from 'react';
 import { FlatList, Image, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
 import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
@@ -78,6 +80,7 @@ interface CategoryCardProps extends CardProps {
 export function CategoryCard(props: CategoryCardProps) {
   const { items, category } = props
   const colorscheme = useColorScheme();
+  const animatedStyle = useBlinkingAnimation()
   const image = categoryImagePaths[props.category];
 
   const getCardBackgroundColor = (index: number) => {
@@ -113,13 +116,13 @@ export function CategoryCard(props: CategoryCardProps) {
           </H3>
         </View>
 
-        {renewal.length > 0 && <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {renewal.length > 0 && <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' },animatedStyle]}>
           <Text adjustsFontSizeToFit
             style={{ fontSize: 12, color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 10 }}>
             Renewal Pending:
           </Text>
           <Text style={{ fontWeight: 'bold', color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 5, fontSize: 20 }}>{renewal.length}</Text>
-        </View>}
+        </Animated.View>}
       </Card.Header>
 
       <Card.Footer padded>
