@@ -42,7 +42,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   editItem
 }) => {
   // const [isLoading, setLoading] = useState(false)
-  const { control, handleSubmit, setValue, watch, reset, formState, trigger, getValues } = useForm<FormData>({
+  const { control, handleSubmit, setValue, watch, reset, formState, trigger, getValues, setError } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
@@ -77,14 +77,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const { isLoading: updateFormDataLoading, isError: isUpdateFormdataErr, mutateAsync: updateFormData } = useUpdateFormDataMutation()
   const { errors } = formState
   const [childrenValues, setChildrenValues] = useState<string[]>(watch('childrenInsuranceValues') || []);
+  const [totalValue, setTotalValue] = useState(watch('value') || '0')
   const data = watch()
-
 
   const addChild = () => {
     if (data.category == 'Insurance Renewals') {
       if (data.childrenInsuranceValues && data.childrenInsuranceValues.length < 4) {
         setChildrenValues([...childrenValues, '']);
         setValue('childrenInsuranceValues', [...data.childrenInsuranceValues, ''])
+        if (data.childrenInsuranceValues.includes('')) {
+          setError('childrenInsuranceValues', {
+            message: 'Children Field Should not be empty'
+          })
+        }
+        calculateTotalInsuredValue()
       }
     }
   };
@@ -119,16 +125,23 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       const spValue = parseFloat(newData.spouseInsuranceValue || '0') || 0;
       const childrenTotal = newData.childrenInsuranceValues?.reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
       const totalSum = empValue + spValue + (childrenTotal || 0);
-      setValue('value', totalSum.toFixed(2))
+      console.log("value", totalSum.toFixed(2))
+      setTotalValue(totalSum.toFixed(2))
+      setValue('value', `${totalSum.toFixed(2)}`)
     }
   }
-
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (!isEdit && !officeMode) {
         setIsSheetOpen(true)
         setManualReminders(false)
+        setChildrenValues([])
+        setTotalValue('0')
+      }
+      if (isEdit && !officeMode) {
+        setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+        setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
       }
     });
     return unsubscribe;
@@ -248,7 +261,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const colorScheme = useColorScheme()
 
-
   if (officeMode) {
     return <TaskEditScreen />
   }
@@ -258,16 +270,16 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   }
 
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
-  const onSubmit = async (data: FormData) => {
-    console.log("on submit: ",data)
+  const onSubmit = async (formdata: FormData) => {
+    const data = formdata.category == 'Insurance Renewals' ? { ...formdata, value: totalValue } : formdata
     if (user != null) {
       if (!isEdit) {
         const id = uuid.v4().toString()
         const withId: FormData = { ...data, id, email: user.email }
-        // const withReminderDates = calculateReminderDates(withId)
         await buildNotifications(withId, 'Add')
         try {
           await addFormData(withId)
+          setTotalValue('0')
         } catch (e) {
           console.log("error on axios:", e)
         }
@@ -278,6 +290,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
         try {
           await updateFormData(updateData)
+          setTotalValue('0')
         } catch (e) {
           console.log("error on axios:", e)
         }
@@ -847,6 +860,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             datetime={data.visaEndDate} isEdit={!!isEdit} setValue={setValue}
             fieldname='visaEndDate' triggerReminderDates={doSetReminderDates} />
 
+          <ThemedText style={styles.label}>Status: </ThemedText>
+          {renderStatus()}
+
           {renderCustomReminderDates()}
 
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
@@ -930,6 +946,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             datetime={data.insuranceEndDate} isEdit={!!isEdit} setValue={setValue}
             fieldname='insuranceEndDate' triggerReminderDates={doSetReminderDates} />
 
+          <ThemedText style={styles.label}>Status: </ThemedText>
+          {renderStatus()}
+
           {renderCustomReminderDates()}
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
@@ -947,14 +966,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('rentAmount', control, 'Rent Amount', 'Enter Rent Amount', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
-          <ThemedText style={styles.label}>Rental Start Date and End Date</ThemedText>
+          <ThemedText style={styles.label}>Rental Start Date:</ThemedText>
+          <HolidayCalendarOffice
+            datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>Rental End Date:</ThemedText>
           {renderInstantDate('endDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.startDate), 'startDate')}
-            <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(new Date(data.endDate), 'endDate')}
-          </ThemedView>
+          <HolidayCalendarOffice
+            datetime={data.endDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='endDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>Status: </ThemedText>
+          {renderStatus()}
+
           {renderCustomReminderDates()}
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>

@@ -86,7 +86,18 @@ export const buildNotifications = async (formData:FormData, mode:'Add'|'Update')
         })
         storeNotificationIds(formData.id,notificationIds)
         return 
-    }else{
+    }else if(formData.category=='House Rental Renewal'){
+        const notificationIds:string[]=[]
+        const title = "House Rental Reminder"
+        const body = `The house rental with ${formData.houseOwnerName} is nearing its end. House Rental ends on ${formData.endDate.toLocaleDateString()}. Action required before 30 days of House Rental End date.`
+        reminders.forEach(async (remind,idx)=>{
+            const id = await constructNotification('Purchase Order',title, body,remind,idx)
+            notificationIds.push(id)
+        })
+        storeNotificationIds(formData.id,notificationIds)
+        return 
+    }
+    else{
         const notificationIds:string[]=[]
         const title = "Visa Expiry Reminder"
         const body = `Visa for ${formData.clientName} is expiring soon. Visa ends on ${formData.visaEndDate.toLocaleDateString()}. Entry Date: ${formData.visaEntryDate.toLocaleDateString()}. Please ensure renewal before ${formData.visaEndDate.toLocaleDateString()}.`

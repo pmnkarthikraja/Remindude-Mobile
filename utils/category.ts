@@ -101,7 +101,6 @@ export interface HouseRentalRenewal {
 
 export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals | HouseRentalRenewal;
 
-
 export type Category =
   | "Agreements"
   | "Purchase Order"
