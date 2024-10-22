@@ -1,7 +1,6 @@
 import HolidayCalendarOffice from '@/components/HolidayCalenderOffice';
 import { categoryImagePaths } from '@/components/OfficeScreen';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
@@ -41,8 +40,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   isEdit,
   editItem
 }) => {
-  // const [isLoading, setLoading] = useState(false)
-  const { control, handleSubmit, setValue, watch, reset, formState, trigger, getValues, setError } = useForm<FormData>({
+  const { control, handleSubmit, setValue, watch, reset, formState, setError } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
@@ -927,7 +925,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <YStack alignItems="center" marginVertical={20}>
             <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Total Insured Value</ThemedText>
-            <ThemedText style={{ fontSize: 24, color: '#1E88E5' }}>{`$${watch('value') || 0}`}</ThemedText>
+            <ThemedText style={{ fontSize: 24, color: '#1E88E5' }}>{`$${totalValue || 0}`}</ThemedText>
           </YStack>
 
           {renderTextInput('value', control, 'Total Insurance Value', 'Calculating Sum Insured Value..', errors, true)}
