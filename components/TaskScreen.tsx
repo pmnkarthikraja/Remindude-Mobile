@@ -2,7 +2,6 @@ import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
-import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
 import { filterTasks, filterTasksCategory, Task } from '@/utils/task';
 import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,6 +16,7 @@ import Svg, { Path } from 'react-native-svg';
 import FilterComponent, { Filters } from './FilterTasks';
 import TaskTimer from './TaskTimer';
 import { ThemedText } from './ThemedText';
+import { useTimeElapseAnimation } from './TimeAnimationProvider';
 
 const TaskPage: FunctionComponent = () => {
   const colorscheme = useColorScheme()

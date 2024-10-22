@@ -1,6 +1,6 @@
 import { useUser } from "@/components/userContext";
-import { FormData, parseDates } from "@/utils/category";
-import axios, { AxiosError } from "axios";
+import { FormData, parseDateForSingleItem, parseDates } from "@/utils/category";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 
@@ -85,6 +85,34 @@ export const useGetFormData = () => {
 
   return {
     data: parsedData,
+    error,
+    isLoading,
+    refetch,
+    isError
+  };
+};
+
+export const useGetFormDataById = (id:string) => {
+  const { data, error, isLoading ,refetch,isError} = useQuery<FormData, AxiosError<any>>({
+    queryKey: ['formdata', id],
+    queryFn: async () => {
+      const res = await axios.get(`https://remindude.vercel.app/formdata/id/${id}`, {
+        params: { id },
+      });
+      return res.data as FormData
+    },
+    enabled: !!id,
+    refetchOnWindowFocus: false, 
+    staleTime: 5 * 60 * 1000, 
+  });
+
+  const parsedData = useMemo(() => {
+    if (!data) return undefined;
+    return parseDateForSingleItem(data);
+  },[data]);
+
+  return {
+    data:parsedData,
     error,
     isLoading,
     refetch,

@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
+import { useTimeElapseAnimation } from '@/components/TimeAnimationProvider';
 import { useDeleteFormDataMutation } from '@/hooks/formDataHooks';
-import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
 import { FormData } from '@/utils/category';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { CalendarClock, CheckCircle, CircleUser, FileText, Tag, Trash, User, UserCheck2, Workflow } from '@tamagui/lucide-icons';
@@ -8,11 +8,11 @@ import { router } from 'expo-router';
 import moment from 'moment';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { ActivityIndicator, Animated, Modal, Platform, StyleSheet, Switch, Text, useColorScheme } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Platform, StyleSheet, Switch, Text, useColorScheme, View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
 import { Button, Card, CardHeader, Paragraph, XStack, YStack } from 'tamagui';
 
-const colors = {
+const colors1 = {
   light: {
     primary: '#1E88E5',  // Teal Blue for primary icons 
     secondary: '#FFB300', // Amber for secondary icons 
@@ -37,16 +37,14 @@ const colors = {
   }
 };
 
+
+
 const Item = React.memo(({ item }: { item: FormData }) => {
-  const { setValue, watch } = useForm<FormData>({
-    defaultValues: item
-  })
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const colorscheme = useColorScheme();
+  const iconName = useTimeElapseAnimation()
   const { isLoading: deleteFormDataLoading, isError: isDeleteFormdataErr, mutateAsync: deleteFormData } = useDeleteFormDataMutation()
-
   const [modalState, setModalState] = useState<{ isVisible: boolean, itemId: string | null }>({ isVisible: false, itemId: null });
-  const { completed } = watch()
   const handleDelete = useCallback(async () => {
     try {
       await deleteFormData(item.id)
@@ -70,13 +68,22 @@ const Item = React.memo(({ item }: { item: FormData }) => {
     }).start();
   }, [fadeAnim]);
 
-  const backgroundColor = colorscheme === 'light'
+  const backgroundColor = colorscheme == 'light'
     ? 'white'
-    : Platform.OS === 'ios'
-      ? '$accentBackground'
-      : '$accentColor';
+    : 'transparent'
 
-  const currentColors = colors[colorscheme || 'light'];
+  const colors = {
+    primary: '#1E88E5',  // Teal Blue for primary icons 
+    secondary: '#1E88E5',
+    accent1: '#1E88E5',
+    accent2: '#1E88E5',
+    accent3: '#1E88E5',
+    accent4: '#1E88E5',
+    accent5: '#C2185B',
+    text: colorscheme == 'light' ? '#212121' : '#EEEEEE',
+    background: colorscheme == 'light' ? '#FAFAFA' : "#303030"
+  };
+
 
   const differenceInDays = (targetDate: Date): number => {
     const endDate = moment(targetDate)
@@ -84,8 +91,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
     return endDate.diff(currentDate, 'days')
   }
 
-  const renderContent = useCallback(() => {
-    const iconName = useTimeElapseAnimation()
+  const renderContent = useCallback((icon: 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete') => {
     switch (item.category) {
       case 'Agreements':
         return (
@@ -93,51 +99,46 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <XStack justifyContent='space-between'>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <User size={20} color={currentColors.accent1} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.clientName}</Text>
+                  <User size={20} color={colors.accent1} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.clientName}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <Tag size={20} color={currentColors.secondary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Vendor Code: {item.vendorCode}</Text>
+                  <Tag size={20} color={colors.secondary} />
+                  <Text style={[styles.text, { color: colors.text }]}>Vendor Code: {item.vendorCode}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.secondary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Start Date: {moment(item.startDate).format('DD-MM-YYYY')}</Text>
+                  <CalendarClock size={20} color={colors.secondary} />
+                  <Text style={[styles.text, { color: colors.text }]}>Start Date: {moment(item.startDate).format('DD-MM-YYYY')}</Text>
                 </XStack>
               </YStack>
-              <Text></Text>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{moment(item.endDate).format('DD-MM-YYYY')}</Text>
+                  <CalendarClock size={20} color={colors.primary} />
+                  <Text style={[styles.text, { color: colors.text }]}>{moment(item.endDate).format('DD-MM-YYYY')}</Text>
                 </XStack>
-                <XStack alignItems='center' gap={10}>
 
-                  {/* <ThemedText>Completed</ThemedText>
-                  <MaterialIcons name='check' color={'green'} size={20} /> */}
-
+                <XStack >
                   {differenceInDays(item.endDate) < 1 ?
-                   ( <>
-                      <ThemedText>Pending</ThemedText>
-                      <Ionicons name='pause-circle-outline' color={'orange'} size={20} />
-                    </>) :
-                    (
-                      <>
-                        <ThemedText>In-Progress</ThemedText>
-                        <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />
-                      </>
-                    )
+                    (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ color: 'red' }}>Pending</Text>
+                      <Ionicons name='pause-circle-outline' color={'red'} size={20} />
+                    </View>) : <>
+                      {item.completed ? (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkgreen' }}>Completed</Text>
+                        <MaterialIcons name='check' color={'darkgreen'} size={20} />
+                      </View>) : (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkorange' }}>In-Progress</Text>
+                        <MaterialCommunityIcons name='progress-clock' color={'darkorange'} size={20} />
+                      </View>)}
+                    </>
                   }
-
-                  {/* {task.status == 'In-Progress' && <MaterialCommunityIcons name='progress-clock' color={'green'} size={20} />}
-                {task.status == 'Pending' && <Ionicons name='pause-circle-outline' color={'orange'} size={20} />} */}
                 </XStack>
               </YStack>
             </XStack>
             <XStack alignItems='center' gap={10} marginBottom={10}>
               <Animated.View>
                 <MaterialCommunityIcons
-                  name={iconName} size={13} color={differenceInDays(item.endDate) > 0 ? 'green' : 'red'} />
+                  name={icon} size={13} color={differenceInDays(item.endDate) > 0 ? 'green' : 'red'} />
               </Animated.View>
               <ThemedText>Remaining :
                 <Text> {differenceInDays(item.endDate)}</Text> Days Left</ThemedText>
@@ -151,22 +152,38 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <XStack justifyContent='space-between'>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <User size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.clientName}</Text>
+                  <User size={20} color={colors.primary} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.clientName}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <UserCheck2 size={20} color={currentColors.accent2} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Consultant: {item.consultant}</Text>
+                  <UserCheck2 size={20} color={colors.accent2} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>Consultant: {item.consultant}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <Tag size={20} color={currentColors.secondary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>PO Number: {item.poNumber}</Text>
+                  <Tag size={20} color={colors.secondary} />
+                  <Text style={[styles.text, { color: colors.text }]}>PO Number: {item.poNumber}</Text>
                 </XStack>
               </YStack>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{moment(item.poEndDate).format('DD-MM-YYYY')}</Text>
+                  <CalendarClock size={20} color={colors.primary} />
+                  <Text style={[styles.text, { color: colors.text }]}>{moment(item.poEndDate).format('DD-MM-YYYY')}</Text>
+                </XStack>
+                <XStack >
+                  {differenceInDays(item.poEndDate) < 1 ?
+                    (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ color: 'red' }}>Pending</Text>
+                      <Ionicons name='pause-circle-outline' color={'red'} size={20} />
+                    </View>) : <>
+                      {item.completed ? (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkgreen' }}>Completed</Text>
+                        <MaterialIcons name='check' color={'darkgreen'} size={20} />
+                      </View>) : (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkorange' }}>In-Progress</Text>
+                        <MaterialCommunityIcons name='progress-clock' color={'darkorange'} size={20} />
+                      </View>)}
+                    </>
+                  }
                 </XStack>
               </YStack>
             </XStack>
@@ -187,30 +204,46 @@ const Item = React.memo(({ item }: { item: FormData }) => {
             <XStack justifyContent='space-between'>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <User size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.clientName}</Text>
+                  <User size={20} color={colors.primary} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.clientName}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <CheckCircle size={20} color={currentColors.accent3} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.consultantName}</Text>
+                  <CheckCircle size={20} color={colors.accent3} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.consultantName}</Text>
                 </XStack>
                 {/* <XStack style={styles.itemText}>
-                <Tag size={20} color={currentColors.secondary} />
-                <Text style={[styles.text, { color: currentColors.text }]}>Visa Number: {item.visaNumber}</Text>
+                <Tag size={20} color={colors.secondary} />
+                <Text style={[styles.text, { color: colors.text }]}>Visa Number: {item.visaNumber}</Text>
               </XStack> */}
                 <XStack style={styles.itemText}>
-                  <CircleUser size={20} color={currentColors.accent3} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.sponsor}</Text>
+                  <CircleUser size={20} color={colors.accent3} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.sponsor}</Text>
                 </XStack>
                 <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.accent3} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Visa Exp. Date: {moment(item.visaExpiryDate).format('DD-MM-YYYY')}</Text>
+                  <CalendarClock size={20} color={colors.accent3} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>Visa Exp. Date: {moment(item.visaExpiryDate).format('DD-MM-YYYY')}</Text>
                 </XStack>
               </YStack>
               <YStack>
                 <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{moment(item.visaEndDate).format('DD-MM-YYYY')}</Text>
+                  <CalendarClock size={20} color={colors.primary} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{moment(item.visaEndDate).format('DD-MM-YYYY')}</Text>
+                </XStack>
+                <XStack >
+                  {differenceInDays(item.visaEndDate) < 1 ?
+                    (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ color: 'red' }}>Pending</Text>
+                      <Ionicons name='pause-circle-outline' color={'red'} size={20} />
+                    </View>) : <>
+                      {item.completed ? (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkgreen' }}>Completed</Text>
+                        <MaterialIcons name='check' color={'darkgreen'} size={20} />
+                      </View>) : (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkorange' }}>In-Progress</Text>
+                        <MaterialCommunityIcons name='progress-clock' color={'darkorange'} size={20} />
+                      </View>)}
+                    </>
+                  }
                 </XStack>
               </YStack>
             </XStack>
@@ -228,22 +261,40 @@ const Item = React.memo(({ item }: { item: FormData }) => {
       case 'IQAMA Renewals':
         return (
           <YStack>
-            <XStack>
-              <YStack>
+            <YStack>
+              <XStack justifyContent='space-between' alignItems='center'>
                 <XStack style={styles.itemText}>
-                  <User size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.employeeName}</Text>
+                  <User size={20} color={colors.primary} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.employeeName}</Text>
                 </XStack>
-                <XStack style={styles.itemText}>
-                  <FileText size={20} color={currentColors.accent4} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>IQAMA Number: {item.iqamaNumber}</Text>
+                <XStack >
+                  {differenceInDays(item.expiryDate) < 1 ?
+                    (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ color: 'red' }}>Pending</Text>
+                      <Ionicons name='pause-circle-outline' color={'red'} size={20} />
+                    </View>) : <>
+                      {item.completed ? (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkgreen' }}>Completed</Text>
+                        <MaterialIcons name='check' color={'darkgreen'} size={20} />
+                      </View>) : (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkorange' }}>In-Progress</Text>
+                        <MaterialCommunityIcons name='progress-clock' color={'darkorange'} size={20} />
+                      </View>)}
+                    </>
+                  }
                 </XStack>
-                <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Expiry Date: {moment(item.expiryDate).format('DD-MM-YYYY')}</Text>
-                </XStack>
-              </YStack>
-            </XStack>
+              </XStack>
+
+              <XStack style={styles.itemText}>
+                <FileText size={20} color={colors.accent4} />
+                <Text style={[styles.text, { color: colors.text }]}>{item.iqamaNumber}</Text>
+              </XStack>
+              <XStack style={styles.itemText}>
+                <CalendarClock size={20} color={colors.primary} />
+                <Text style={[styles.text, { color: colors.text }]}>Exp. Date: {moment(item.expiryDate).format('DD-MM-YYYY')}</Text>
+              </XStack>
+            </YStack>
+
             <XStack alignItems='center' gap={10} marginBottom={10}>
               <Animated.View>
                 <MaterialCommunityIcons
@@ -258,26 +309,43 @@ const Item = React.memo(({ item }: { item: FormData }) => {
       case 'Insurance Renewals':
         return (
           <YStack>
-            <XStack>
-              <YStack>
+            <YStack>
+              <XStack justifyContent='space-between' alignItems='center'>
                 <XStack style={styles.itemText}>
-                  <User size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>{item.employeeName}</Text>
+                  <User size={20} color={colors.primary} />
+                  <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.employeeName}</Text>
                 </XStack>
-                <XStack style={styles.itemText}>
-                  <FileText size={20} color={currentColors.accent5} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Insurance Company: {item.insuranceCompany}</Text>
+                <XStack >
+                  {differenceInDays(item.insuranceEndDate) < 1 ?
+                    (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                      <Text style={{ color: 'red' }}>Pending</Text>
+                      <Ionicons name='pause-circle-outline' color={'red'} size={20} />
+                    </View>) : <>
+                      {item.completed ? (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkgreen' }}>Completed</Text>
+                        <MaterialIcons name='check' color={'darkgreen'} size={20} />
+                      </View>) : (<View style={{ alignItems: 'center', flexDirection: 'row', gap: 8 }}>
+                        <Text style={{ color: 'darkorange' }}>In-Progress</Text>
+                        <MaterialCommunityIcons name='progress-clock' color={'darkorange'} size={20} />
+                      </View>)}
+                    </>
+                  }
                 </XStack>
-                <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>Start: {moment(item.insuranceStartDate).format('DD-MM-YYYY')}</Text>
-                </XStack>
-                <XStack style={styles.itemText}>
-                  <CalendarClock size={20} color={currentColors.primary} />
-                  <Text style={[styles.text, { color: currentColors.text }]}>End: {moment(item.insuranceEndDate).format('DD-MM-YYYY')}</Text>
-                </XStack>
-              </YStack>
-            </XStack>
+              </XStack>
+
+              <XStack style={styles.itemText}>
+                <FileText size={20} color={colors.accent5} />
+                <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.insuranceCompany}</Text>
+              </XStack>
+              <XStack style={styles.itemText}>
+                <CalendarClock size={20} color={colors.primary} />
+                <Text style={[styles.text, { color: colors.text }]}>Start: {moment(item.insuranceStartDate).format('DD-MM-YYYY')}</Text>
+              </XStack>
+              <XStack style={styles.itemText}>
+                <CalendarClock size={20} color={colors.primary} />
+                <Text style={[styles.text, { color: colors.text }]}>End: {moment(item.insuranceEndDate).format('DD-MM-YYYY')}</Text>
+              </XStack>
+            </YStack>
             <XStack alignItems='center' gap={10} marginBottom={10}>
               <Animated.View>
                 <MaterialCommunityIcons
@@ -302,7 +370,7 @@ const Item = React.memo(({ item }: { item: FormData }) => {
         onPress={() => router.navigate(`/(tabs)/category/edit/${item.id}`)}
       >
         <CardHeader>
-          {renderContent()}
+          {renderContent(iconName)}
           <XStack alignItems='center' justifyContent='space-between'>
             <Button
               theme='purple_active'
@@ -373,6 +441,8 @@ const styles = StyleSheet.create({
   text: {
     marginLeft: 6,
     fontWeight: 'bold',
+    flexWrap: 'wrap',
+    maxWidth: 180,
   },
   modalTitle: {
     fontWeight: 'bold',

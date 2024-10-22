@@ -8,9 +8,9 @@ import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/fo
 import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
 import { Category, FormData } from '@/utils/category';
 import { buildNotifications } from '@/utils/pushNotifications';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ArrowLeft, CalendarRange, Check, Plus, X } from '@tamagui/lucide-icons';
+import { ArrowLeft, CalendarRange, Check, NotebookPen, Plus, X } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
@@ -19,7 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
-import { Button, Checkbox, H4, H6, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, H4, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
 
 const categories: { label: string; value: Category }[] = [
@@ -42,7 +42,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   editItem
 }) => {
   // const [isLoading, setLoading] = useState(false)
-  const { control, handleSubmit, setValue, watch, reset, formState, trigger } = useForm<FormData>({
+  const { control, handleSubmit, setValue, watch, reset, formState, trigger, getValues } = useForm<FormData>({
     defaultValues: !!isEdit ? editItem : {
       category: 'Agreements',
       clientName: '',
@@ -51,11 +51,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       vendorCode: '',
       wantsCustomReminders: false,
       customReminderDates: [],
-      completed:false,
+      completed: false,
     }
   });
   const { loading, user, officeMode } = useUser()
-  const [isSheetOpen,setIsSheetOpen]=useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
     startDate: false,
@@ -69,13 +69,60 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     insuranceStartDate: false,
     insuranceEndDate: false,
     customReminderDate: false,
-    visaExpiryDate:false,
+    visaExpiryDate: false,
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
   const { isLoading: addFormDataLoading, isError: isAddFormdataErr, mutateAsync: addFormData } = useCreateFormDataMutation()
   const { isLoading: updateFormDataLoading, isError: isUpdateFormdataErr, mutateAsync: updateFormData } = useUpdateFormDataMutation()
   const { errors } = formState
+  const [childrenValues, setChildrenValues] = useState<string[]>(watch('childrenInsuranceValues') || []);
+  const data = watch()
+
+
+  const addChild = () => {
+    if (data.category == 'Insurance Renewals') {
+      if (data.childrenInsuranceValues && data.childrenInsuranceValues.length < 4) {
+        setChildrenValues([...childrenValues, '']);
+        setValue('childrenInsuranceValues', [...data.childrenInsuranceValues, ''])
+      }
+    }
+  };
+
+  const removeChild = (index: number) => {
+    if (data.category == 'Insurance Renewals') {
+      const updatedChildren = [...data.childrenInsuranceValues || []];
+      updatedChildren.splice(index, 1);
+      setChildrenValues(updatedChildren);
+      setValue('childrenInsuranceValues', updatedChildren)
+      calculateTotalInsuredValue()
+    }
+  };
+
+
+  // function to update child value in array
+  const updateChildValue = (index: number, value: string) => {
+    if (data.category == 'Insurance Renewals') {
+      const updatedChildren = [...childrenValues || []];
+      updatedChildren[index] = value;
+      setChildrenValues(updatedChildren);
+      setValue('childrenInsuranceValues', updatedChildren)
+      calculateTotalInsuredValue()
+    }
+  };
+
+  // calculate total sum insured
+  const calculateTotalInsuredValue = () => {
+    const newData = watch()
+    if (newData.category == 'Insurance Renewals') {
+      const empValue = parseFloat(newData.employeeInsuranceValue) || 0;
+      const spValue = parseFloat(newData.spouseInsuranceValue || '0') || 0;
+      const childrenTotal = newData.childrenInsuranceValues?.reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+      const totalSum = empValue + spValue + (childrenTotal || 0);
+      setValue('value', totalSum.toFixed(2))
+    }
+  }
+
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -94,7 +141,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }));
   };
 
-  const data = watch()
 
   const doSetReminderDates = () => {
     const newWatch = watch()
@@ -114,7 +160,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             vendorCode: '',
             wantsCustomReminders: false,
             customReminderDates: [],
-            completed:false,
+            completed: false,
           });
           break;
         case 'Insurance Renewals':
@@ -128,7 +174,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             customReminderDates: [],
             remarks: '',
             reminderDates: [],
-            completed:false,
+            completed: false,
+            childrenInsuranceValues: [],
           });
           break;
         case 'IQAMA Renewals':
@@ -141,7 +188,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             customReminderDates: [],
             remarks: '',
             reminderDates: [],
-            completed:false,
+            completed: false,
           });
           break;
         case 'Purchase Order':
@@ -156,26 +203,26 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             customReminderDates: [],
             remarks: '',
             reminderDates: [],
-            completed:false,
+            completed: false,
           });
           break;
-        case 'House Rental Renewal':  
+        case 'House Rental Renewal':
           reset({
-            category:'House Rental Renewal',
-            consultantName:'',
-            houseOwnerName:'',
-            customReminderDates:[],
-            email:'',
-            endDate:new Date(),
-            location:'',
-            remarks:'',
-            reminderDates:[],
-            rentAmount:'',
-            startDate:new Date(),
-            wantsCustomReminders:false,
-            completed:false,
+            category: 'House Rental Renewal',
+            consultantName: '',
+            houseOwnerName: '',
+            customReminderDates: [],
+            email: '',
+            endDate: new Date(),
+            location: '',
+            remarks: '',
+            reminderDates: [],
+            rentAmount: '',
+            startDate: new Date(),
+            wantsCustomReminders: false,
+            completed: false,
           })
-        break;
+          break;
         default:
           reset({
             category: 'Visa Details',
@@ -188,7 +235,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             customReminderDates: [],
             remarks: '',
             reminderDates: [],
-            completed:false,
+            completed: false,
           });
           break;
       }
@@ -212,6 +259,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (data: FormData) => {
+    console.log("on submit: ",data)
     if (user != null) {
       if (!isEdit) {
         const id = uuid.v4().toString()
@@ -256,6 +304,54 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     label: string,
     placeholder: string,
     errorss: FieldErrors<FormData>,
+    disabled?: boolean,
+    rules?: object,
+
+  ) => {
+    return (
+      <>
+        <ThemedText style={styles.label}>{label}</ThemedText>
+        <Controller
+          control={control}
+          disabled={disabled}
+          name={name}
+          rules={{
+            required: 'This field is required',
+            ...rules,
+          }}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              disabled={disabled}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
+                  color: colorScheme === 'light' ? 'black' : 'white',
+                },
+              ]}
+              placeholder={placeholder}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={typeof value === 'string' ? value : ''}
+            />
+          )}
+        />
+
+        {errorss[name as keyof FieldErrors<FormData>] && (
+          <ThemedText style={styles.errorText}>
+            {errorss[name as keyof FieldErrors<FormData>]?.message || ''}
+          </ThemedText>
+        )}
+      </>
+    );
+  };
+
+  const renderNumberInput = (
+    name: FieldName,
+    control: Control<FormData>,
+    label: string,
+    placeholder: string,
+    errorss: FieldErrors<FormData>,
     rules?: object
   ) => {
     return (
@@ -270,6 +366,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           }}
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
+              keyboardType='numeric'
               style={[
                 styles.input,
                 {
@@ -279,7 +376,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               ]}
               placeholder={placeholder}
               onBlur={onBlur}
-              onChangeText={onChange}
+              onChangeText={(e) => {
+                onChange(e)
+                calculateTotalInsuredValue()
+              }}
               value={typeof value === 'string' ? value : ''}
             />
           )}
@@ -368,15 +468,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                   display='spinner'
                   onChange={(e, date) => {
                     if (Platform.OS == 'ios' && date) {
-                      date.setHours(10, 0, 0, 0) //set 10 am
+                      date.setHours(10, 0, 0, 0)
                       setIosDate(date)
                     } else {
                       if (date) {
-                        date.setHours(10, 0, 0, 0) //set 10 am
+                        date.setHours(10, 0, 0, 0)
                         toggleDatePickerVisibility(fieldName, false);
                         setValue(fieldName, date)
-                        // const updatedform = calculateReminderDates(data)
-                        // setValue('reminderDates',updatedform.reminderDates)
                         doSetReminderDates()
                       }
                       toggleDatePickerVisibility(fieldName, false);
@@ -596,6 +694,38 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     </>
   }
 
+  const CheckMark = (): JSX.Element => (<FontAwesome6 name="check"
+    style={{ position: 'absolute', right: -5, color: colorScheme == 'light' ? 'black' : 'white' }} />)
+
+  const renderStatus = () => {
+    return <View style={styles.categoryStyle}>
+      <TouchableOpacity
+        activeOpacity={1}
+        style={{ borderRadius: 10 }}
+        onPress={() => { setValue('completed', true) }}>
+        <View style={[styles.categoryLabel, data.completed && styles.borderEnabled,
+        colorScheme == 'light' ? { width: 'auto', backgroundColor: 'lightgreen' } :
+          { width: 'auto', backgroundColor: '#568E57' }]} >
+          <MaterialIcons name='check' color={colorScheme == 'light' ? 'green' : 'white'} size={16} />
+          <ThemedText >Completed</ThemedText>
+          {data.completed && <CheckMark />}
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={1}
+        style={{ borderRadius: 10 }}
+        onPress={() => { setValue('completed', false) }}>
+        <View style={[styles.categoryLabel, !data.completed && styles.borderEnabled,
+        colorScheme == 'light' ? { width: 'auto', backgroundColor: '#FFD580' } : { width: 'auto', backgroundColor: '#99804D' }]} >
+          <MaterialCommunityIcons name='progress-clock' color={colorScheme == 'light' ? 'darkorange' : 'white'} size={20} />
+          <ThemedText style={{ margin: 'auto' }}>In-Progress</ThemedText>
+          {!data.completed && <CheckMark />}
+        </View>
+      </TouchableOpacity>
+    </View>
+  }
+
   const renderFormFields = () => {
     switch (data.category) {
       case 'Agreements':
@@ -603,16 +733,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
           {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-          {/* <ThemedText style={styles.label}>Start Date and End Date</ThemedText> */}
-          {/* <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.startDate), 'startDate')}
-            <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            color: '#007BFF',
-            {renderDatePicker(new Date(data.endDate), 'endDate')}
-          </ThemedView> */}
-
-
           <ThemedText style={styles.label}>Start Date:</ThemedText>
 
           <HolidayCalendarOffice
@@ -627,8 +747,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             triggerReminderDates={doSetReminderDates}
             datetime={data.endDate} isEdit={!!isEdit} setValue={setValue} fieldname='endDate' />
 
-          {renderCustomReminderDates()}
+          <ThemedText style={styles.label}>Status: </ThemedText>
 
+          {renderStatus()}
+
+          {renderCustomReminderDates()}
 
           <View style={styles.caution}>
             <Ionicons name='alert-circle' size={21} color={'yellow'} />
@@ -645,14 +768,23 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('consultant', control, 'Consultant', 'Enter Consultant Name', errors)}
           {renderTextInput('poNumber', control, 'PO Value', 'Enter PO Number', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
-          <ThemedText style={styles.label}>PO Start Date and End Date</ThemedText>
+
+          <ThemedText style={styles.label}>PO Start Date:</ThemedText>
+
+          <HolidayCalendarOffice
+            datetime={data.poIssueDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='poIssueDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>PO End Date:</ThemedText>
           {renderInstantDate('poEndDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.poIssueDate), 'poIssueDate')}
-            <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(new Date(data.poEndDate), 'poEndDate')}
-          </ThemedView>
+          <HolidayCalendarOffice
+            datetime={data.poEndDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='poEndDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>Status: </ThemedText>
+          {renderStatus()}
+
+
           {renderCustomReminderDates()}
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
@@ -662,6 +794,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
         </>
+
       case 'IQAMA Renewals':
         return <>
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
@@ -672,10 +805,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
           {renderInstantDate('expiryDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.expiryDate), 'expiryDate')}
-          </ThemedView>
+
+          <HolidayCalendarOffice
+            triggerReminderDates={doSetReminderDates}
+            datetime={data.expiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='expiryDate' />
+
+          <ThemedText style={styles.label}>Status: </ThemedText>
+          {renderStatus()}
 
           {renderCustomReminderDates()}
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
@@ -695,17 +831,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>Visa Expiry Date: </ThemedText>
-          {renderDatePicker(new Date(), 'visaExpiryDate')}
+          {/* {renderDatePicker(new Date(), 'visaExpiryDate')} */}
+          <HolidayCalendarOffice
+            triggerReminderDates={doSetReminderDates}
+            datetime={data.visaExpiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='visaExpiryDate' />
 
-          <ThemedText style={styles.label}>Visa Entry Date and Exit Before Date</ThemedText>
+          <ThemedText style={styles.label}>Visa Entry Date:</ThemedText>
+          <HolidayCalendarOffice
+            datetime={data.visaEntryDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='visaEntryDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>Visa Exit Before Date:</ThemedText>
           {renderInstantDate('visaEndDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.visaEntryDate), 'visaEntryDate')}
-            <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(new Date(data.visaEndDate), 'visaEndDate')}
-          </ThemedView>
+          <HolidayCalendarOffice
+            datetime={data.visaEndDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='visaEndDate' triggerReminderDates={doSetReminderDates} />
+
           {renderCustomReminderDates()}
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -719,17 +862,74 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
           {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company', errors)}
           {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category', errors)}
-          {renderTextInput('value', control, 'Insurance Value', 'Enter Insurance Value', errors)}
+
+          {renderNumberInput('employeeInsuranceValue', control, 'Employee Insurance Value', "Enter employee's insured value", errors)}
+          {renderNumberInput('spouseInsuranceValue', control, 'Spouse Insurance Value', "Enter spouse's insured value", errors)}
+
+
+
+          {childrenValues.map((childValue, index) => (
+            <XStack key={index} style={{ alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'column', flex: 1 }}>
+                <ThemedText>{`Child ${index + 1} Insurance Value`}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Input
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
+                        color: colorScheme === 'light' ? 'black' : 'white',
+                        width: '90%'
+                      },
+                    ]} placeholder={`Enter child ${index + 1} insured value`}
+                    value={childValue}
+                    onChangeText={(value) => updateChildValue(index, value)}
+                    keyboardType="numeric"
+                  />
+                  <Ionicons
+                    name="trash"
+                    size={20}
+                    color="red"
+                    onPress={() => removeChild(index)}
+                  />
+                </View>
+              </View>
+            </XStack>
+          ))}
+
+          {(data.childrenInsuranceValues == undefined || data.childrenInsuranceValues.length < 4) && (
+            <Button
+              onPress={addChild}
+              style={{ backgroundColor: Colors.light.tint, color: 'white', marginVertical: 20, width: 150, height: 30, margin: 'auto', marginTop: 10 }}
+            >Add Children +</Button>
+          )}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 10 }}>
+            <NotebookPen color={'grey'} size={15} />
+            <Text style={{ textAlign: 'center', color: 'grey', fontSize: 12 }}>You can add upto 4 child</Text>
+          </View>
+
+          <YStack alignItems="center" marginVertical={20}>
+            <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Total Insured Value</ThemedText>
+            <ThemedText style={{ fontSize: 24, color: '#1E88E5' }}>{`$${watch('value') || 0}`}</ThemedText>
+          </YStack>
+
+          {renderTextInput('value', control, 'Total Insurance Value', 'Calculating Sum Insured Value..', errors, true)}
+
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
-          <ThemedText style={styles.label}>Insurance Start Date and End Date</ThemedText>
+          <ThemedText style={styles.label}>Insurance Start Date:</ThemedText>
+          <HolidayCalendarOffice
+            datetime={data.insuranceStartDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='insuranceStartDate' triggerReminderDates={doSetReminderDates} />
+
+          <ThemedText style={styles.label}>Insurance End Date:</ThemedText>
           {renderInstantDate('insuranceEndDate')}
-          <ThemedView style={styles.dateDisplayContainer}>
-            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-            {renderDatePicker(new Date(data.insuranceStartDate), 'insuranceStartDate')}
-            <ThemedText style={styles.dateDisplay}> - </ThemedText>
-            {renderDatePicker(new Date(data.insuranceEndDate), 'insuranceEndDate')}
-          </ThemedView>
+
+          <HolidayCalendarOffice
+            datetime={data.insuranceEndDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='insuranceEndDate' triggerReminderDates={doSetReminderDates} />
+
           {renderCustomReminderDates()}
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
@@ -740,30 +940,30 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           )}
         </>
       case 'House Rental Renewal':
-      return <>
-        {renderTextInput('houseOwnerName', control, 'House Owner Name', 'Enter House Owner Name', errors)}
-        {renderTextInput('location', control, 'Location', 'Enter Location', errors)}
-        {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name', errors)}
-        {renderTextInput('rentAmount', control, 'Rent Amount', 'Enter Rent Amount', errors)}
-        {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+        return <>
+          {renderTextInput('houseOwnerName', control, 'House Owner Name', 'Enter House Owner Name', errors)}
+          {renderTextInput('location', control, 'Location', 'Enter Location', errors)}
+          {renderTextInput('consultantName', control, 'Consultant Name', 'Enter Consultant Name', errors)}
+          {renderTextInput('rentAmount', control, 'Rent Amount', 'Enter Rent Amount', errors)}
+          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
-        <ThemedText style={styles.label}>Rental Start Date and End Date</ThemedText>
-        {renderInstantDate('endDate')}
-        <ThemedView style={styles.dateDisplayContainer}>
-          <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
-          {renderDatePicker(new Date(data.startDate), 'startDate')}
-          <ThemedText style={styles.dateDisplay}> - </ThemedText>
-          {renderDatePicker(new Date(data.endDate), 'endDate')}
-        </ThemedView>
-        {renderCustomReminderDates()}
-        <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
-        {data.reminderDates?.map((value, index) =>
-          <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
-        )}
-        {data.customReminderDates?.map((value, index) =>
-          <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
-        )}
-      </>
+          <ThemedText style={styles.label}>Rental Start Date and End Date</ThemedText>
+          {renderInstantDate('endDate')}
+          <ThemedView style={styles.dateDisplayContainer}>
+            <CalendarRange size={20} marginVertical={10} paddingHorizontal={20} color={Colors.light.tint} />
+            {renderDatePicker(new Date(data.startDate), 'startDate')}
+            <ThemedText style={styles.dateDisplay}> - </ThemedText>
+            {renderDatePicker(new Date(data.endDate), 'endDate')}
+          </ThemedView>
+          {renderCustomReminderDates()}
+          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+          {data.reminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+          {data.customReminderDates?.map((value, index) =>
+            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+          )}
+        </>
       default:
         return <></>
     }
@@ -777,39 +977,38 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         headerShown: false
       }} />
       <ScrollView style={{ padding: 30, marginVertical: 30, paddingBottom: 150 }}>
-      <XStack
-      style={{
-        alignItems: 'center',
-        padding: 10,
-        backgroundColor: colorScheme=='light' ? '#F0F0F0' : '#1A1A1A',
-        borderRadius: 8, 
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 4, 
-        shadowOffset: { width: 0, height: 2 }, 
-        elevation: 3,
-        marginBottom:10,
-      }}
-      onPress={() => router.back()}
-      space={10} 
-    >
-      <ArrowLeft color={colorScheme=='light' ? 'black' : 'white'} size={25} />
-      <ThemedText
-        style={{
-          color: colorScheme=='light' ? 'black' : 'white',
-          fontSize: 16, 
-          fontWeight: '600', 
-        }}
-      >
-        Back
-      </ThemedText>
-    </XStack>
+        <XStack
+          style={{
+            alignItems: 'center',
+            padding: 10,
+            backgroundColor: colorScheme == 'light' ? '#F0F0F0' : '#1A1A1A',
+            borderRadius: 8,
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 3,
+            marginBottom: 10,
+          }}
+          onPress={() => router.back()}
+          space={10}
+        >
+          <ArrowLeft color={colorScheme == 'light' ? 'black' : 'white'} size={25} />
+          <ThemedText
+            style={{
+              color: colorScheme == 'light' ? 'black' : 'white',
+              fontSize: 16,
+              fontWeight: '600',
+            }}
+          >
+            Back
+          </ThemedText>
+        </XStack>
         <YStack space="$4" alignItems="center" justifyContent="center">
-          {/* {!isEdit && <ThemedText style={{ fontSize: 20 }}>Select a Category</ThemedText>} */}
           <XStack
             ai="center"
             jc="space-between"
-            backgroundColor={Platform.OS == 'ios' ? colorScheme == 'light' ? '$accentColor' : '$accentBackground' : '$accentColor'}
+            backgroundColor={Colors.light.tint}
             borderRadius="$4"
             padding="$3"
             hoverStyle={{
@@ -822,21 +1021,21 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             onPress={() => !isEdit && setIsSheetOpen(true)}
           >
             {data.category ? (
-              <XStack ai="center" space="$4">
+              <XStack ai="center" space="$2">
                 <Image
                   source={categoryImagePaths[data.category]}
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: 20,
+                    height: 20,
                     borderRadius: 12,
                   }}
                 />
                 <YStack>
-                  <H6 theme="alt2" color="white" >
+                  <Text style={{ color: 'white' }}>
                     {data.category}
-                  </H6>
+                  </Text>
                 </YStack>
-                
+
               </XStack>
             ) : (
               <Text color="white" ai="center">
@@ -902,7 +1101,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderColor:Colors.light.tint,
+    borderColor: Colors.light.tint,
     borderWidth: 1,
     marginBottom: 20,
     paddingLeft: 10,
@@ -911,7 +1110,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   textAreaInput: {
-    borderColor:Colors.light.tint,
+    borderColor: Colors.light.tint,
     borderWidth: 1,
     marginBottom: 20,
     paddingLeft: 10,
@@ -921,8 +1120,8 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 5,
-    fontSize: 16,
-    fontWeight: 'bold',
+    // fontSize: 16,
+    // fontWeight: 'bold',
   },
   errorText: {
     color: 'red',
@@ -976,5 +1175,31 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.tint,
     justifyContent: 'center',
     marginRight: 10,
+  },
+  categoryStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 10,
+    paddingHorizontal: 10,
+    backgroundColor: 'transparent',
+    width: 'auto',
+    gap: 20,
+    flexWrap: 'wrap',
+  },
+  categoryLabel: {
+    height: 40,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    elevation: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5
+  },
+  borderEnabled: {
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: 'white'
   }
 });

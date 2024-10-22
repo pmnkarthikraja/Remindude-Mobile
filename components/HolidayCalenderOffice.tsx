@@ -18,6 +18,8 @@ import { Colors } from "@/constants/Colors"
 import { XStack } from "tamagui"
 import Checklist from "./Checklist"
 import { FormData } from "@/utils/category"
+import { CalendarDays } from "@tamagui/lucide-icons"
+import moment from "moment"
 
 
 export interface HolidayCalendarOfficeProps {
@@ -117,22 +119,28 @@ const HolidayCalendarOffice: React.FC<HolidayCalendarOfficeProps> = ({
         '2025-08-15': { holiday: 'Independence Day', color: '#32CD32' },
     };
 
+    const iconColor = colorscheme=='light'?'black':'white'
 
     const renderCustomHeader = () => {
         const holidayInfo = holidays[selected as keyof HolidayMap];
         return (
-            <TouchableOpacity style={stylesHolidayCalendar.headerContainer} onPress={toggleCalendarVisibility}>
+            <TouchableOpacity style={[stylesHolidayCalendar.headerContainer, colorscheme=='light' ? {backgroundColor: '#E4F3E9'} :{
+                backgroundColor:Colors.light.tint
+            }]} onPress={toggleCalendarVisibility}>
                 {holidayInfo ? (
                     <View style={{flexDirection:'row',gap:10}}>
-                    <Fontisto name="holiday-village" size={18} color="black" />
-                    <ThemedText style={stylesHolidayCalendar.holidayText}>
+                    <Fontisto name="holiday-village" size={18} color={iconColor} />
+                    <ThemedText numberOfLines={1} ellipsizeMode="tail" style={stylesHolidayCalendar.holidayText}>
                         {`${holidayInfo.holiday} on ${selected}`}
                     </ThemedText>
                     </View>
                 ) : (
-                    <ThemedText style={stylesHolidayCalendar.noHolidayText}>{`Selected ${fieldname}: ${selected}`}</ThemedText>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:5}} >
+                    <CalendarDays size={15} color={iconColor}/>
+                    <ThemedText style={stylesHolidayCalendar.noHolidayText}>{moment(selected).format('DD-MM-YYYY (dddd)')}</ThemedText>
+                    </View>
                 )}
-                    <Text>{calendarVisible ? '▲' : '▼'}</Text>
+                    <ThemedText>{calendarVisible ? '▲' : '▼'}</ThemedText>
             </TouchableOpacity>
         );
     };
@@ -147,7 +155,7 @@ const HolidayCalendarOffice: React.FC<HolidayCalendarOfficeProps> = ({
                 markingType={'custom'}
                 enableSwipeMonths
                 current={INITIAL_DATE}
-                style={stylesHolidayCalendar.calendar}
+                style={[stylesHolidayCalendar.calendar,{backgroundColor:colorscheme=='light'?Colors.light.tint: '#252C39'}]}
                 onDayPress={onDayPress}
                 markedDates={marked}
                 theme={{
@@ -172,14 +180,13 @@ const stylesHolidayCalendar = StyleSheet.create({
     container: {
         flex: 1,
         // backgroundColor: '#f7f7f7',
-        paddingHorizontal: 16, // Standard padding
+        paddingHorizontal: 16, // Standard padding,
         // paddingVertical: 20,
       },
       headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#E4F3E9', 
         borderRadius: 8, 
         padding: 12, 
         shadowColor: '#000', 
@@ -194,28 +201,28 @@ const stylesHolidayCalendar = StyleSheet.create({
       holidayText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#333', 
+        // color: '#333', 
       },
       noHolidayText: {
         fontSize: 16,
         fontWeight: '400',
-        color: '#555',
+        // color: '#555',
       },
       arrow: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#00adf5', // Use accent color for arrow
+        color: '#00adf5', 
       },
       animatedCalendarContainer: {
         overflow: 'hidden',
       },
       calendar: {
-        borderRadius: 8, // Rounded calendar
-        backgroundColor: 'black', // Calendar background
-        shadowColor: '#000', // Subtle shadow for depth
+        borderRadius: 8, 
+        backgroundColor: Colors.light.tint, 
+        shadowColor: '#000', 
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 3, // For Android
+        elevation: 3, 
       },
 });

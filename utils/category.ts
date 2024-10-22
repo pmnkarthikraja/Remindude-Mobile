@@ -72,7 +72,10 @@ export interface InsuranceRenewals {
   insuranceCompany: string;
   insuranceCategory:string;
   remarks:string;
-  value: string; 
+  employeeInsuranceValue: string;  
+  spouseInsuranceValue?: string;    
+  childrenInsuranceValues?: string[]; //upto 4 childrens
+  value: string;  //consider this is the total sum insured
   wantsCustomReminders:boolean;
   customReminderDates:Date[];
   reminderDates:Date[],
@@ -107,31 +110,7 @@ export type Category =
   | "Insurance Renewals" 
   | "House Rental Renewal"
   
-
-// | "IQAMA Renewals"
-  // | "Interview Schedule"
-  // | "VAT Submission"
-  // | "Bills Payments"
-  // | "Room Rent Collection"
-  // | "Room Rent Pay"
-  // | "Saudi Salary Processing"
-  // | "WithHolding Tax"
-  // | "Reimbursements"
-  // | "Deduction"
-  // | "GOSI Payments"
-  // | "Saudization Payment collection"
-  // | "Employee Issue Tracking"
-
-
-
-// export interface CategoryFormData<T extends Category> {
-//     category: T; 
-//     fields: CategoryFields[T]; 
-//   }
-
-
 import { differenceInDays } from 'date-fns';
-
 
 export const categorizeData = (data: FormData[]): {
   next30Days: FormData[],
@@ -207,85 +186,86 @@ export const getEndDate = (item: FormData): Date | null => {
 };
 
 
-export const parseResponse = (data:any):FormData[]=>{
-  return data.map((item:any) => {
-    const baseData = {
-      id: item.id,
-      category: item.category,
-      remarks: item.remarks,
-      wantsCustomReminders: item.wantsCustomReminders,
-      customReminderDates: item.customReminderDates.map((date:string) => new Date(date)),
-      reminderDates: item.reminderDates.map((date:string) => new Date(date)),
-    };
+// export const parseResponse = (data:any):FormData[]=>{
+//   return data.map((item:any) => {
+//     const baseData = {
+//       id: item.id,
+//       category: item.category,
+//       remarks: item.remarks,
+//       wantsCustomReminders: item.wantsCustomReminders,
+//       customReminderDates: item.customReminderDates.map((date:string) => new Date(date)),
+//       reminderDates: item.reminderDates.map((date:string) => new Date(date)),
+//     };
 
-    switch (item.category){
-      case "Agreements":
-        return {
-          ...baseData,
-          clientName: item.clientName,
-          vendorCode: item.vendorCode,
-          startDate: new Date(item.startDate),
-          endDate: new Date(item.endDate),
-        } as Agreements;
+//     switch (item.category){
+//       case "Agreements":
+//         return {
+//           ...baseData,
+//           clientName: item.clientName,
+//           vendorCode: item.vendorCode,
+//           startDate: new Date(item.startDate),
+//           endDate: new Date(item.endDate),
+//         } as Agreements;
 
-      case "Purchase Order":
-        return {
-          ...baseData,
-          clientName: item.clientName,
-          consultant: item.consultant,
-          poNumber: item.poNumber,
-          poIssueDate: new Date(item.poIssueDate),
-          poEndDate: new Date(item.poEndDate),
-          entryDate: new Date(item.entryDate),
-        } as PurchaseOrder;
+//       case "Purchase Order":
+//         return {
+//           ...baseData,
+//           clientName: item.clientName,
+//           consultant: item.consultant,
+//           poNumber: item.poNumber,
+//           poIssueDate: new Date(item.poIssueDate),
+//           poEndDate: new Date(item.poEndDate),
+//           entryDate: new Date(item.entryDate),
+//         } as PurchaseOrder;
 
-      case "Visa Details":
-        return {
-          ...baseData,
-          clientName: item.clientName,
-          visaNumber: item.visaNumber,
-          sponsor: item.sponsor,
-          consultantName: item.consultantName,
-          visaEndDate: new Date(item.visaEndDate),
-          visaEntryDate: new Date(item.visaEntryDate),
-        } as VisaDetails;
+//       case "Visa Details":
+//         return {
+//           ...baseData,
+//           clientName: item.clientName,
+//           visaNumber: item.visaNumber,
+//           sponsor: item.sponsor,
+//           consultantName: item.consultantName,
+//           visaEndDate: new Date(item.visaEndDate),
+//           visaEntryDate: new Date(item.visaEntryDate),
+//         } as VisaDetails;
 
-      case "IQAMA Renewals":
-        return {
-          ...baseData,
-          employeeName: item.employeeName,
-          iqamaNumber: item.iqamaNumber,
-          expiryDate: new Date(item.expiryDate),
-        } as IQAMARenewals;
+//       case "IQAMA Renewals":
+//         return {
+//           ...baseData,
+//           employeeName: item.employeeName,
+//           iqamaNumber: item.iqamaNumber,
+//           expiryDate: new Date(item.expiryDate),
+//         } as IQAMARenewals;
 
-      case "Insurance Renewals":
-        return {
-          ...baseData,
-          employeeName: item.employeeName,
-          insuranceStartDate: new Date(item.insuranceStartDate),
-          insuranceEndDate: new Date(item.insuranceEndDate),
-          insuranceCompany: item.insuranceCompany,
-          insuranceCategory: item.insuranceCategory,
-          value: item.value,
-        } as InsuranceRenewals;
+//       case "Insurance Renewals":
+//         return {
+//           ...baseData,
+//           employeeName: item.employeeName,
+//           insuranceStartDate: new Date(item.insuranceStartDate),
+//           insuranceEndDate: new Date(item.insuranceEndDate),
+//           insuranceCompany: item.insuranceCompany,
+//           insuranceCategory: item.insuranceCategory,
+//           value: item.value,
+//           employeeInsuranceValue:item.employeeInsuranceValue,
 
-        case "House Rental Renewal":
-          return {
-            ...baseData,
-            consultantName:item.consultantName,
-            startDate:item.startDate,
-            endDate:item.endDate,
-            houseOwnerName:item.houseOwnerName,
-            location:item.location,
-            rentAmount:item.rentAmount,
-          } as HouseRentalRenewal;
+//         } as InsuranceRenewals;
 
-      default:
-        throw new Error(`Unknown category: ${item.category}`);
-    }
-  })
-}
+//         case "House Rental Renewal":
+//           return {
+//             ...baseData,
+//             consultantName:item.consultantName,
+//             startDate:item.startDate,
+//             endDate:item.endDate,
+//             houseOwnerName:item.houseOwnerName,
+//             location:item.location,
+//             rentAmount:item.rentAmount,
+//           } as HouseRentalRenewal;
 
+//       default:
+//         throw new Error(`Unknown category: ${item.category}`);
+//     }
+//   })
+// }
 
 export const parseDates = (data: FormData[]): FormData[] => {
   return data.map((item) => {
@@ -343,3 +323,56 @@ export const parseDates = (data: FormData[]): FormData[] => {
     }
   });
 };
+
+export const parseDateForSingleItem = (item:FormData):FormData=>{
+  switch (item.category) {
+    case 'Agreements':
+      return {
+        ...item,
+        startDate: new Date(item.startDate),
+        endDate: new Date(item.endDate),
+        customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      };
+    case 'Purchase Order':
+      return {
+        ...item,
+        poIssueDate: new Date(item.poIssueDate),
+        poEndDate: new Date(item.poEndDate),
+        entryDate: new Date(item.entryDate),
+        customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      };
+    case 'Visa Details':
+      return {
+        ...item,
+        visaEndDate: new Date(item.visaEndDate),
+        visaEntryDate: new Date(item.visaEntryDate),
+        customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      };
+    case 'IQAMA Renewals':
+      return {
+        ...item,
+        expiryDate: new Date(item.expiryDate),
+        customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      };
+    case 'Insurance Renewals':
+      return {
+        ...item,
+        insuranceStartDate: new Date(item.insuranceStartDate),
+        insuranceEndDate: new Date(item.insuranceEndDate),
+        customReminderDates: item.customReminderDates.map((date) => new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      };
+    default:
+      return {
+        ...item,
+        endDate: new Date(item.endDate),
+        startDate:new Date(item.startDate),
+        customReminderDates:item.customReminderDates.map((date)=>new Date(date)),
+        reminderDates: item.reminderDates.map((date) => new Date(date)),
+      }
+  }
+}

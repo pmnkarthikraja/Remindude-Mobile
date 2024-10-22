@@ -12,6 +12,7 @@ import SplashScreenComponent from '@/components/SplashScreen';
 import { CategoryDataProvider } from '@/hooks/useCategoryData';
 import { ProfileContextProvider } from '@/hooks/useProfile';
 import { UserProvider } from '@/components/userContext';
+import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
 
 
 const tamaguiConfig = createTamagui(config);
@@ -56,6 +57,7 @@ export default function RootLayout() {
   }
 
   return (
+    <TimeAnimationProvider>
     <UserProvider>
     <CategoryDataProvider>
       <ProfileContextProvider>
@@ -75,5 +77,6 @@ export default function RootLayout() {
     </ProfileContextProvider>
     </CategoryDataProvider>
     </UserProvider>
+    </TimeAnimationProvider>
   );
 }

@@ -1,24 +1,26 @@
-import { Stack, useLocalSearchParams } from "expo-router"
-import {  ActivityIndicator, View,StyleSheet } from "react-native"
-import DynamicForm from "../../add"
-import { useEffect, useState } from "react"
-import { FormData } from "@/utils/category"
 import { ThemedView } from "@/components/ThemedView"
-import { useGetFormData } from "@/hooks/formDataHooks"
+import { useGetFormDataById } from "@/hooks/formDataHooks"
+import { Stack, useLocalSearchParams } from "expo-router"
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native"
+import DynamicForm from "../../add"
 
 const Item = () => {
     const {item} = useLocalSearchParams()
-    const [target,setTarget]=useState<FormData|undefined>(undefined)
-    const [isloading,setloading]=useState(true)
-    const { data:formData, isLoading:formDataLoading, error:getFormDataError,refetch } = useGetFormData();
+    // const [target,setTarget]=useState<FormData|undefined>(undefined)
+    console.log("id:",item)
+    const { data:formData, isLoading:formDataLoading, error:getFormDataError, isError,refetch } = useGetFormDataById(item as string);
 
-    useEffect(()=>{
-        const got =formData && formData.find(i=>i.id==item)
-        setTarget(got)
-        setloading(false)
-    },[item])
+    // useEffect(()=>{
+    //     const got =formData && formData.find(i=>i.id==item)
+    //     setTarget(got)
+    //     setloading(false)
+    // },[item])
 
-    if (isloading || formDataLoading){
+    if (isError){
+        Alert.alert("Error",getFormDataError?.message)
+    }
+
+    if (formDataLoading){
         return <ThemedView style={styles.container}>
             <ActivityIndicator size={'large'}/>
         </ThemedView>
@@ -27,9 +29,9 @@ const Item = () => {
     return <View>
         <Stack.Screen options={{
             title:'Edit ',
-            headerShown:true
+            headerShown:false
         }}/>
-        {target && <DynamicForm isEdit  editItem={target}/>}
+        {formData && <DynamicForm isEdit  editItem={formData}/>}
     </View>
 }
 

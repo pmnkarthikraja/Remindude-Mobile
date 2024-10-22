@@ -38,7 +38,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
 
   return (
     <Animated.View style={animatedBorderStyle}>
-      {item && <Item item={item} key={item.id} />}
+      {item && <Item item={item} key={item.id}/>}
     </Animated.View>
   );
 };
@@ -210,7 +210,7 @@ const CategoryPage = () => {
   ];
 
   const renderCategoryList = (title: string, data: FormData[], index: number, color: string) => (
-    <View key={index} style={{ gap: 5 }}>
+   <View key={index} style={{ gap: 5 }}>
       {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
         <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
       </Animated.View>}
