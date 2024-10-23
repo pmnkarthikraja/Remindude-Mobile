@@ -19,6 +19,11 @@ export interface UserAPI{
     editProfile:(email:string,password:string,userName:string,profilePicture:string)=>Promise<AxiosResponse>
     validatePassword :(email:string,password:string)=>Promise<AxiosResponse>
     deleteUserAccount:(email:string)=>Promise<AxiosResponse>
+    getAllUsers:()=>Promise<AxiosResponse<{
+        users:User[],
+        success:boolean,
+        message:string
+    }>>
 
     //settings -> master controller switch data api
     getMasterSwitchData:(email:string)=>Promise<{message:string,success:boolean,masterSwitchData:MasterSwitchData}>
@@ -52,6 +57,19 @@ class UserAPIService implements UserAPI{
              "Content-Type":"application/json"
          }}) 
      }
+
+     async getAllUsers ():Promise<AxiosResponse<{
+        users:User[],
+        success:boolean,
+        message:string
+     }>>{
+        return await axios.get(`${BASE_URL}/get-users`,{
+            headers:{
+                'Content-Type':'application/json'
+            }
+        })
+     }
+
      async googleSignup (accessToken:string): Promise<AxiosResponse>{
          return await axios.post(`${BASE_URL}/signup-google`,{accessToken},{withCredentials:true,headers:{
              "Content-Type":"application/json"

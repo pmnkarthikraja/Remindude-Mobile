@@ -18,8 +18,9 @@ import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
-import { Button, Checkbox, H4, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
+import ShareToUsers from '@/components/ShareToUser';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -67,16 +68,29 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     insuranceStartDate: false,
     insuranceEndDate: false,
     customReminderDate: false,
-    visaExpiryDate:false
+    visaExpiryDate: false
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-  const { isLoading: addFormDataLoading,  mutateAsync: addFormData } = useCreateFormDataMutation()
+  const { isLoading: addFormDataLoading, mutateAsync: addFormData } = useCreateFormDataMutation()
   const { isLoading: updateFormDataLoading, mutateAsync: updateFormData } = useUpdateFormDataMutation()
+  // const {usersLoading,usersData } =useGetAllUsers()
   const { errors } = formState
   const [childrenValues, setChildrenValues] = useState<string[]>(watch('childrenInsuranceValues') || []);
   const [totalValue, setTotalValue] = useState(watch('value') || '0')
   const data = watch()
+
+  interface UserProfile{
+    userName:string,
+    profilePicture:string|undefined
+  }[]
+
+  // const users:UserProfile[] = usersData?.users.map(r=>{
+  //   return {
+  //     userName: r.userName,
+  //     profilePicture:r.profilePicture
+  //   }
+  // }).filter(r=>r) || []
 
   const addChild = () => {
     if (data.category == 'Insurance Renewals') {
@@ -123,7 +137,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       const spValue = parseFloat(newData.spouseInsuranceValue || '0') || 0;
       const childrenTotal = newData.childrenInsuranceValues?.reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
       const totalSum = empValue + spValue + (childrenTotal || 0);
-      console.log("value", totalSum.toFixed(2))
       setTotalValue(totalSum.toFixed(2))
       setValue('value', `${totalSum.toFixed(2)}`)
     }
@@ -187,8 +200,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             reminderDates: [],
             completed: false,
             childrenInsuranceValues: [],
-            spouseInsuranceValue:'',
-            employeeInsuranceValue:''
+            spouseInsuranceValue: '',
+            employeeInsuranceValue: ''
           });
           break;
         case 'IQAMA Renewals':
@@ -265,7 +278,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     return <TaskEditScreen />
   }
 
-  if (loading) {
+  if (loading ) {
     return <ActivityIndicator size={'large'} />
   }
 
@@ -693,6 +706,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {data.reminderDates?.concat(data.customReminderDates).map((value, index) =>
             <ThemedText style={{ paddingHorizontal: 30 }} key={index}>{index + 1}{'.'}{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
+
+          <ShareToUsers/>
         </>
       case 'Purchase Order':
         return <>
@@ -953,7 +968,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             ai="center"
             jc="space-between"
             backgroundColor={Colors.light.tint}
-            borderRadius="$4"
+            borderRadius={25}
+            borderStyle='solid'
+            borderWidth={0.5}
+            borderColor={'white'}
             padding="$3"
             hoverStyle={{
               backgroundColor: '$accentColorHover',
@@ -999,18 +1017,27 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
               <Sheet.Handle />
               <YStack space>
-                {categories.map((item) => (
-                  <Button
-                    backgroundColor={Platform.OS == 'ios' ? colorScheme == 'light' ? '$accentColor' : '$accentBackground' : '$accentColor'}
-                    key={item.value}
+                {categories.map((item, index) => (
+                  <TouchableOpacity key={index}
+                    activeOpacity={0.8}
+                    style={[styles.button, { backgroundColor: Colors.light.tint }]}
                     onPress={() => {
-                      setIsSheetOpen(false);
+                      setIsSheetOpen(false)
                       setValue('category', item.value)
                     }}
-                    borderRadius="$3"
                   >
-                    <H4 theme={'alt2'} color={'white'}>{item.label}</H4>
-                  </Button>
+                    <View style={styles.buttonContent}>
+                      <Image
+                        source={categoryImagePaths[item.value]}
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 12,
+                        }}
+                      />
+                      <Text style={[styles.buttonText1, { color: 'aliceblue' }]}>{item.label}</Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
 
               </YStack>
@@ -1146,5 +1173,28 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderWidth: 1,
     borderColor: 'white'
-  }
+  },
+  button: {
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginVertical: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: 'white',
+    margin: 'auto'
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap:10
+  },
+  buttonText1: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
