@@ -67,12 +67,12 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     insuranceStartDate: false,
     insuranceEndDate: false,
     customReminderDate: false,
-    visaExpiryDate: false,
+    visaExpiryDate:false
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
-  const { isLoading: addFormDataLoading, isError: isAddFormdataErr, mutateAsync: addFormData } = useCreateFormDataMutation()
-  const { isLoading: updateFormDataLoading, isError: isUpdateFormdataErr, mutateAsync: updateFormData } = useUpdateFormDataMutation()
+  const { isLoading: addFormDataLoading,  mutateAsync: addFormData } = useCreateFormDataMutation()
+  const { isLoading: updateFormDataLoading, mutateAsync: updateFormData } = useUpdateFormDataMutation()
   const { errors } = formState
   const [childrenValues, setChildrenValues] = useState<string[]>(watch('childrenInsuranceValues') || []);
   const [totalValue, setTotalValue] = useState(watch('value') || '0')
@@ -187,6 +187,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             reminderDates: [],
             completed: false,
             childrenInsuranceValues: [],
+            spouseInsuranceValue:'',
+            employeeInsuranceValue:''
           });
           break;
         case 'IQAMA Renewals':
@@ -300,13 +302,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }, 1000)
   };
 
-  const formatDate = (date: Date): string => {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
   type FieldName = FieldPath<FormData>
 
   const renderTextInput = (
@@ -413,7 +408,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     rules?: object
   ) => {
     return (
-      < >
+      <>
         <ThemedText style={styles.label}>{label}</ThemedText>
         <Controller
           control={control}
@@ -436,13 +431,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
-  const confirmIosDate = (fieldName: AcceptedDateFields) => {
-    if (fieldName !== 'customReminderDate' && iosDate) {
-      setValue(fieldName, iosDate)
-      toggleDatePickerVisibility(fieldName, false)
-    }
-  }
-
   const confirmCustomIosDate = () => {
     if (iosDate) {
       toggleDatePickerVisibility('customReminderDate', false);
@@ -451,73 +439,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       setValue('customReminderDates', dates)
       setIosDate(undefined)
     }
-  }
-
-  const renderDatePicker = (selectedDate: Date, fieldName: AcceptedDateFields) => {
-    return <>
-      <TouchableOpacity onPress={() => toggleDatePickerVisibility(fieldName, true)}>
-        <ThemedText style={styles.dateDisplay}>
-          {formatDate(selectedDate || new Date())}
-        </ThemedText>
-
-        {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && Platform.OS == 'ios' && (
-          <Sheet
-            modal
-            dismissOnOverlayPress
-            dismissOnSnapToBottom
-            open={datePickerVisibility[fieldName]}
-            onOpenChange={(open: boolean) => toggleDatePickerVisibility(fieldName, false)}
-            snapPoints={[50, 100]}
-          >
-            <Sheet.Frame padding="$4"
-              backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
-              <Sheet.Handle />
-              <YStack space>
-                <DateTimePicker
-                  value={selectedDate || new Date()}
-                  mode='date'
-                  display='spinner'
-                  onChange={(e, date) => {
-                    if (Platform.OS == 'ios' && date) {
-                      date.setHours(10, 0, 0, 0)
-                      setIosDate(date)
-                    } else {
-                      if (date) {
-                        date.setHours(10, 0, 0, 0)
-                        toggleDatePickerVisibility(fieldName, false);
-                        setValue(fieldName, date)
-                        doSetReminderDates()
-                      }
-                      toggleDatePickerVisibility(fieldName, false);
-                    }
-                  }}
-                />
-                <Button style={{ backgroundColor: Colors.light.tint }} onPress={() => confirmIosDate(fieldName)}>Confirm</Button>
-              </YStack>
-            </Sheet.Frame>
-          </Sheet>
-        )}
-
-        {datePickerVisibility[fieldName] && fieldName != 'customReminderDate' && (
-          <DateTimePicker
-            value={selectedDate || new Date()}
-            mode='date'
-            display='default'
-            onChange={(e, date) => {
-              if (date) {
-                date.setHours(10, 0, 0, 0) //set 10 am
-                toggleDatePickerVisibility(fieldName, false);
-                setValue(fieldName, date)
-                // const updatedform = calculateReminderDates(data)
-                // setValue('reminderDates',updatedform.reminderDates)
-                doSetReminderDates()
-              }
-              toggleDatePickerVisibility(fieldName, false);
-            }}
-          />
-        )}
-      </TouchableOpacity>
-    </>
   }
 
   const renderInstantDate = (fieldName: AcceptedDateFields) => {
@@ -1083,8 +1004,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     backgroundColor={Platform.OS == 'ios' ? colorScheme == 'light' ? '$accentColor' : '$accentBackground' : '$accentColor'}
                     key={item.value}
                     onPress={() => {
-                      setValue('category', item.value)
                       setIsSheetOpen(false);
+                      setValue('category', item.value)
                     }}
                     borderRadius="$3"
                   >
@@ -1098,6 +1019,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </YStack>
 
         {data.category && renderFormFields()}
+
         <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
           {isEdit ? 'Update' : 'Add'}
         </Button>
