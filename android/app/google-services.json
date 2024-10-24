@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1041616407142",
+    "project_id": "remindude-1c964",
+    "storage_bucket": "remindude-1c964.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041616407142:android:bb4a2080d73e08bdd3fba7",
+        "android_client_info": {
+          "package_name": "com.anonymous.testexpoapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD81ZyHYpQacyRn08mCAFgKUG8Widql3GY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

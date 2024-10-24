@@ -1126,6 +1126,8 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: 40,
+    width:150,
+    borderRadius:20,
     alignSelf: 'center',
     color: 'white'
   },

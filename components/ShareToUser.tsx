@@ -10,14 +10,15 @@ import uuid from 'react-native-uuid'
 
 
 interface UserProfile {
-    id:string,
+    id: string,
     userName: string;
     profilePicture: string | undefined;
-    email:string,
-    avatarColor:string
+    email: string,
+    avatarColor: string,
+    enabledNotification:boolean
 }
 
-const ShareToUsers: FunctionComponent= () => {
+const ShareToUsers: FunctionComponent = () => {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -34,19 +35,19 @@ const ShareToUsers: FunctionComponent= () => {
         }
         return color;
     };
-    
-    
+
+
     const loadUsers = async () => {
         setLoading(true);
         try {
             const usersData = (await userApi.getAllUsers()).data
             const users: UserProfile[] = usersData?.users.map(r => {
                 const avatarColor = getRandomColor();
-                if (r.userName){
+                if (r.userName) {
                     let username = r.userName.toLowerCase()
-                    if (username.startsWith('karthik') || username.startsWith('kannan') || username.startsWith('deepika')||username.startsWith('thulasi')||username.startsWith('roshini') || username.startsWith('datasack')||username.startsWith('durga')) {
+                    if (username.startsWith('karthik') || username.startsWith('kannan') || username.startsWith('deepika') || username.startsWith('thulasi') || username.startsWith('roshini') || username.startsWith('datasack') || username.startsWith('durga')) {
                         let profilePicture = undefined;
-    
+
                         if (r.profilePicture?.startsWith('/9j/') || r.profilePicture?.startsWith('iVBORw0KGgo')) {
                             profilePicture = `data:image/*;base64,${r.profilePicture}`;
                         } else if (r.profilePicture?.startsWith('https://lh3.googleusercontent.com')) {
@@ -56,22 +57,23 @@ const ShareToUsers: FunctionComponent= () => {
                         } else {
                             profilePicture = r.profilePicture
                         }
-    
+
                         return {
-                            id:uuid.v4().toString(),
+                            id: uuid.v4().toString(),
                             userName: (r.userName != '' && !!r.userName && r.userName != null) ? r.userName : r.email,
                             profilePicture,
-                            email:r.email,
-                            avatarColor
+                            email: r.email,
+                            avatarColor,
+                            enabledNotification:true
                         }
                     }
                 }
-               
+
             }).filter(r => r != undefined)
 
             setUsers(users);
         } catch (error) {
-            console.error('Failed to fetch users:',error);
+            console.error('Failed to fetch users:', error);
         } finally {
             setLoading(false);
         }
@@ -99,34 +101,63 @@ const ShareToUsers: FunctionComponent= () => {
 
     const handleSend = () => {
         //we need to send email or push notification via web socket.
-        Alert.alert("Success",`Successfully assigned to ${selectedUsers.length} users!`)
+        Alert.alert("Success", `Successfully assigned to ${selectedUsers.length} users!`)
     };
 
-    const renderUserItem = ({ item, key }: { item: UserProfile, key: number }) => (
-        <View style={styles.userItem} key={key}>
-            <UserAvatar userName={item.userName} profilePicture={item.profilePicture} avatarColor={item.avatarColor}/>
-           
-            <View style={{flexDirection:'column',flex:2}}>
-            <Text style={[styles.userName, { color: colorscheme === 'light' ? '#000' : '#fff' }]}>
-                {item.userName}
-            </Text>
-            <Text style={[styles.userName, { color: colorscheme === 'light' ? 'grey' : 'grey', fontSize:12 }]}>
-                {item.email}
-            </Text>
+    const renderUserItem = ({ item, key }: { item: UserProfile, key: number }) => {
+        const userHasSelected = selectedUsers.includes(item.id)
+        return <View style={styles.userItem} key={key}>
+            <UserAvatar userName={item.userName} profilePicture={item.profilePicture} avatarColor={item.avatarColor} />
+
+            <View style={{ flexDirection: 'column', flex: 2 }}>
+                <Text style={[styles.userName, { color: colorscheme === 'light' ? '#000' : '#fff' }]}>
+                    {item.userName}
+                </Text>
+                <Text style={[styles.userName, { color: colorscheme === 'light' ? 'grey' : 'grey', fontSize: 12 }]}>
+                    {item.email}
+                </Text>
+                <View style={{flexDirection:'row',flex:1,justifyContent:'flex-start',width:'70%'}}>
+                <Text style={[styles.userName, { color: Colors.light.tint, opacity:0.8, fontSize: 12 }]}>Enable Reminders?</Text>
+                <Checkbox
+                    checked={item.enabledNotification}
+                    onPress={() => {
+                        if (userHasSelected){
+                            setUsers(u=> u.map((r=>{
+                                if (r.id==item.id){
+                                    return {...r,enabledNotification:!r.enabledNotification}
+                                }
+                                return r
+                            })))
+                        }
+                    }
+                }
+                    borderColor={'white'}
+                    disabled={!userHasSelected}
+                    disableOptimization={true}
+                    style={[styles.checkBoxContainer, item.enabledNotification ? { backgroundColor: Colors.light.tint } : {},{opacity: userHasSelected ? 1:0.3, width:15,height:15,margin:'auto'}]}
+                >
+                    <Checkbox.Indicator>
+                        <CheckIcon color={'white'} />
+                    </Checkbox.Indicator>
+                </Checkbox>
+                </View>
+ 
+
             </View>
 
             <Checkbox
                 checked={selectedUsers.includes(item.id)}
                 onPress={() => toggleSelectUser(item.id)}
-                style={[styles.checkBoxContainer, selectedUsers.includes(item.id) ? {backgroundColor:'green'} : {}]}
+                style={[styles.checkBoxContainer, selectedUsers.includes(item.id) ? { backgroundColor: 'green' } : {}]}
                 borderColor={'white'}
             >
-                 <Checkbox.Indicator>
-          <CheckIcon color={'white'} />
-        </Checkbox.Indicator>
+                <Checkbox.Indicator>
+                    <CheckIcon color={'white'} />
+                </Checkbox.Indicator>
             </Checkbox>
+
         </View>
-    );
+    }
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator>
@@ -134,11 +165,11 @@ const ShareToUsers: FunctionComponent= () => {
                 setShowDropdown(!showDropdown);
                 if (!users.length) loadUsers();
             }}>
-                <Text style={styles.shareButtonText}>{(!loading && showDropdown) ? 'Assign to ?':'Load Users'}</Text>
-               { (!showDropdown || loading) && <ArrowDown color={'white'}  size={14}/>}
-               { (showDropdown && !loading) && <ArrowUp color={'white'}  size={14}/>}
-               {loading && <ActivityIndicator size={10} color="white" />
-               }
+                <Text style={styles.shareButtonText}>{(!loading && showDropdown) ? 'Assign to ?' : 'Load Users'}</Text>
+                {(!showDropdown || loading) && <ArrowDown color={'white'} size={14} />}
+                {(showDropdown && !loading) && <ArrowUp color={'white'} size={14} />}
+                {loading && <ActivityIndicator size={10} color="white" />
+                }
             </TouchableOpacity>
 
             {showDropdown && (
@@ -175,8 +206,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderRadius: 20,
         alignItems: 'center',
-        flexDirection:'row',
-        margin:'auto'
+        flexDirection: 'row',
+        margin: 'auto'
     },
     shareButtonText: {
         color: 'white',
@@ -206,22 +237,22 @@ const styles = StyleSheet.create({
 interface UserAvatarProps {
     userName: string;
     profilePicture: string | undefined;
-    avatarColor:string
+    avatarColor: string
 }
 
-const UserAvatar: FunctionComponent<UserAvatarProps> = ({ userName, profilePicture,avatarColor }) => {
+const UserAvatar: FunctionComponent<UserAvatarProps> = ({ userName, profilePicture, avatarColor }) => {
     const firstLetter = userName.charAt(0).toUpperCase();
 
 
 
-    if (profilePicture !== undefined && profilePicture!=='') {
+    if (profilePicture !== undefined && profilePicture !== '') {
         return (
             <Avatar circular size="$3">
                 <Avatar.Image src={profilePicture || 'https://via.placeholder.com/150'} />
                 <Avatar.Fallback bg="$gray4" />
             </Avatar>
         )
-    }else{
+    } else {
         return (
             <Avatar circular size={40} backgroundColor={avatarColor} alignItems="center" justifyContent="center">
                 <Text fontWeight="bold" color="white">
