@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { router, useNavigation } from 'expo-router';
 import { useEmailSigninMutation, useResetPassword } from '@/hooks/userHooks';
 import { useUser } from '@/components/userContext';
+import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 
 interface ChangePasswordForm {
   currentPassword: string;
@@ -21,10 +22,12 @@ const ChangePassword = () => {
   const watchNewPassword = watch('newPassword', '');
 
   const loading = isLoginLoading || isResetLoading
-const navigation = useNavigation()
-  useEffect(()=>{
-    reset()
-  },[navigation])
+// const navigation = useNavigation()
+//   useEffect(()=>{
+//     reset()
+//   },[navigation])
+
+  useOnNavigationFocus(reset)
   
   const handleVerifyCurrentPassword = async (data: ChangePasswordForm) => {
     try {

@@ -5,7 +5,7 @@ import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
 import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
-import { Category, FormData } from '@/utils/category';
+import { AssignedTo, Category, FormData } from '@/utils/category';
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -21,6 +21,7 @@ import uuid from 'react-native-uuid';
 import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
 import ShareToUsers from '@/components/ShareToUser';
+import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -142,21 +143,34 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      if (!isEdit && !officeMode) {
-        setIsSheetOpen(true)
-        setManualReminders(false)
-        setChildrenValues([])
-        setTotalValue('0')
-      }
-      if (isEdit && !officeMode) {
-        setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-        setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('focus', () => {
+  //     if (!isEdit && !officeMode) {
+  //       setIsSheetOpen(true)
+  //       setManualReminders(false)
+  //       setChildrenValues([])
+  //       setTotalValue('0')
+  //     }
+  //     if (isEdit && !officeMode) {
+  //       setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+  //       setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+  //     }
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
+
+  useOnNavigationFocus(()=>{
+    if (!isEdit && !officeMode) {
+      setIsSheetOpen(true)
+      setManualReminders(false)
+      setChildrenValues([])
+      setTotalValue('0')
+    }
+    if (isEdit && !officeMode) {
+      setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+      setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+    }
+  })
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -707,7 +721,16 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             <ThemedText style={{ paddingHorizontal: 30 }} key={index}>{index + 1}{'.'}{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
 
-          <ShareToUsers/>
+          <ShareToUsers onSelect={(user)=>{
+           if (user){
+            setValue('assignedTo',{
+              email:user.email,
+              reminderEnabled:user.enabledNotification,
+            })
+           }else{
+            setValue('assignedTo',undefined)
+           }
+          }}/>
         </>
       case 'Purchase Order':
         return <>

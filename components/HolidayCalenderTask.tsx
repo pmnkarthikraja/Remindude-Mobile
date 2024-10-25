@@ -1,22 +1,11 @@
 // import { View } from "@/components/View"
-import { SubTask, Task, TaskPriorityLevel } from "@/utils/task"
-import { FontAwesome6, MaterialIcons } from "@expo/vector-icons"
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { router, useLocalSearchParams, useNavigation } from "expo-router"
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react"
-import { Controller, useForm, UseFormSetValue } from "react-hook-form"
-import { Platform, ScrollView, StyleProp, StyleSheet, Switch, Text, TextInput, TextStyle, TouchableHighlight, TouchableOpacity, useColorScheme, View, ViewStyle } from "react-native"
-import { Calendar, CalendarList, CalendarUtils } from 'react-native-calendars'
-import Icon from 'react-native-vector-icons/MaterialIcons'
-import uuid from 'react-native-uuid';
-import { LinearGradient } from "expo-linear-gradient"
-import { useUser } from "./userContext"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import Lottie from 'lottie-react-native';
+import useOnNavigationFocus from "@/hooks/useNavigationFocus"
+import { Task } from "@/utils/task"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { UseFormSetValue } from "react-hook-form"
+import { StyleSheet, View } from "react-native"
+import { Calendar, CalendarUtils } from 'react-native-calendars'
 import { ThemedText } from "./ThemedText"
-import { Colors } from "@/constants/Colors"
-import { XStack } from "tamagui"
-import Checklist from "./Checklist"
 
 
 export interface HolidayCalendarProps {
@@ -31,19 +20,23 @@ const HolidayCalendar: React.FC<HolidayCalendarProps> = ({
     isEdit
 }) => {
     const INITIAL_DATE = CalendarUtils.getCalendarDateString((isEdit && datetime) || new Date())
-    const navigation = useNavigation()
 
     const [selected, setSelected] = useState<string>(INITIAL_DATE);
-    const colorscheme = useColorScheme()
 
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
-            if (!isEdit) {
-                setSelected(INITIAL_DATE)
-            }
-        });
-        return unsubscribe;
-    }, [navigation]);
+    // useEffect(() => {
+    //     const unsubscribe = navigation.addListener('focus', () => {
+    //         if (!isEdit) {
+    //             setSelected(INITIAL_DATE)
+    //         }
+    //     });
+    //     return unsubscribe;
+    // }, [navigation]);
+
+    useOnNavigationFocus(()=>{
+        if (!isEdit) {
+            setSelected(INITIAL_DATE)
+        }
+    })
 
     useEffect(() => {
         const currentDate = new Date(selected) || (datetime && isEdit);
@@ -125,24 +118,6 @@ const HolidayCalendar: React.FC<HolidayCalendarProps> = ({
     return (
         <View style={stylesHolidayCalendar.container}>
             {renderCustomHeader()}
-            {/* <CalendarList
-            markingType={'custom'}
-            current={selected}
-            onDayPress={onDayPress}
-            markedDates={marked}
-            theme={{
-              calendarBackground: '#1a1a1a',
-              dayTextColor: '#d9e1e8',
-              textSectionTitleColor: '#b6c1cd',
-              selectedDayBackgroundColor: '#00adf5',
-              selectedDayTextColor: '#ffffff',
-              todayTextColor: '#00adf5',
-              arrowColor: '#00adf5',
-              monthTextColor: '#ffffff',
-              indicatorColor: 'blue',
-            }}
-            style={styles.calendar}
-          /> */}
             <Calendar
                 testID={'testid=1'}
                 markingType={'custom'}

@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { CategoryDataProvider } from '@/hooks/useCategoryData';
 import { ProfileContextProvider } from '@/hooks/useProfile';
-import { UserProvider } from '@/components/userContext';
+import { UserProvider, useUser } from '@/components/userContext';
 import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
 
 import * as Notifications from 'expo-notifications';
@@ -19,6 +19,7 @@ import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { PermissionsAndroid } from 'react-native';
+import axios from 'axios';
 
 
 //permission for ios
@@ -40,7 +41,6 @@ const getFcmToken = async () => {
   try {
     const token = await messaging().getToken();
     if (token) {
-      console.log('FCM Token:', token);
       await AsyncStorage.setItem('fcmToken', token);
     } else {
       console.log('Failed to get FCM token');
@@ -78,16 +78,11 @@ async function requestUserPermissionAndroid() {
   }
 }
 
-
-
-
 const tamaguiConfig = createTamagui(config);
 type Conf = typeof tamaguiConfig;
 declare module '@tamagui/core' {
   interface TamaguiCustomConfig extends Conf { }
 }
-
-
 
 export default function RootLayout() {
   const queryClient = new QueryClient();
@@ -108,9 +103,9 @@ export default function RootLayout() {
     }),
   });
 
-  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-    console.log('Message handled in the background!', remoteMessage);
-  });
+  // messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  //   console.log('Message handled in the background!', remoteMessage);
+  // });
 
 
   useEffect(() => {
@@ -123,7 +118,7 @@ export default function RootLayout() {
       getFcmToken();
     }
 
-    // Listen for incoming notifications
+    // listen for incoming notifications
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
       console.log('A new FCM message arrived!', JSON.stringify(remoteMessage));
        await Notifications.scheduleNotificationAsync({
@@ -153,6 +148,8 @@ export default function RootLayout() {
     hideSplash();
   }, [fontsLoaded]);
 
+
+
   if (showSplash || !isAnimationFinished) {
     return <SplashScreenComponent onAnimationFinish={(isCancelled: boolean) => {
       if (!isCancelled) {
@@ -181,7 +178,7 @@ export default function RootLayout() {
             </TamaguiProvider>
           </ProfileContextProvider>
         </CategoryDataProvider>
-      </UserProvider>
+        </UserProvider>
     </TimeAnimationProvider>
   );
 }

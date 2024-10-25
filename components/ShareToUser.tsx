@@ -1,15 +1,12 @@
-import React, { useState, useEffect, FunctionComponent } from 'react';
-import { View, TouchableOpacity, FlatList, StyleSheet, Button, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import { Avatar, Checkbox, Progress, ProgressIndicator, Text } from 'tamagui';
-import { useColorScheme } from 'react-native';
 import { userApi } from '@/api/userApi';
-import { ArrowDown, ArrowUp } from '@tamagui/lucide-icons';
 import { Colors } from '@/constants/Colors';
-import { Check as CheckIcon } from '@tamagui/lucide-icons'
-import uuid from 'react-native-uuid'
+import { ArrowDown, ArrowUp, Check as CheckIcon } from '@tamagui/lucide-icons';
+import React, { FunctionComponent, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import uuid from 'react-native-uuid';
+import { Avatar, Checkbox, Text } from 'tamagui';
 
-
-interface UserProfile {
+export interface UserProfile {
     id: string,
     userName: string;
     profilePicture: string | undefined;
@@ -18,15 +15,16 @@ interface UserProfile {
     enabledNotification:boolean
 }
 
-const ShareToUsers: FunctionComponent = () => {
+const ShareToUsers: FunctionComponent<{onSelect:(user:UserProfile|undefined)=>void}> = ({
+    onSelect
+}) => {
     const [users, setUsers] = useState<UserProfile[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    // const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const colorscheme = useColorScheme();
-    const templateImageUrl = "https://via.placeholder.com/150";
+    const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
 
-    // Function to load users from API
     const getRandomColor = () => {
         const letters = '0123456789ABCDEF';
         let color = '#';
@@ -92,20 +90,17 @@ const ShareToUsers: FunctionComponent = () => {
     // };
 
     const toggleSelectUser = (gotId: string) => {
-        if (selectedUsers.includes(gotId)) {
-            setSelectedUsers(selectedUsers.filter((id) => id !== gotId));
-        } else {
-            setSelectedUsers([...selectedUsers, gotId]);
+        if (selectedUser == gotId){
+            setSelectedUser(undefined)
+            onSelect(undefined)
+        }else{
+            setSelectedUser(gotId)
+            onSelect(users.find(u=>u.id==gotId))
         }
     };
 
-    const handleSend = () => {
-        //we need to send email or push notification via web socket.
-        Alert.alert("Success", `Successfully assigned to ${selectedUsers.length} users!`)
-    };
-
     const renderUserItem = ({ item, key }: { item: UserProfile, key: number }) => {
-        const userHasSelected = selectedUsers.includes(item.id)
+        const userHasSelected = selectedUser ==  item.id
         return <View style={styles.userItem} key={key}>
             <UserAvatar userName={item.userName} profilePicture={item.profilePicture} avatarColor={item.avatarColor} />
 
@@ -124,6 +119,7 @@ const ShareToUsers: FunctionComponent = () => {
                         if (userHasSelected){
                             setUsers(u=> u.map((r=>{
                                 if (r.id==item.id){
+                                    onSelect({...r,enabledNotification:!r.enabledNotification})
                                     return {...r,enabledNotification:!r.enabledNotification}
                                 }
                                 return r
@@ -146,9 +142,9 @@ const ShareToUsers: FunctionComponent = () => {
             </View>
 
             <Checkbox
-                checked={selectedUsers.includes(item.id)}
+                checked={selectedUser==item.id}
                 onPress={() => toggleSelectUser(item.id)}
-                style={[styles.checkBoxContainer, selectedUsers.includes(item.id) ? { backgroundColor: 'green' } : {}]}
+                style={[styles.checkBoxContainer, selectedUser==item.id ? { backgroundColor: 'green' } : {}]}
                 borderColor={'white'}
             >
                 <Checkbox.Indicator>
@@ -183,10 +179,6 @@ const ShareToUsers: FunctionComponent = () => {
                                 })}
                             </View>)}
                         </>
-                    )}
-
-                    {users.length > 0 && (
-                        <Button color={Colors.light.tint} title="Send" onPress={handleSend} disabled={selectedUsers.length === 0} />
                     )}
                 </View>
             )}

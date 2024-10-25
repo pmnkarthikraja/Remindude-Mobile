@@ -1,19 +1,19 @@
 import { wait } from '@/components/OfficeScreen';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useGetFormData } from '@/hooks/formDataHooks';
 import useBlinkingAnimation from '@/hooks/useAnimations';
-import { categorizeData, FormData, getEndDate } from '@/utils/category';
+import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
-import { Platform, RefreshControl, StyleSheet, useColorScheme, View } from 'react-native';
+import { FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { Button, ScrollView, Sheet, Text, } from 'tamagui';
+import { Button, Sheet, Text } from 'tamagui';
 import Item from './Item';
+import { useGetFormData } from '@/hooks/formDataHooks';
 
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
@@ -38,7 +38,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
 
   return (
     <Animated.View style={animatedBorderStyle}>
-      {item && <Item item={item} key={item.id}/>}
+      {item && <Item item={item} key={item.id} />}
     </Animated.View>
   );
 };
@@ -73,7 +73,6 @@ const initialState: State = {
   showEndPicker: false,
   refreshing: false,
 };
-
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -111,6 +110,8 @@ const CategoryPage = () => {
   useEffect(() => {
     const doRefetch = async () => {
       const result = await refetch()
+      // dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
+      // dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
       if (result.data) {
         const filteredFormData = result.data.filter(d => d.category === category);
         dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
@@ -119,7 +120,7 @@ const CategoryPage = () => {
       }
     }
     doRefetch()
-  }, [category, colourscheme, navigation]);
+  }, [category]);
 
   const onRefresh = useCallback(() => {
     dispatch({ type: 'SET_REFRESHING', payload: true })
@@ -198,7 +199,9 @@ const CategoryPage = () => {
     next30to60Days,
     next60to90Days,
     laterThan90Days,
-    renewal
+    renewal,
+    assignedTasksToOthers,
+    assignedTasksToYou
   } = categorizeData(data);
 
   const categories = [
@@ -207,24 +210,56 @@ const CategoryPage = () => {
     { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
     { title: 'Next 60 - 90 days', data: next60to90Days, color: colourscheme == 'light' ? 'purple' : 'orange' },
     { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
+    { title: 'Assigned To Others', data: assignedTasksToOthers, color: 'blue' },
+    { title: 'Assigned To You', data: assignedTasksToYou, color: 'brown' },
   ];
 
-  const renderCategoryList = (title: string, data: FormData[], index: number, color: string) => (
-   <View key={index} style={{ gap: 5 }}>
-      {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
-        <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-      </Animated.View>}
-      {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-      }
-      {data.map((item, index) => (
-        title === 'Renewal Pending' ? (
-          <BlinkingItem key={index} item={item} />
-        ) : (
-          <Item key={item.id} item={item} />
-        )
-      ))}
-    </View>
-  );
+  interface RenderCategoryListProps {
+    title: string, data: FormData[], index: number, color: string
+  }
+  const RenderCategoryList: FunctionComponent<RenderCategoryListProps> = ({
+    color,
+    data,
+    index,
+    title
+  }) => {
+
+    const renderItem = useCallback(({ item }: { item: FormData }) => {
+      return <Item key={index} item={item} />;
+    }, []);
+
+    return (
+      <View key={index}>
+        {data.length > 0 && <SafeAreaView key={index} style={{ gap: 5 }}>
+          {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
+            <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+          </Animated.View>}
+          {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+          }
+      
+          {title == 'Renewal Pending' ?
+            <FlatList
+              // removeClippedSubviews={true}
+              // onEndReachedThreshold={0.5}
+              // initialNumToRender={4}
+              // maxToRenderPerBatch={5}
+              // updateCellsBatchingPeriod={5}
+              // windowSize={1}
+              keyExtractor={(item) => item.id}
+              data={data}
+              renderItem={renderItem}
+            />
+            :
+            <FlatList
+              keyExtractor={(item) => item.id}
+              data={data}
+              renderItem={renderItem}
+            />}
+        </SafeAreaView>}
+      </View>
+    )
+  }
+
 
   function onClearFilter() {
     dispatch({ type: 'SET_START_DATE', payload: null })
@@ -318,15 +353,19 @@ const CategoryPage = () => {
         />
       )}
 
+      {!isLoading && data.length > 0 && (
+        // <ScrollView>{categories.map((item,index)=><RenderCategoryList color={item.color} data={item.data} index={index} title={item.title} key={item.title}/>)}</ScrollView>
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.title}
+          renderItem={item => <RenderCategoryList data={item.item.data} color={item.item.color} title={item.item.title} index={item.index} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={<Text>No data available</Text>}
+        />
+      )}
 
-      {!isLoading && data.length > 0 && <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        {categories.map(({ title, data, color }, index) => data.length > 0 &&
-          renderCategoryList(title, data, index, color)
-        )}
-      </ScrollView>}
       {!isLoading && data.length == 0 && <>
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
@@ -416,7 +455,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export default CategoryPage;
+export default React.memo(CategoryPage);
 
 
 

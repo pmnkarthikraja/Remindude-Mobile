@@ -13,6 +13,8 @@ import * as Notifications from 'expo-notifications';
 import { ThemedView } from '@/components/ThemedView';
 import Lottie from 'lottie-react-native';
 import { useNavigation } from 'expo-router';
+import useOnNavigationFocus from '@/hooks/useNavigationFocus';
+import axios from 'axios';
 
 
 Notifications.setNotificationHandler({
@@ -31,6 +33,29 @@ const IndexPage = () => {
   const { data:formData, isLoading, error:getFormDataError ,refetch} = useGetFormData();
   const [isConnected,setIsConnected]=useState(true)
   const navigation = useNavigation()
+
+  const sendFCMTokensToBackend = async () => {
+    const fcmToken = await AsyncStorage.getItem('fcmToken')
+    const isTokenSent = await AsyncStorage.getItem('isFCMTokenSent');
+    const BASE_URL = "https://remindude.vercel.app";
+
+    if (!isTokenSent && fcmToken) {
+      try {
+        await axios.post(`${BASE_URL}/fcmTokens`, {
+          email: user?.email,
+          token: fcmToken,
+        });
+  
+        await AsyncStorage.setItem('isFCMTokenSent', 'true'); //one time only we should send to backend
+        console.log('FCM token sent to backend successfully');
+      } catch (error) {
+        console.error('Error sending FCM token to backend:', error);
+      }
+    } else {
+      console.log('FCM token has already been sent or token is not available');
+    }
+  }
+
 
   const onRefresh= useCallback(async ()=>{
     setRefreshing(true)
@@ -53,6 +78,7 @@ const IndexPage = () => {
     };
   }, [navigation]);
 
+
   useEffect(() => {
     const checkPermissions = async () => {
       const hasRequested = await AsyncStorage.getItem('notificationPermissionsRequested');
@@ -64,6 +90,7 @@ const IndexPage = () => {
     };
 
     checkPermissions();
+    sendFCMTokensToBackend()
 
     const subscription = Notifications.addNotificationReceivedListener(
       notification => {

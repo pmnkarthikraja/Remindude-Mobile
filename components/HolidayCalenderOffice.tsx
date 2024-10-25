@@ -9,6 +9,7 @@ import { FieldPath, UseFormSetValue } from "react-hook-form"
 import { Animated, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native"
 import { Calendar, CalendarUtils } from 'react-native-calendars'
 import { ThemedText } from "./ThemedText"
+import useOnNavigationFocus from "@/hooks/useNavigationFocus"
 
 
 export interface HolidayCalendarOfficeProps {
@@ -34,12 +35,16 @@ const HolidayCalendarOffice: React.FC<HolidayCalendarOfficeProps> = ({
     const animatedHeight = useRef(new Animated.Value(0)).current;
     const colorscheme = useColorScheme()
 
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
-            setSelected(INITIAL_DATE)
-        });
-        return unsubscribe;
-    }, [navigation]);
+    // useEffect(() => {
+    //     const unsubscribe = navigation.addListener('focus', () => {
+    //         setSelected(INITIAL_DATE)
+    //     });
+    //     return unsubscribe;
+    // }, [navigation]);
+
+    useOnNavigationFocus(()=>{
+        setSelected(INITIAL_DATE)
+    })
 
     useEffect(() => {
         if (datetime && selected !== CalendarUtils.getCalendarDateString(datetime)) {

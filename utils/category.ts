@@ -1,90 +1,70 @@
-export interface Agreements {
-  id:string,
+export interface AssignedTo{
   email:string,
+  reminderEnabled:boolean
+}
+
+export interface BaseFormData {
+  id: string;
+  email: string;
+  remarks?: string;
+  wantsCustomReminders: boolean;
+  customReminderDates: Date[];
+  reminderDates: Date[];
+  completed: boolean,
+  assignedTo?: AssignedTo | undefined,  //example kannan, assigning task to karthik and deepika
+  assignedBy?: string | undefined  //email  // consider i am karthik, task assigned by kannan or undefined (if no one assigned me a task)
+}
+
+export interface Agreements extends BaseFormData {
   category:"Agreements"
   clientName: string;
   vendorCode: string;
-  remarks:string;
   startDate: Date; 
   endDate: Date;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
-export interface PurchaseOrder {
-  id:string,
-  email:string,
+export interface PurchaseOrder extends BaseFormData {
   category:"Purchase Order"
   clientName: string;
   consultant: string;
-  remarks:string;
   poNumber: string;
   poIssueDate: Date;
   poEndDate: Date;
   entryDate: Date;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
-export interface VisaDetails {
-  id:string,
-  email:string,
+export interface VisaDetails  extends BaseFormData{
   category:"Visa Details"
   clientName: string;
   visaNumber: string;
   sponsor: string;
   consultantName: string;
-  remarks:string;
   visaEndDate: Date;
   visaEntryDate: Date;
   visaExpiryDate:Date;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
-export interface IQAMARenewals {
-  id:string,
-  email:string,
+export interface IQAMARenewals  extends BaseFormData{
   category:"IQAMA Renewals"
   employeeName: string;
   iqamaNumber: string;
-  remarks:string;
   expiryDate: Date;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
-export interface InsuranceRenewals {
-  id:string,
-  email:string,
+export interface InsuranceRenewals  extends BaseFormData{
   category: 'Insurance Renewals';
   employeeName: string;
   insuranceStartDate: Date;
   insuranceEndDate: Date;
   insuranceCompany: string;
   insuranceCategory:string;
-  remarks:string;
   employeeInsuranceValue: string;  
   spouseInsuranceValue?: string;    
   childrenInsuranceValues?: string[]; //upto 4 childrens
   value: string;  //consider this is the total sum insured
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
-export interface HouseRentalRenewal {
-  id:string,
-  email:string,
+export interface HouseRentalRenewal  extends BaseFormData{
   category: 'House Rental Renewal';
   houseOwnerName:string,
   location:string,
@@ -92,11 +72,6 @@ export interface HouseRentalRenewal {
   startDate:Date,
   endDate:Date,
   rentAmount:string,  
-  remarks:string;
-  wantsCustomReminders:boolean;
-  customReminderDates:Date[];
-  reminderDates:Date[],
-  completed:boolean
 }
 
 export type FormData = Agreements | PurchaseOrder | VisaDetails | IQAMARenewals | InsuranceRenewals | HouseRentalRenewal;
@@ -111,18 +86,25 @@ export type Category =
   
 import { differenceInDays } from 'date-fns';
 
-export const categorizeData = (data: FormData[]): {
+export const categorizeData1 = (data: FormData[]): {
   next30Days: FormData[],
   next30to60Days: FormData[],
   next60to90Days: FormData[],
   laterThan90Days: FormData[],
-  renewal: FormData[]
+  renewal: FormData[],
+  assignedTasksToOthers:FormData[]
 } => {
   const today = new Date();
 
   const renewal = data.filter(item => {
     const endDate = getEndDate(item);
     return endDate && differenceInDays(endDate, today) < 1
+  })
+
+  const assignedTasksToOthers = data.filter(item=> {
+      if (!!item.assignedTo){
+        return true
+      }
   })
 
   const next30Days = data.filter(item => {
@@ -145,8 +127,60 @@ export const categorizeData = (data: FormData[]): {
     return endDate && differenceInDays(endDate, today) > 90;
   });
 
-  return { next30Days, next30to60Days, next60to90Days, laterThan90Days, renewal };
+  return { next30Days, next30to60Days, next60to90Days, laterThan90Days, renewal , assignedTasksToOthers};
 };
+
+export const categorizeData = (data: FormData[]): {
+  next30Days: FormData[],
+  next30to60Days: FormData[],
+  next60to90Days: FormData[],
+  laterThan90Days: FormData[],
+  renewal: FormData[],
+  assignedTasksToOthers: FormData[],
+  assignedTasksToYou: FormData[],
+} => {
+  const today = new Date();
+
+  return data.reduce((acc, item) => {
+    const endDate = getEndDate(item);
+    
+    if (endDate) {
+      const diffDays = differenceInDays(endDate, today);
+
+      if (diffDays < 1) {
+        acc.renewal.push(item); // renewal task
+      } else if (diffDays >1 && diffDays <= 30) {
+        acc.next30Days.push(item); // within the next 30 days
+      } else if (diffDays> 30 && diffDays<= 60) {
+        acc.next30to60Days.push(item); // between 30 to60 days
+      } else if (diffDays> 60 && diffDays <= 90) {
+        acc.next60to90Days.push(item); // between 60 to 90 days
+      } else {
+        acc.laterThan90Days.push(item); // more than 90 days
+      }
+    }
+
+    if (item.assignedTo) {
+      acc.assignedTasksToOthers.push(item); // assigned tasks to others
+    }
+
+    if (item.assignedBy) {
+      acc.assignedTasksToYou.push(item)
+    }
+
+    return acc;
+  }, {
+    next30Days: [] as FormData[],
+    next30to60Days: [] as FormData[],
+    next60to90Days: [] as FormData[],
+    laterThan90Days: [] as FormData[],
+    renewal: [] as FormData[],
+    assignedTasksToOthers: [] as FormData[],
+    assignedTasksToYou:[] as  FormData[],
+
+  });
+};
+
 
 
 type SortType = 'newest' | 'oldest' | 'renewal';
@@ -375,3 +409,66 @@ export const parseDateForSingleItem = (item:FormData):FormData=>{
       }
   }
 }
+
+
+
+//test data--------
+
+const emails: string[] = ["karthik@example.com", "kannan@example.com", "deepika@example.com", "alex@example.com", "jane@example.com"];
+const clientNames: string[] = ["Client A", "Client B", "Client C", "Client D", "Client E"];
+const vendorCodes: string[] = ["VC001", "VC002", "VC003", "VC004", "VC005"];
+
+function getRandomEmail(): string {
+  return emails[Math.floor(Math.random() * emails.length)];
+}
+
+function getRandomRemarks(): string | undefined {
+  const remarks = ["Sample remarks", "Additional info", undefined];
+  return remarks[Math.floor(Math.random() * remarks.length)];
+}
+
+function getRandomAssignedTo(): AssignedTo {
+  return {
+    email: getRandomEmail(),
+    reminderEnabled: Math.random() < 0.5,
+  }
+}
+
+function getRandomAssignedBy(): string | undefined {
+  const assignedByOptions = [...emails, undefined];
+  return assignedByOptions[Math.floor(Math.random() * assignedByOptions.length)];
+}
+
+function getRandomClientName(): string {
+  return clientNames[Math.floor(Math.random() * clientNames.length)];
+}
+
+function getRandomVendorCode(): string {
+  return vendorCodes[Math.floor(Math.random() * vendorCodes.length)];
+}
+
+function getRandomDate(start: Date, end: Date): Date {
+  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+}
+
+function getRandomDates(min: number, max: number): Date[] {
+  const count = Math.floor(Math.random() * (max - min + 1)) + min;
+  return Array.from({ length: count }, () => getRandomDate(new Date(), new Date(2025, 11, 31)));
+}
+
+export const testAgreementsData: Agreements[] = Array.from({ length: 100 }, (_, i) => ({
+  id: `${(i + 1).toString().padStart(3, '0')}`,
+  email: getRandomEmail(),
+  remarks: getRandomRemarks(),
+  wantsCustomReminders: Math.random() < 0.5,
+  customReminderDates: getRandomDates(0, 3),
+  reminderDates: getRandomDates(1, 3),
+  completed: Math.random() < 0.5,
+  assignedTo: getRandomAssignedTo(),
+  // assignedBy: getRandomAssignedBy(),
+  category: "Agreements",
+  clientName: getRandomClientName(),
+  vendorCode: getRandomVendorCode(),
+  startDate: getRandomDate(new Date(2023, 0, 1), new Date()),
+  endDate: getRandomDate(new Date(), new Date(2025, 11, 31)),
+}));
