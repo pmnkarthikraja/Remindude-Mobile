@@ -147,15 +147,15 @@ export const categorizeData = (data: FormData[]): {
     if (endDate) {
       const diffDays = differenceInDays(endDate, today);
 
-      if (diffDays < 1) {
+      if (diffDays < 1 && !item.assignedTo && !item.assignedBy) {
         acc.renewal.push(item); // renewal task
-      } else if (diffDays >1 && diffDays <= 30) {
+      } else if (diffDays >0 && diffDays <= 30 && !item.assignedTo && !item.assignedBy) {
         acc.next30Days.push(item); // within the next 30 days
-      } else if (diffDays> 30 && diffDays<= 60) {
+      } else if (diffDays> 30 && diffDays<= 60 && !item.assignedTo && !item.assignedBy) {
         acc.next30to60Days.push(item); // between 30 to60 days
-      } else if (diffDays> 60 && diffDays <= 90) {
+      } else if (diffDays> 60 && diffDays <= 90 && !item.assignedTo && !item.assignedBy) {
         acc.next60to90Days.push(item); // between 60 to 90 days
-      } else {
+      } else if (diffDays > 90 && !item.assignedBy && !item.assignedTo) {
         acc.laterThan90Days.push(item); // more than 90 days
       }
     }
@@ -456,7 +456,7 @@ function getRandomDates(min: number, max: number): Date[] {
   return Array.from({ length: count }, () => getRandomDate(new Date(), new Date(2025, 11, 31)));
 }
 
-export const testAgreementsData: Agreements[] = Array.from({ length: 100 }, (_, i) => ({
+export const testAgreementsData: Agreements[] = Array.from({ length: 200 }, (_, i) => ({
   id: `${(i + 1).toString().padStart(3, '0')}`,
   email: getRandomEmail(),
   remarks: getRandomRemarks(),
@@ -464,7 +464,7 @@ export const testAgreementsData: Agreements[] = Array.from({ length: 100 }, (_, 
   customReminderDates: getRandomDates(0, 3),
   reminderDates: getRandomDates(1, 3),
   completed: Math.random() < 0.5,
-  assignedTo: getRandomAssignedTo(),
+  // assignedTo: getRandomAssignedTo(),
   // assignedBy: getRandomAssignedBy(),
   category: "Agreements",
   clientName: getRandomClientName(),

@@ -1,7 +1,7 @@
 import { wait } from '@/components/OfficeScreen';
-import { ThemedText } from '@/components/ThemedText';
+import SectionItems, { HeaderTitle } from '@/components/SectionList';
 import { ThemedView } from '@/components/ThemedView';
-import useBlinkingAnimation from '@/hooks/useAnimations';
+import { useGetFormData } from '@/hooks/formDataHooks';
 import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
@@ -9,39 +9,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
-import { FlatList, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, useColorScheme, View } from 'react-native';
-import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { FlatList, Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { Button, Sheet, Text } from 'tamagui';
 import Item from './Item';
-import { useGetFormData } from '@/hooks/formDataHooks';
 
 
-const BlinkingItem: FunctionComponent<{ item: FormData }> = ({ item }) => {
-  const colorscheme = useColorScheme()
-  const borderColor = useSharedValue(colorscheme == 'light' ? 'white' : 'transparent');
+interface Section {
+  title: HeaderTitle;
+  data: FormData[];
+  color: string;
+}
 
-  React.useEffect(() => {
-    borderColor.value = withRepeat(
-      withTiming(colorscheme == 'light' ? '#ff7f50' : 'orange', { duration: 700, easing: Easing.linear, reduceMotion: ReduceMotion.Never }),
-      -1,
-      true
-    );
-  }, [borderColor]);
-
-  const animatedBorderStyle = useAnimatedStyle(() => {
-    return {
-      borderColor: borderColor.value,
-      borderWidth: 0.9,
-      borderRadius: 10
-    };
-  });
-
-  return (
-    <Animated.View style={animatedBorderStyle}>
-      {item && <Item item={item} key={item.id} />}
-    </Animated.View>
-  );
-};
 
 interface State {
   initialData: FormData[]
@@ -97,6 +75,59 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
+
+interface RenderCategoryListProps {
+  title: string, data: FormData[], index: number, color: string
+}
+const RenderCategoryList: FunctionComponent<RenderCategoryListProps> = ({
+  color,
+  data,
+  index,
+  title
+}) => {
+
+  const renderItem = useCallback(({ item }: { item: FormData }) => {
+    return <Item key={index} item={item} />;
+  }, []);
+
+  return (
+    // <View key={index}>
+    //   {data.length > 0 && <View key={index} style={{ gap: 5 }}>
+    //     {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
+    //       <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+    //     </Animated.View>}
+    //     {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+    //     }
+
+    //     {title == 'Renewal Pending' ?
+    //       <FlatList
+    //         // removeClippedSubviews={true}
+    //         // onEndReachedThreshold={0.5}
+    //         // initialNumToRender={4}
+    //         // maxToRenderPerBatch={5}
+    //         // updateCellsBatchingPeriod={5}
+    //         // windowSize={1}
+    //         keyExtractor={(item) => item.id}
+    //         data={data}
+    //         renderItem={renderItem}
+    //       />
+    //       :
+    //       <FlatList
+    //         keyExtractor={(item) => item.id}
+    //         data={data}
+    //         renderItem={renderItem}
+    //       />}
+    //   </View>}
+    // </View>
+
+    <FlatList
+      keyExtractor={(item) => item.id}
+      data={data}
+      renderItem={renderItem}
+    />
+  )
+}
+
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
   const [state, dispatch] = useReducer(reducer, { ...initialState });
@@ -105,19 +136,19 @@ const CategoryPage = () => {
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
-  const animatedStyle = useBlinkingAnimation()
 
   useEffect(() => {
     const doRefetch = async () => {
-      const result = await refetch()
-      // dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
-      // dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
-      if (result.data) {
-        const filteredFormData = result.data.filter(d => d.category === category);
-        dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
-        dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
-        setIsLoading(false)
-      }
+      // const result = await refetch()
+      dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
+      dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
+      setIsLoading(false)
+      // if (result.data) {
+      //   const filteredFormData = result.data.filter(d => d.category === category);
+      //   dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
+      //   dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
+      //   setIsLoading(false)
+      // }
     }
     doRefetch()
   }, [category]);
@@ -183,82 +214,30 @@ const CategoryPage = () => {
 
   }, [navigation, category, colourscheme, hasFilterApplied, handleSearch]);
 
-  const handleFilter = (startDate: Date | null, endDate: Date | null) => {
+
+  const handleFilter = (startDate: Date | null, endDate: Date | null) => {  
     const filteredData = got.filter(item => {
-      const itemDate = getEndDate(item)
-      if (itemDate && startDate && endDate) {
-        return itemDate >= startDate && itemDate <= endDate;
-      }
-    });
-    dispatch({ type: 'SET_DATA', payload: filteredData })
-    dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })
-  };
-
-  const {
-    next30Days,
-    next30to60Days,
-    next60to90Days,
-    laterThan90Days,
-    renewal,
-    assignedTasksToOthers,
-    assignedTasksToYou
-  } = categorizeData(data);
-
-  const categories = [
-    { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
-    { title: 'Next 30 days', data: next30Days, color: 'green' },
-    { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
-    { title: 'Next 60 - 90 days', data: next60to90Days, color: colourscheme == 'light' ? 'purple' : 'orange' },
-    { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
-    { title: 'Assigned To Others', data: assignedTasksToOthers, color: 'blue' },
-    { title: 'Assigned To You', data: assignedTasksToYou, color: 'brown' },
-  ];
-
-  interface RenderCategoryListProps {
-    title: string, data: FormData[], index: number, color: string
-  }
-  const RenderCategoryList: FunctionComponent<RenderCategoryListProps> = ({
-    color,
-    data,
-    index,
-    title
-  }) => {
-
-    const renderItem = useCallback(({ item }: { item: FormData }) => {
-      return <Item key={index} item={item} />;
-    }, []);
-
-    return (
-      <View key={index}>
-        {data.length > 0 && <SafeAreaView key={index} style={{ gap: 5 }}>
-          {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
-            <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-          </Animated.View>}
-          {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-          }
+      const itemDate = getEndDate(item);
       
-          {title == 'Renewal Pending' ?
-            <FlatList
-              // removeClippedSubviews={true}
-              // onEndReachedThreshold={0.5}
-              // initialNumToRender={4}
-              // maxToRenderPerBatch={5}
-              // updateCellsBatchingPeriod={5}
-              // windowSize={1}
-              keyExtractor={(item) => item.id}
-              data={data}
-              renderItem={renderItem}
-            />
-            :
-            <FlatList
-              keyExtractor={(item) => item.id}
-              data={data}
-              renderItem={renderItem}
-            />}
-        </SafeAreaView>}
-      </View>
-    )
-  }
+      if (!!itemDate && startDate && endDate) {
+        const newItemDate = new Date(itemDate)
+        newItemDate.setHours(0,0,0,0)
+
+        const normalizedStartDate = new Date(startDate);
+        normalizedStartDate.setHours(0, 0, 0, 0); 
+  
+        const normalizedEndDate = new Date(endDate);
+        normalizedEndDate.setHours(23, 59, 59, 999); 
+  
+        const isTrue = newItemDate >= normalizedStartDate && newItemDate <= normalizedEndDate;
+        return isTrue
+      }
+      return false; 
+    });
+  
+    dispatch({ type: 'SET_DATA', payload: filteredData });
+    dispatch({ type: 'SET_MODAL_VISIBLE', payload: false });
+  };
 
 
   function onClearFilter() {
@@ -272,6 +251,44 @@ const CategoryPage = () => {
     colourscheme == 'light' ? '#a1c4fd' : '#252C39',
     colourscheme == 'light' ? 'white' : 'transparent']
 
+
+
+    const {
+      next30Days,
+      next30to60Days,
+      next60to90Days,
+      laterThan90Days,
+      renewal,
+      assignedTasksToOthers,
+      assignedTasksToYou
+  } = categorizeData(data);
+
+  const categories: Section[] = [
+      { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
+      { title: 'Next 30 days', data: next30Days, color: 'green' },
+      { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
+      { title: 'Next 60 - 90 days', data: next60to90Days, color: 'purple' },
+      { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
+      { title: 'Assigned To Others', data: assignedTasksToOthers, color: 'blue' },
+      { title: 'Assigned To You', data: assignedTasksToYou, color: 'brown' },
+  ];
+
+  const flatteningData = (sections:Section[]):(FormData | HeaderTitle)[] => {
+      const output = sections.map((section,index)=>{
+          const out:(HeaderTitle|FormData)[] = []
+          if (section.data.length!=0){
+              const title:HeaderTitle = section.title
+              const data = section.data
+              out.push(title)
+              out.push(...data)
+          } 
+          return out       
+      }).flatMap(r=>r)
+
+      return output
+  }
+
+ const flattenedData = flatteningData(categories)
 
   return (
     <LinearGradient colors={linearGradientUnified} style={styles.container}>
@@ -353,17 +370,16 @@ const CategoryPage = () => {
         />
       )}
 
+      {hasFilterApplied && (<View style={styles1.container}>
+        <Text style={styles1.filterText}>
+          {data.length} {data.length === 1 ? 'Item' : 'Items'} Found through filter
+        </Text>
+
+      </View>
+      )}
+
       {!isLoading && data.length > 0 && (
-        // <ScrollView>{categories.map((item,index)=><RenderCategoryList color={item.color} data={item.data} index={index} title={item.title} key={item.title}/>)}</ScrollView>
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.title}
-          renderItem={item => <RenderCategoryList data={item.item.data} color={item.item.color} title={item.item.title} index={item.index} />}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={<Text>No data available</Text>}
-        />
+        <SectionItems flattenedData={flattenedData} renewal={renewal} />
       )}
 
       {!isLoading && data.length == 0 && <>
@@ -385,10 +401,23 @@ const CategoryPage = () => {
   );
 };
 
+
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  sectionHeader: {
+    padding: 10,
+    backgroundColor: '#f2f2f2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   scrollContent: {
     paddingBottom: 20,
@@ -453,6 +482,30 @@ const styles = StyleSheet.create({
     height: 250,
     flex: 1
   }
+});
+
+
+const styles1 = StyleSheet.create({
+  container: {
+    padding: 10,
+    backgroundColor: '#f9f9f9', 
+    borderRadius: 8, 
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2, 
+  },
+  filterText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333', 
+    textAlign: 'center'
+  },
 });
 
 export default React.memo(CategoryPage);

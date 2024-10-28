@@ -51,6 +51,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       vendorCode: '',
       wantsCustomReminders: false,
       customReminderDates: [],
+      reminderDates:[],
       completed: false,
     }
   });
@@ -143,34 +144,35 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  // useEffect(() => {
-  //   const unsubscribe = navigation.addListener('focus', () => {
-  //     if (!isEdit && !officeMode) {
-  //       setIsSheetOpen(true)
-  //       setManualReminders(false)
-  //       setChildrenValues([])
-  //       setTotalValue('0')
-  //     }
-  //     if (isEdit && !officeMode) {
-  //       setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-  //       setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-  //     }
-  //   });
-  //   return unsubscribe;
-  // }, [navigation]);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!isEdit && !officeMode) {
+        setIsSheetOpen(true)
+        setManualReminders(false)
+        setChildrenValues([])
+        setTotalValue('0')
+        doSetReminderDates()
+      }
+      if (isEdit && !officeMode) {
+        setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+        setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
-  useOnNavigationFocus(()=>{
-    if (!isEdit && !officeMode) {
-      setIsSheetOpen(true)
-      setManualReminders(false)
-      setChildrenValues([])
-      setTotalValue('0')
-    }
-    if (isEdit && !officeMode) {
-      setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-      setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-    }
-  })
+  // useOnNavigationFocus(()=>{
+  //   if (!isEdit && !officeMode) {
+  //     setIsSheetOpen(true)
+  //     setManualReminders(false)
+  //     setChildrenValues([])
+  //     setTotalValue('0')
+  //   }
+  //   if (isEdit && !officeMode) {
+  //     setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+  //     setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+  //   }
+  // })
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -299,6 +301,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (formdata: FormData) => {
     const data = formdata.category == 'Insurance Renewals' ? { ...formdata, value: totalValue } : formdata
+    console.log("on submit :",formdata)
     if (user != null) {
       if (!isEdit) {
         const id = uuid.v4().toString()
@@ -685,10 +688,27 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     </View>
   }
 
+
+  const AssignedToComponent = ({ isEdit, data }:{isEdit:boolean,data:FormData}) => {
+    if (!isEdit || !data.assignedTo) return null;
+  
+    return (
+      <View style={{flexDirection:'row',alignItems:'center',marginVertical:10}}>
+        <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+        <Text style={styles.text}>
+          Assigned to: <ThemedText style={styles.assignedToText}>{data.assignedTo.email}</ThemedText>
+        </Text>
+      </View>
+    );
+  };
+
   const renderFormFields = () => {
     switch (data.category) {
       case 'Agreements':
         return <>
+          {/* {isEdit && data.assignedTo && <Text>Assigned to: {data.assignedTo.email}</Text>} */}
+          <AssignedToComponent data={data} isEdit={!!isEdit}/>
+
           {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
           {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
@@ -720,17 +740,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {data.reminderDates?.concat(data.customReminderDates).map((value, index) =>
             <ThemedText style={{ paddingHorizontal: 30 }} key={index}>{index + 1}{'.'}{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
-
-          <ShareToUsers onSelect={(user)=>{
-           if (user){
-            setValue('assignedTo',{
-              email:user.email,
-              reminderEnabled:user.enabledNotification,
-            })
-           }else{
-            setValue('assignedTo',undefined)
-           }
-          }}/>
+       
         </>
       case 'Purchase Order':
         return <>
@@ -1070,6 +1080,17 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
         {data.category && renderFormFields()}
 
+        <ShareToUsers onSelect={(user)=>{
+           if (user){
+            setValue('assignedTo',{
+              email:user.email,
+              reminderEnabled:user.enabledNotification,
+            })
+           }else{
+            setValue('assignedTo',undefined)
+           }
+          }}/>
+
         <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
           {isEdit ? 'Update' : 'Add'}
         </Button>
@@ -1088,11 +1109,19 @@ const styles = StyleSheet.create({
     marginVertical: 50,
     color: 'black'
   },
+  text: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: 'grey',
+    fontWeight:'bold'
+  },
+  assignedToText: {
+    fontWeight: 'bold',
+  },
   caution: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    // paddingLeft: 10
   },
   input: {
     height: 40,

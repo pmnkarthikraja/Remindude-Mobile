@@ -9,22 +9,7 @@ import Animated from 'react-native-reanimated';
 import { Animated as NativeAnimated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
-import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
-
-
-import { ThemedView } from '@/components/ThemedView';
-import { useUser } from '@/components/userContext';
-import { useGetFormData } from '@/hooks/formDataHooks';
-import { useTimeElapseAnimation } from '@/hooks/useTimeElapse';
-import { filterTasks, filterTasksCategory, Task } from '@/utils/task';
-import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
-
-import FilterComponent, { Filters } from './FilterTasks';
-import TaskTimer from './TaskTimer';
-import { ThemedText } from './ThemedText';
-
+import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui'
 
 
 interface AnimatedCountProps {
