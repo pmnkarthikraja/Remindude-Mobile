@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { CategoryDataProvider } from '@/hooks/useCategoryData';
 import { ProfileContextProvider } from '@/hooks/useProfile';
-import { UserProvider, useUser } from '@/components/userContext';
+import {  UserProvider } from '@/components/userContext';
 import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
 
 import * as Notifications from 'expo-notifications';
@@ -19,8 +19,6 @@ import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { PermissionsAndroid } from 'react-native';
-import axios from 'axios';
-
 
 //permission for ios
 async function requestUserPermission() {
@@ -41,6 +39,7 @@ const getFcmToken = async () => {
   try {
     const token = await messaging().getToken();
     if (token) {
+      console.log("fcm token:",token)
       await AsyncStorage.setItem('fcmToken', token);
     } else {
       console.log('Failed to get FCM token');
@@ -109,18 +108,17 @@ export default function RootLayout() {
 
 
   useEffect(() => {
-    // For iOS, request permission
     if (Platform.OS === 'ios') {
       requestUserPermission();
     } else {      
-      // On Android, automatically get the FCM token
       requestUserPermissionAndroid()
       getFcmToken();
     }
 
     // listen for incoming notifications
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
-      console.log('A new FCM message arrived!', JSON.stringify(remoteMessage));
+      console.log('A new FCM message arrived layout!', JSON.stringify(remoteMessage));
+
        await Notifications.scheduleNotificationAsync({
         content: {
           title: remoteMessage.notification?.title,

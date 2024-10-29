@@ -4,12 +4,12 @@ import { categorizeData, Category, FormData } from '@/utils/category';
 import { router } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
-import { Easing, FlatList, Image, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Easing, FlatList, Image, Animated as NativeAnimated, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Animated as NativeAnimated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
-import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui'
+import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
+import NotificationBox from './NotificationBox';
 
 
 interface AnimatedCountProps {
@@ -90,7 +90,7 @@ export const categoryImagePaths: Record<string, any> = {
   "GOSI Payments": require('../assets/images/categories/Room Rent Pay.png'),
   "Saudization Payment collection": require('../assets/images/categories/Rental Collectin.png'),
   "Employee Issue Tracking": require('../assets/images/categories/Employment Issue.png'),
-  'House Rental Renewal':require('../assets/images/categories/Rental Collectin.png'),
+  'House Rental Renewal': require('../assets/images/categories/Rental Collectin.png'),
 };
 
 export const CategoryCardWrapper: FunctionComponent<{ category: Category, items: FormData[] }> = ({
@@ -174,7 +174,7 @@ export function CategoryCard(props: CategoryCardProps) {
           </Text>
           <Text style={{ fontWeight: 'bold', color: colorscheme == 'light' ? 'orangered' : 'orange', paddingLeft: 5, fontSize: 20 }}>{renewal.length}</Text>
         </Animated.View>}
-        
+
       </Card.Header>
 
       <Card.Footer padded>
@@ -286,49 +286,55 @@ const OfficeScreen: FunctionComponent<OfficeScreenProps> = ({
 }) => {
 
   return (
-    <FlatList
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      ListFooterComponent={() => <View style={{ height: 150 }} />}
-      ListHeaderComponentStyle={{
-        flex: 1,
-      }}
-      ListHeaderComponent={() => (
-        <>
-          {isConnected && <>
-            <Lottie
-              source={require('../assets/Animation/Animation2.json')}
-              autoPlay
-              loop
-              style={styles.animation2}
-            />
-            <Lottie
-              source={require('../assets/Animation/Animation.json')}
-              autoPlay
-              loop
-              style={styles.animation}
-            />
-            <Lottie
-              source={require('../assets/Animation/Animation2.json')}
-              autoPlay
-              loop
-              style={styles.animation2}
-            />
-          </>}
+    <View>
+      <View>
+      <NotificationBox />
+      </View>
+      <FlatList
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListFooterComponent={() => <View style={{ height: 150 }} />}
+        ListHeaderComponentStyle={{
+          flex: 1,
+        }}
+        ListHeaderComponent={() => (
+          <>
+            {isConnected && <>
+              <Lottie
+                source={require('../assets/Animation/Animation2.json')}
+                autoPlay
+                loop
+                style={styles.animation2}
+              />
+              <Lottie
+                source={require('../assets/Animation/Animation.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+              <Lottie
+                source={require('../assets/Animation/Animation2.json')}
+                autoPlay
+                loop
+                style={styles.animation2}
+              />
+            </>}
 
-          {!isConnected && <>
-            <Lottie
-              source={require('../assets/Animation/Animation - no_internet.json')}
-              autoPlay
-              loop
-              style={styles.animation}
-            />
-          </>}
-        </>
-      )}
-      data={categories}
-      contentContainerStyle={styles.listContainer}
-      renderItem={({ item }) => <CategoryCardWrapper key={item.length} items={formData} category={item} />}
-    />
+            {!isConnected && <>
+              <Lottie
+                source={require('../assets/Animation/Animation - no_internet.json')}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+            </>}
+          </>
+        )}
+        data={categories}
+        contentContainerStyle={styles.listContainer}
+        renderItem={({ item }) => <CategoryCardWrapper key={item.length} items={formData} category={item} />}
+      />
+
+    </View>
   );
 }
 

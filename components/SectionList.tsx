@@ -4,18 +4,16 @@ import React, { FunctionComponent } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
 
-import { useColorScheme } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 export type HeaderTitle = 'Renewal Pending' | 'Next 30 days' | 'Next 30 - 60 days' | 'Next 60 - 90 days' | 'Later 90 days' | 'Assigned To Others' | 'Assigned To You'
 
 const BlinkingItem: FunctionComponent<{ item: FormData }> = React.memo(({ item }) => {
-    const colorscheme = useColorScheme()
-    const borderColor = useSharedValue(colorscheme == 'light' ? 'white' : 'transparent');
+    const borderColor = useSharedValue('white');
   
     React.useEffect(() => {
       borderColor.value = withRepeat(
-        withTiming(colorscheme == 'light' ? '#ff7f50' : 'orange', { duration: 700, easing: Easing.linear, reduceMotion: ReduceMotion.Never }),
+        withTiming('orange', { duration: 600, easing: Easing.bounce, reduceMotion: ReduceMotion.Never }),
         -1,
         true
       );
@@ -25,7 +23,7 @@ const BlinkingItem: FunctionComponent<{ item: FormData }> = React.memo(({ item }
       return {
         borderColor: borderColor.value,
         borderWidth: 0.9,
-        borderRadius: 10
+        borderRadius: 20
       };
     });
   

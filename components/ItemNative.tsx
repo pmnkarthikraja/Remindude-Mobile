@@ -2,8 +2,8 @@ import { HeaderTitle } from '@/components/SectionList';
 import { ThemedText } from '@/components/ThemedText';
 import { useTimeElapseAnimation } from '@/components/TimeAnimationProvider';
 import { useDeleteFormDataMutation } from '@/hooks/formDataHooks';
-import { Agreements, FormData, InsuranceRenewals } from '@/utils/category';
-import { FontAwesome, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Agreements, FormData, HouseRentalRenewal, InsuranceRenewals, IQAMARenewals, PurchaseOrder, VisaDetails } from '@/utils/category';
+import { FontAwesome, FontAwesome5, FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import moment from 'moment';
 import React, { FunctionComponent, useCallback, useState } from 'react';
@@ -12,7 +12,6 @@ import { Path, Svg } from 'react-native-svg';
 
 import { Colors } from '@/constants/Colors';
 import { TouchableOpacity } from 'react-native';
-
 
 type ColorsObject = {
     primary: string,
@@ -422,6 +421,26 @@ const renderContent = (item: FormData, colors: ColorsObject, iconName: 'timer-sa
             return (
                 <AgreementsItem colors={colors} icon={iconName} item={item} />
             );
+        case 'Purchase Order':
+            return (
+                <PurchaseOrderItem colors={colors} icon={iconName} item={item}/>
+            )
+        case 'Visa Details':
+            return (
+                <VisaDetailsItem colors={colors} icon={iconName} item={item} />
+            )
+        case 'IQAMA Renewals':
+            return (
+                <IQAMARenewalsItem colors={colors} icon={iconName} item={item}/>
+            )
+        case 'Insurance Renewals':
+            return (
+                <InsuranceRenewalsItem colors={colors} icon={iconName} item={item}/>
+            )
+        case 'House Rental Renewal':
+            return (
+                <HouseRentalRenewalItem colors={colors} icon={iconName} item={item}/>
+            )
 
         default:
             return <ThemedText style={styles.itemText}>No data available.</ThemedText>;
@@ -468,6 +487,323 @@ const AgreementsItem: FunctionComponent<AgreementsItemProps> = React.memo(({
                     <View style={styles.itemText}>
                         <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.secondary} />
                         <Text style={[styles.text, { color: colors.text }]}>Start Date: {moment(item.startDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                </View>
+                <View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.primary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{moment(item.endDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                    <View>
+                        <RenderStatus targetDate={item.endDate} isCompleted={item.completed} />
+                    </View>
+                </View>
+            </View>
+            <View style={styles.remainingDaysContainer}>
+                <Animated.View>
+                    <MaterialCommunityIcons
+                        name={icon} size={13} color={differenceInDays(item.endDate) > 0 ? 'green' : 'red'} />
+                </Animated.View>
+                <ThemedText>Remaining :
+                    <Text> {differenceInDays(item.endDate)}</Text> Days Left</ThemedText>
+            </View>
+        </View>
+    </View>
+})
+
+
+interface PurchaseOrderProps extends ItemProps {
+    item: PurchaseOrder,
+}
+
+const PurchaseOrderItem: FunctionComponent<PurchaseOrderProps> = React.memo(({
+    colors, icon, item
+}) => {
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
+            </View>
+        )}
+        <View>
+            <View style={styles.contentRow}>
+                <View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-alt' size={16} color={colors.accent1} />
+                        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.clientName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-check' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Consultant: {item.consultant}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome name='id-card' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>PO Number: {item.poNumber}</Text>
+                    </View>
+                </View>
+                <View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.primary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{moment(item.poEndDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                    <View>
+                        <RenderStatus targetDate={item.poEndDate} isCompleted={item.completed} />
+                    </View>
+                </View>
+            </View>
+            <View style={styles.remainingDaysContainer}>
+                <Animated.View>
+                    <MaterialCommunityIcons
+                        name={icon} size={13} color={differenceInDays(item.poEndDate) > 0 ? 'green' : 'red'} />
+                </Animated.View>
+                <ThemedText>Remaining :
+                    <Text> {differenceInDays(item.poEndDate)}</Text> Days Left</ThemedText>
+            </View>
+        </View>
+    </View>
+})
+
+
+
+interface VisaDetailsItemProps extends ItemProps {
+    item: VisaDetails,
+}
+
+const VisaDetailsItem: FunctionComponent<VisaDetailsItemProps> = React.memo(({
+    colors, icon, item
+}) => {
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
+            </View>
+        )}
+        <View>
+            <View style={styles.contentRow}>
+                <View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-alt' size={16} color={colors.accent1} />
+                        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.clientName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-check' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Consultant: {item.consultantName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='users' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Sponsor: {item.sponsor}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Visa Exp. on: {moment(item.visaExpiryDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                </View>
+                <View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.primary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{moment(item.visaEndDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                    <View>
+                        <RenderStatus targetDate={item.visaEndDate} isCompleted={item.completed} />
+                    </View>
+                </View>
+            </View>
+            <View style={styles.remainingDaysContainer}>
+                <Animated.View>
+                    <MaterialCommunityIcons
+                        name={icon} size={13} color={differenceInDays(item.visaEndDate) > 0 ? 'green' : 'red'} />
+                </Animated.View>
+                <ThemedText>Remaining :
+                    <Text> {differenceInDays(item.visaEndDate)}</Text> Days Left</ThemedText>
+            </View>
+        </View>
+    </View>
+})
+
+
+interface IQAMARenewalsItemProps extends ItemProps {
+    item: IQAMARenewals,
+}
+
+const IQAMARenewalsItem: FunctionComponent<IQAMARenewalsItemProps> = React.memo(({
+    colors, icon, item
+}) => {
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
+            </View>
+        )}
+        <View>
+            <View style={styles.contentRow}>
+                <View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-alt' size={16} color={colors.accent1} />
+                        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.employeeName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome name='id-card' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Iqama No.: {item.iqamaNumber}</Text>
+                    </View>
+                    {/* <View style={styles.itemText}>
+                        <FontAwesome5 name='users' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Sponsor: {item.sponsor}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Visa Exp. on: {moment(item.visaExpiryDate).format('DD-MM-YYYY')}</Text>
+                    </View> */}
+                </View>
+                <View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.primary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{moment(item.expiryDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                    <View>
+                        <RenderStatus targetDate={item.expiryDate} isCompleted={item.completed} />
+                    </View>
+                </View>
+            </View>
+            <View style={styles.remainingDaysContainer}>
+                <Animated.View>
+                    <MaterialCommunityIcons
+                        name={icon} size={13} color={differenceInDays(item.expiryDate) > 0 ? 'green' : 'red'} />
+                </Animated.View>
+                <ThemedText>Remaining :
+                    <Text> {differenceInDays(item.expiryDate)}</Text> Days Left</ThemedText>
+            </View>
+        </View>
+    </View>
+})
+
+
+interface InsuranceRenewalsItemProps extends ItemProps {
+    item: InsuranceRenewals,
+}
+
+const InsuranceRenewalsItem: FunctionComponent<InsuranceRenewalsItemProps> = React.memo(({
+    colors, icon, item
+}) => {
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
+            </View>
+        )}
+        <View>
+            <View style={styles.contentRow}>
+                <View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-alt' size={16} color={colors.accent1} />
+                        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.employeeName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome name='institution' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{item.insuranceCompany}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome6 name="sack-dollar" size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Sum Insured: {item.value}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome6 name="people-roof" size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>People: {calculateInsuredPeople(item)}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Start: {moment(item.insuranceStartDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                </View>
+                <View>
+                    <View style={styles.itemText}>
+                        <MaterialCommunityIcons name='calendar-clock' size={16} color={colors.primary} />
+                        <Text style={[styles.text, { color: colors.text }]}>{moment(item.insuranceEndDate).format('DD-MM-YYYY')}</Text>
+                    </View>
+                    <View>
+                        <RenderStatus targetDate={item.insuranceEndDate} isCompleted={item.completed} />
+                    </View>
+                </View>
+            </View>
+            <View style={styles.remainingDaysContainer}>
+                <Animated.View>
+                    <MaterialCommunityIcons
+                        name={icon} size={13} color={differenceInDays(item.insuranceEndDate) > 0 ? 'green' : 'red'} />
+                </Animated.View>
+                <ThemedText>Remaining :
+                    <Text> {differenceInDays(item.insuranceEndDate)}</Text> Days Left</ThemedText>
+            </View>
+        </View>
+    </View>
+})
+
+
+interface HouseRentalRenewalProps extends ItemProps {
+    item: HouseRentalRenewal,
+}
+
+const HouseRentalRenewalItem: FunctionComponent<HouseRentalRenewalProps> = React.memo(({
+    colors, icon, item
+}) => {
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
+            </View>
+        )}
+        <View>
+            <View style={styles.contentRow}>
+                <View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-alt' size={16} color={colors.accent1} />
+                        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.text, { color: colors.text }]}>{item.houseOwnerName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome5 name='user-check' size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Consultant: {item.consultantName}</Text>
+                    </View>
+                    <View style={styles.itemText}>
+                        <FontAwesome6 name="sack-dollar" size={16} color={colors.secondary} />
+                        <Text style={[styles.text, { color: colors.text }]}>Rental Amount: {item.rentAmount}</Text>
                     </View>
                 </View>
                 <View>

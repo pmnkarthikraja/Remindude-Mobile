@@ -1,5 +1,6 @@
 import { userApi } from '@/api/userApi';
 import { Colors } from '@/constants/Colors';
+import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import { ArrowDown, ArrowUp, Check as CheckIcon } from '@tamagui/lucide-icons';
 import React, { FunctionComponent, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
@@ -12,18 +13,22 @@ export interface UserProfile {
     profilePicture: string | undefined;
     email: string,
     avatarColor: string,
-    enabledNotification:boolean
+    enabledNotification: boolean
 }
 
-const ShareToUsers: FunctionComponent<{onSelect:(user:UserProfile|undefined)=>void}> = ({
+const ShareToUsers: FunctionComponent<{ onSelect: (user: UserProfile | undefined) => void }> = ({
     onSelect
 }) => {
     const [users, setUsers] = useState<UserProfile[]>([]);
-    // const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const colorscheme = useColorScheme();
     const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
+
+    useOnNavigationFocus(() => {
+        setShowDropdown(false);
+        setSelectedUser(undefined)
+    })
 
     const getRandomColor = () => {
         const letters = '0123456789ABCDEF';
@@ -42,28 +47,25 @@ const ShareToUsers: FunctionComponent<{onSelect:(user:UserProfile|undefined)=>vo
             const users: UserProfile[] = usersData?.users.map(r => {
                 const avatarColor = getRandomColor();
                 if (r.userName) {
-                    let username = r.userName.toLowerCase()
-                    if (username.startsWith('karthik') || username.startsWith('kannan') || username.startsWith('deepika') || username.startsWith('thulasi') || username.startsWith('roshini') || username.startsWith('datasack') || username.startsWith('durga')) {
-                        let profilePicture = undefined;
+                    let profilePicture = undefined;
 
-                        if (r.profilePicture?.startsWith('/9j/') || r.profilePicture?.startsWith('iVBORw0KGgo')) {
-                            profilePicture = `data:image/*;base64,${r.profilePicture}`;
-                        } else if (r.profilePicture?.startsWith('https://lh3.googleusercontent.com')) {
-                            profilePicture = r.profilePicture;
-                        } else if (!r.profilePicture || r.profilePicture === 'undefined') {
-                            profilePicture = undefined;
-                        } else {
-                            profilePicture = r.profilePicture
-                        }
+                    if (r.profilePicture?.startsWith('/9j/') || r.profilePicture?.startsWith('iVBORw0KGgo')) {
+                        profilePicture = `data:image/*;base64,${r.profilePicture}`;
+                    } else if (r.profilePicture?.startsWith('https://lh3.googleusercontent.com')) {
+                        profilePicture = r.profilePicture;
+                    } else if (!r.profilePicture || r.profilePicture === 'undefined') {
+                        profilePicture = undefined;
+                    } else {
+                        profilePicture = r.profilePicture
+                    }
 
-                        return {
-                            id: uuid.v4().toString(),
-                            userName: (r.userName != '' && !!r.userName && r.userName != null) ? r.userName : r.email,
-                            profilePicture,
-                            email: r.email,
-                            avatarColor,
-                            enabledNotification:true
-                        }
+                    return {
+                        id: uuid.v4().toString(),
+                        userName: (r.userName != '' && !!r.userName && r.userName != null) ? r.userName : r.email,
+                        profilePicture,
+                        email: r.email,
+                        avatarColor,
+                        enabledNotification: true
                     }
                 }
 
@@ -77,30 +79,18 @@ const ShareToUsers: FunctionComponent<{onSelect:(user:UserProfile|undefined)=>vo
         }
     };
 
-    // const fetchUsersFromAPI = async (): Promise<UserProfile[]> => {
-    //     return new Promise((resolve) => {
-    //         setTimeout(() => {
-    //             resolve([
-    //                 { userName: 'John Doe', profilePicture: undefined },
-    //                 { userName: 'Jane Smith', profilePicture: undefined },
-    //                 { userName: 'Alice Brown', profilePicture: undefined }
-    //             ]);
-    //         }, 1500);
-    //     });
-    // };
-
     const toggleSelectUser = (gotId: string) => {
-        if (selectedUser == gotId){
+        if (selectedUser == gotId) {
             setSelectedUser(undefined)
             onSelect(undefined)
-        }else{
+        } else {
             setSelectedUser(gotId)
-            onSelect(users.find(u=>u.id==gotId))
+            onSelect(users.find(u => u.id == gotId))
         }
     };
 
     const renderUserItem = ({ item, key }: { item: UserProfile, key: number }) => {
-        const userHasSelected = selectedUser ==  item.id
+        const userHasSelected = selectedUser == item.id
         return <View style={styles.userItem} key={key}>
             <UserAvatar userName={item.userName} profilePicture={item.profilePicture} avatarColor={item.avatarColor} />
 
@@ -111,47 +101,44 @@ const ShareToUsers: FunctionComponent<{onSelect:(user:UserProfile|undefined)=>vo
                 <Text style={[styles.userName, { color: colorscheme === 'light' ? 'grey' : 'grey', fontSize: 12 }]}>
                     {item.email}
                 </Text>
-                <View style={{flexDirection:'row',flex:1,justifyContent:'flex-start',width:'70%'}}>
-                <Text style={[styles.userName, { color: Colors.light.tint, opacity:0.8, fontSize: 12 }]}>Enable Reminders?</Text>
-                <Checkbox
-                    checked={item.enabledNotification}
-                    onPress={() => {
-                        if (userHasSelected){
-                            setUsers(u=> u.map((r=>{
-                                if (r.id==item.id){
-                                    onSelect({...r,enabledNotification:!r.enabledNotification})
-                                    return {...r,enabledNotification:!r.enabledNotification}
-                                }
-                                return r
-                            })))
+                <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'flex-start', width: '70%' }}>
+                    <Text style={[styles.userName, { color: Colors.light.tint, opacity: 0.8, fontSize: 12 }]}>Enable Reminders?</Text>
+                    <Checkbox
+                        checked={item.enabledNotification}
+                        onPress={() => {
+                            if (userHasSelected) {
+                                setUsers(u => u.map((r => {
+                                    if (r.id == item.id) {
+                                        onSelect({ ...r, enabledNotification: !r.enabledNotification })
+                                        return { ...r, enabledNotification: !r.enabledNotification }
+                                    }
+                                    return r
+                                })))
+                            }
                         }
-                    }
-                }
-                    borderColor={'white'}
-                    disabled={!userHasSelected}
-                    disableOptimization={true}
-                    style={[styles.checkBoxContainer, item.enabledNotification ? { backgroundColor: Colors.light.tint } : {},{opacity: userHasSelected ? 1:0.3, width:15,height:15,margin:'auto'}]}
-                >
-                    <Checkbox.Indicator>
-                        <CheckIcon color={'white'} />
-                    </Checkbox.Indicator>
-                </Checkbox>
+                        }
+                        borderColor={'white'}
+                        disabled={!userHasSelected}
+                        disableOptimization={true}
+                        style={[styles.checkBoxContainer, item.enabledNotification ? { backgroundColor: Colors.light.tint } : {}, { opacity: userHasSelected ? 1 : 0.3, width: 15, height: 15, margin: 'auto' }]}
+                    >
+                        <Checkbox.Indicator>
+                            <CheckIcon color={'white'} />
+                        </Checkbox.Indicator>
+                    </Checkbox>
                 </View>
- 
 
             </View>
-
             <Checkbox
-                checked={selectedUser==item.id}
+                checked={selectedUser == item.id}
                 onPress={() => toggleSelectUser(item.id)}
-                style={[styles.checkBoxContainer, selectedUser==item.id ? { backgroundColor: 'green' } : {}]}
+                style={[styles.checkBoxContainer, selectedUser == item.id ? { backgroundColor: 'green' } : {}]}
                 borderColor={'white'}
             >
                 <Checkbox.Indicator>
                     <CheckIcon color={'white'} />
                 </Checkbox.Indicator>
             </Checkbox>
-
         </View>
     }
 

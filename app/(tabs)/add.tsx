@@ -779,8 +779,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         return <>
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
           {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number', errors)}
-          {renderTextInput('iqamaNumber', control, 'Contract Start Date', 'Enter IQAMA Number', errors)}
-          {renderTextInput('iqamaNumber', control, 'Contract End Date', 'Enter IQAMA Number', errors)}
+          {renderTextInput('iqamaNumber', control, 'Contract Start Date (Not Implemented, skip this)', 'Skip This..(Not implemented)', errors)}
+          {renderTextInput('iqamaNumber', control, 'Contract End Date (Not Implemented, skip this)', 'Skip This..(Not implemented)', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>

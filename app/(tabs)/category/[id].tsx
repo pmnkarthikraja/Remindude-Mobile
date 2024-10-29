@@ -1,25 +1,27 @@
 import { wait } from '@/components/OfficeScreen';
 import SectionItems, { HeaderTitle } from '@/components/SectionList';
+import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
+import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
-import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useState } from 'react';
-import { FlatList, Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
+import { FlatList, Platform, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { Button, Sheet, Text } from 'tamagui';
 import Item from './Item';
-
+import DeviceInfo from 'react-native-device-info';
 
 interface Section {
   title: HeaderTitle;
   data: FormData[];
   color: string;
 }
-
 
 interface State {
   initialData: FormData[]
@@ -30,7 +32,9 @@ interface State {
   showStartPicker: boolean;
   showEndPicker: boolean;
   refreshing: boolean;
+  selectedTab: number;
 }
+
 type Action =
   | { type: 'SET_MODAL_VISIBLE'; payload: boolean }
   | { type: 'SET_START_DATE'; payload: Date | null }
@@ -39,7 +43,8 @@ type Action =
   | { type: 'SET_SHOW_END_PICKER'; payload: boolean }
   | { type: 'SET_REFRESHING'; payload: boolean }
   | { type: 'SET_DATA'; payload: FormData[] }
-  | { type: 'SET_INITIAL_DATA'; payload: FormData[] };
+  | { type: 'SET_INITIAL_DATA'; payload: FormData[] }
+  | { type: 'SET_SELECTED_TAB'; payload: number };
 
 const initialState: State = {
   initialData: [],
@@ -50,6 +55,7 @@ const initialState: State = {
   showStartPicker: false,
   showEndPicker: false,
   refreshing: false,
+  selectedTab: 0
 };
 
 const reducer = (state: State, action: Action): State => {
@@ -70,6 +76,8 @@ const reducer = (state: State, action: Action): State => {
       return { ...state, data: action.payload };
     case 'SET_INITIAL_DATA':
       return { ...state, initialData: action.payload }
+    case 'SET_SELECTED_TAB':
+      return { ...state, selectedTab: action.payload }
     default:
       return state;
   }
@@ -132,23 +140,30 @@ const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
   const [state, dispatch] = useReducer(reducer, { ...initialState });
   const { data: formData, isLoading: formDataLoading, error: getFormDataError, refetch } = useGetFormData();
-  const { initialData: got, data, endDate, modalVisible, refreshing, showEndPicker, showStartPicker, startDate } = state
+  const { initialData: got, selectedTab, data, endDate, modalVisible, refreshing, showEndPicker, showStartPicker, startDate } = state
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
 
+
   useEffect(() => {
     const doRefetch = async () => {
-      // const result = await refetch()
-      dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
-      dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
-      setIsLoading(false)
-      // if (result.data) {
-      //   const filteredFormData = result.data.filter(d => d.category === category);
-      //   dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
-      //   dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
-      //   setIsLoading(false)
-      // }
+      const result = await refetch()
+      // const deviceId = await DeviceInfo.getUniqueId();
+
+      // console.log("device id:",deviceId)
+
+
+      // dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
+      // dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
+      // setIsLoading(false)
+
+      if (result.data) {
+        const filteredFormData = result.data.filter(d => d.category === category);
+        dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
+        dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
+        setIsLoading(false)
+      }
     }
     doRefetch()
   }, [category]);
@@ -215,26 +230,26 @@ const CategoryPage = () => {
   }, [navigation, category, colourscheme, hasFilterApplied, handleSearch]);
 
 
-  const handleFilter = (startDate: Date | null, endDate: Date | null) => {  
+  const handleFilter = (startDate: Date | null, endDate: Date | null) => {
     const filteredData = got.filter(item => {
       const itemDate = getEndDate(item);
-      
+
       if (!!itemDate && startDate && endDate) {
         const newItemDate = new Date(itemDate)
-        newItemDate.setHours(0,0,0,0)
+        newItemDate.setHours(0, 0, 0, 0)
 
         const normalizedStartDate = new Date(startDate);
-        normalizedStartDate.setHours(0, 0, 0, 0); 
-  
+        normalizedStartDate.setHours(0, 0, 0, 0);
+
         const normalizedEndDate = new Date(endDate);
-        normalizedEndDate.setHours(23, 59, 59, 999); 
-  
+        normalizedEndDate.setHours(23, 59, 59, 999);
+
         const isTrue = newItemDate >= normalizedStartDate && newItemDate <= normalizedEndDate;
         return isTrue
       }
-      return false; 
+      return false;
     });
-  
+
     dispatch({ type: 'SET_DATA', payload: filteredData });
     dispatch({ type: 'SET_MODAL_VISIBLE', payload: false });
   };
@@ -251,44 +266,45 @@ const CategoryPage = () => {
     colourscheme == 'light' ? '#a1c4fd' : '#252C39',
     colourscheme == 'light' ? 'white' : 'transparent']
 
-
-
-    const {
-      next30Days,
-      next30to60Days,
-      next60to90Days,
-      laterThan90Days,
-      renewal,
-      assignedTasksToOthers,
-      assignedTasksToYou
+  const {
+    next30Days,
+    next30to60Days,
+    next60to90Days,
+    laterThan90Days,
+    renewal,
+    assignedTasksToOthers,
+    assignedTasksToYou,
+    completed
   } = categorizeData(data);
 
+
+
   const categories: Section[] = [
-      { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
-      { title: 'Next 30 days', data: next30Days, color: 'green' },
-      { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
-      { title: 'Next 60 - 90 days', data: next60to90Days, color: 'purple' },
-      { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
-      { title: 'Assigned To Others', data: assignedTasksToOthers, color: 'blue' },
-      { title: 'Assigned To You', data: assignedTasksToYou, color: 'brown' },
+    { title: 'Renewal Pending', data: renewal, color: '#ff6600' },
+    { title: 'Next 30 days', data: next30Days, color: 'green' },
+    { title: 'Next 30 - 60 days', data: next30to60Days, color: 'red' },
+    { title: 'Next 60 - 90 days', data: next60to90Days, color: 'purple' },
+    { title: 'Later 90 days', data: laterThan90Days, color: 'grey' },
+    { title: 'Assigned To Others', data: assignedTasksToOthers, color: 'blue' },
+    { title: 'Assigned To You', data: assignedTasksToYou, color: 'brown' },
   ];
 
-  const flatteningData = (sections:Section[]):(FormData | HeaderTitle)[] => {
-      const output = sections.map((section,index)=>{
-          const out:(HeaderTitle|FormData)[] = []
-          if (section.data.length!=0){
-              const title:HeaderTitle = section.title
-              const data = section.data
-              out.push(title)
-              out.push(...data)
-          } 
-          return out       
-      }).flatMap(r=>r)
+  const flatteningData = (sections: Section[]): (FormData | HeaderTitle)[] => {
+    const output = sections.map((section, index) => {
+      const out: (HeaderTitle | FormData)[] = []
+      if (section.data.length != 0) {
+        const title: HeaderTitle = section.title
+        const data = section.data
+        out.push(title)
+        out.push(...data)
+      }
+      return out
+    }).flatMap(r => r)
 
-      return output
+    return output
   }
 
- const flattenedData = flatteningData(categories)
+  const flattenedData = flatteningData(categories)
 
   return (
     <LinearGradient colors={linearGradientUnified} style={styles.container}>
@@ -378,9 +394,66 @@ const CategoryPage = () => {
       </View>
       )}
 
-      {!isLoading && data.length > 0 && (
+      <TaskTabs onChangeTab={(tab) => {
+        dispatch({
+          type: 'SET_SELECTED_TAB',
+          payload: tab
+        })
+      }} isColorLight={colourscheme == 'light'} />
+
+
+      {!isLoading && data.length > 0 && selectedTab == 0 && (
         <SectionItems flattenedData={flattenedData} renewal={renewal} />
       )}
+
+      {!isLoading &&selectedTab == 0 && flattenedData.length == 0 && (
+        <Lottie
+          source={require('../../../assets/Animation/Animation-no_data.json')}
+          autoPlay
+          loop
+          style={[styles.animation_no_data, { flexGrow: 10 }]}
+        />
+      )}
+
+      {!isLoading && data.length > 0 && selectedTab == 1 && (
+        <SectionItems flattenedData={completed} renewal={renewal} />
+      )}
+
+      {!isLoading &&selectedTab == 1 && completed.length == 0 && (
+        <Lottie
+          source={require('../../../assets/Animation/Animation-no_data.json')}
+          autoPlay
+          loop
+          style={[styles.animation_no_data, { flexGrow: 10 }]}
+        />
+      )}
+
+      {!isLoading && data.length > 0 && selectedTab == 2 && (
+        <SectionItems flattenedData={assignedTasksToYou} renewal={renewal} />
+      )}
+
+      {!isLoading &&selectedTab == 2 && assignedTasksToYou.length == 0 && (
+        <Lottie
+          source={require('../../../assets/Animation/Animation-no_data.json')}
+          autoPlay
+          loop
+          style={[styles.animation_no_data, { flexGrow: 10 }]}
+        />
+      )}
+
+      {!isLoading && data.length > 0 && selectedTab == 3 && (
+        <SectionItems flattenedData={assignedTasksToOthers} renewal={renewal} />
+      )}
+
+      {!isLoading &&selectedTab == 3 && assignedTasksToOthers.length == 0 && (
+        <Lottie
+          source={require('../../../assets/Animation/Animation-no_data.json')}
+          autoPlay
+          loop
+          style={[styles.animation_no_data, { flexGrow: 10 }]}
+        />
+      )}
+
 
       {!isLoading && data.length == 0 && <>
         <Lottie
@@ -488,8 +561,8 @@ const styles = StyleSheet.create({
 const styles1 = StyleSheet.create({
   container: {
     padding: 10,
-    backgroundColor: '#f9f9f9', 
-    borderRadius: 8, 
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
     marginVertical: 8,
     shadowColor: '#000',
     shadowOffset: {
@@ -498,12 +571,12 @@ const styles1 = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2, 
+    elevation: 2,
   },
   filterText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333', 
+    color: '#333',
     textAlign: 'center'
   },
 });
@@ -513,3 +586,100 @@ export default React.memo(CategoryPage);
 
 
 
+interface TaskTabsProps {
+  onChangeTab: (tab: number) => void,
+  isColorLight: boolean
+}
+
+const TaskTabs: FunctionComponent<TaskTabsProps> = React.memo(({
+  onChangeTab,
+  isColorLight
+}) => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const tabWidth = 100;
+
+  useEffect(() => {
+    onChangeTab(selectedTab)
+  }, [selectedTab])
+
+  const handleTabPress = (index: number) => {
+    setSelectedTab(index);
+
+    const xOffset = index * tabWidth - (tabWidth/2 ); 
+    if (scrollViewRef.current){
+      scrollViewRef.current.scrollTo({ x: xOffset, animated: true });
+    }
+  };
+  const iconColor = isColorLight ? 'black' : 'white'
+
+  return (
+    <ScrollView ref={scrollViewRef} horizontal showsHorizontalScrollIndicator={false}
+    scrollsToTop
+      style={{ flexGrow: 0 }}>
+      <View style={stylesTab.tabsContainer}>
+        <TouchableOpacity onPress={() => handleTabPress(0)} style={[stylesTab.tab, selectedTab === 0 && stylesTab.activeTab]}>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]}>All Tasks </ThemedText>
+          <FontAwesome5 name="tasks" color={iconColor} style={[stylesTab.tabText, selectedTab === 0 && stylesTab.activeTabText]} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(1)} style={[stylesTab.tab, selectedTab === 1 && stylesTab.activeTab]}>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]}>Completed</ThemedText>
+          <MaterialIcons name='check' color={iconColor} style={[stylesTab.tabText, selectedTab === 1 && stylesTab.activeTabText]} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(2)} style={[stylesTab.tab, selectedTab === 2 && stylesTab.activeTab]}>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]}>Assigned To You </ThemedText>
+          <MaterialCommunityIcons name="account-arrow-left" size={20} color={iconColor} style={[stylesTab.tabText, selectedTab === 2 && stylesTab.activeTabText]} />
+
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleTabPress(3)} style={[stylesTab.tab, selectedTab === 3 && stylesTab.activeTab]}>
+          <ThemedText style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]}>Assigned To Others </ThemedText>
+          <MaterialCommunityIcons name="account-arrow-right" size={20} color={iconColor} style={[stylesTab.tabText, selectedTab === 3 && stylesTab.activeTabText]} />
+
+        </TouchableOpacity>
+      </View>
+
+      {/* <AnimatedNative.View
+        style={[
+          stylesTab.underline,
+          {
+            left: underlinePosition,
+          },
+        ]}
+      /> */}
+    </ScrollView>
+  );
+});
+
+
+const stylesTab = StyleSheet.create({
+  tabsContainer: {
+    flexDirection: 'row',
+    height: 55,
+  },
+  tab: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    flexDirection: 'row'
+  },
+  activeTab: {
+    backgroundColor: Colors.light.tint,
+    borderRadius: 20,
+
+  },
+  tabText: {
+    // fontSize: 13,
+  },
+  activeTabText: {
+    fontWeight: 'bold',
+    color: 'white',
+    // fontSize: 14,
+  },
+  underline: {
+    height: 3,
+    width: 100,
+    backgroundColor: Colors.light.tint,
+    position: 'absolute',
+    bottom: 0,
+  },
+});

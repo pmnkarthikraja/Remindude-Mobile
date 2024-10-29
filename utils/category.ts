@@ -138,11 +138,16 @@ export const categorizeData = (data: FormData[]): {
   renewal: FormData[],
   assignedTasksToOthers: FormData[],
   assignedTasksToYou: FormData[],
+  completed:FormData[],
 } => {
   const today = new Date();
 
   return data.reduce((acc, item) => {
     const endDate = getEndDate(item);
+
+    if (item.completed){
+      acc.completed.push(item) //completed task regardless of dates
+    }
     
     if (endDate) {
       const diffDays = differenceInDays(endDate, today);
@@ -177,7 +182,7 @@ export const categorizeData = (data: FormData[]): {
     renewal: [] as FormData[],
     assignedTasksToOthers: [] as FormData[],
     assignedTasksToYou:[] as  FormData[],
-
+    completed:[] as FormData[]
   });
 };
 
@@ -414,8 +419,8 @@ export const parseDateForSingleItem = (item:FormData):FormData=>{
 
 //test data--------
 
-const emails: string[] = ["karthik@example.com", "kannan@example.com", "deepika@example.com", "alex@example.com", "jane@example.com"];
-const clientNames: string[] = ["Client A", "Client B", "Client C", "Client D", "Client E"];
+const emails: string[] = ["karthik@gmail.com", "kannan@gmail.com", "deepika@gmail.com", "alex@gmail.com", "jane@gmail.com"];
+const clientNames: string[] = ["Joseph", "Karthik", "Micheal", "Franklin", "Trevor"];
 const vendorCodes: string[] = ["VC001", "VC002", "VC003", "VC004", "VC005"];
 
 function getRandomEmail(): string {
@@ -427,11 +432,13 @@ function getRandomRemarks(): string | undefined {
   return remarks[Math.floor(Math.random() * remarks.length)];
 }
 
-function getRandomAssignedTo(): AssignedTo {
-  return {
+function getRandomAssignedTo(): AssignedTo|undefined {
+  const obj =  {
     email: getRandomEmail(),
     reminderEnabled: Math.random() < 0.5,
   }
+  const assignedByOptions = [obj, undefined];
+  return assignedByOptions[Math.floor(Math.random() * assignedByOptions.length)];
 }
 
 function getRandomAssignedBy(): string | undefined {
@@ -456,19 +463,23 @@ function getRandomDates(min: number, max: number): Date[] {
   return Array.from({ length: count }, () => getRandomDate(new Date(), new Date(2025, 11, 31)));
 }
 
-export const testAgreementsData: Agreements[] = Array.from({ length: 200 }, (_, i) => ({
-  id: `${(i + 1).toString().padStart(3, '0')}`,
-  email: getRandomEmail(),
-  remarks: getRandomRemarks(),
-  wantsCustomReminders: Math.random() < 0.5,
-  customReminderDates: getRandomDates(0, 3),
-  reminderDates: getRandomDates(1, 3),
-  completed: Math.random() < 0.5,
-  // assignedTo: getRandomAssignedTo(),
-  // assignedBy: getRandomAssignedBy(),
-  category: "Agreements",
-  clientName: getRandomClientName(),
-  vendorCode: getRandomVendorCode(),
-  startDate: getRandomDate(new Date(2023, 0, 1), new Date()),
-  endDate: getRandomDate(new Date(), new Date(2025, 11, 31)),
-}));
+export const testAgreementsData: Agreements[] = Array.from({ length: 200 }, (_, i) => {
+  const hasAssignedTo = Math.random() < 0.5; 
+  
+  return ({
+    id: `${(i + 1).toString().padStart(3, '0')}`,
+    email: getRandomEmail(),
+    remarks: getRandomRemarks(),
+    wantsCustomReminders: Math.random() < 0.5,
+    customReminderDates: getRandomDates(0, 3),
+    reminderDates: getRandomDates(1, 3),
+    completed: Math.random() < 0.5,
+    assignedTo: hasAssignedTo ? getRandomAssignedTo() : undefined,
+    assignedBy: hasAssignedTo ? undefined : getRandomAssignedBy(),
+    category: "Agreements",
+    clientName: getRandomClientName(),
+    vendorCode: getRandomVendorCode(),
+    startDate: getRandomDate(new Date(2023, 0, 1), new Date()),
+    endDate: getRandomDate(new Date(), new Date(2025, 11, 31)),
+  })
+} );

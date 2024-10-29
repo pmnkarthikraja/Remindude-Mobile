@@ -3,7 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '@/utils/user';
 import { router } from 'expo-router';
 import { parseTaskDates, Task } from '@/utils/task';
+import axios from 'axios';
 
+export interface NotificationContent{
+  id:string,
+  title:string,
+  description:string
+}
 
 interface UserContextType {
   user: User | null;
@@ -14,6 +20,8 @@ interface UserContextType {
   officeMode:boolean,
   tasks:Task[]
   setTasks:React.Dispatch<React.SetStateAction<Task[]>>
+  notifications:NotificationContent[],
+  setNotifications:  React.Dispatch<React.SetStateAction<NotificationContent[]>>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -23,6 +31,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [officeMode, setOfficeMode] = useState(false);
   const [tasks,setTasks]=useState<Task[]>([])
+  const [notifications,setNotifications]=useState<NotificationContent[]>([])
 
   useEffect(() => {
     const loadUser = async () => {
@@ -45,14 +54,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+
+  const removeTokenonsignedout = async () => {
+    const fcmToken = await AsyncStorage.getItem('fcmToken')
+    const BASE_URL = "https://remindude.vercel.app";
+    if (fcmToken){
+      try {
+        await axios.delete(`${BASE_URL}/fcmTokens`,{
+          data:{
+            email: user?.email,
+            token: fcmToken,
+          }
+        });
+      }catch(e){
+        console.log("error on removing the token: ",e)
+      }
+    }
+  }
+
+
   const logout = async () => {
     await AsyncStorage.removeItem('user');
+    await removeTokenonsignedout()
     setUser(null); 
     router.navigate('/login')
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, logout,setOfficeMode,officeMode,setTasks,tasks }}>
+    <UserContext.Provider value={{ user, setUser, loading, logout,setOfficeMode,officeMode,setTasks,tasks,notifications,setNotifications }}>
       {children}
     </UserContext.Provider>
   );

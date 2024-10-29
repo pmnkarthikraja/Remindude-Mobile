@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Header from '@/components/Header';
-import { useUser } from '@/components/userContext';
+import { NotificationContent, useUser } from '@/components/userContext';
 import OfficeScreen from '@/components/OfficeScreen';
 import TaskScreen from '@/components/TaskScreen';
 import { useGetFormData } from '@/hooks/formDataHooks';
@@ -15,6 +15,9 @@ import Lottie from 'lottie-react-native';
 import { useNavigation } from 'expo-router';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import axios from 'axios';
+import messaging from '@react-native-firebase/messaging';
+import uuid from 'react-native-uuid'
+
 
 
 Notifications.setNotificationHandler({
@@ -26,13 +29,30 @@ Notifications.setNotificationHandler({
 });
 
 const IndexPage = () => {
-  const {officeMode,user,loading:getuserloading}= useUser()
+  const {officeMode,user,loading:getuserloading,setNotifications}= useUser()
   const colorscheme = useColorScheme()
   const [isloading,setloading]=useState(true)
   const [refreshing,setRefreshing]=useState(false)
   const { data:formData, isLoading, error:getFormDataError ,refetch} = useGetFormData();
   const [isConnected,setIsConnected]=useState(true)
   const navigation = useNavigation()
+
+  const removeTokenonsignedout = async () => {
+    const fcmToken = await AsyncStorage.getItem('fcmToken')
+    const BASE_URL = "https://remindude.vercel.app";
+    if (fcmToken){
+      try {
+        await axios.delete(`${BASE_URL}/fcmTokens`,{
+          data:{
+            email: user?.email,
+            token: fcmToken,
+          }
+        });
+      }catch(e){
+        console.log("error on removing the token: ",e)
+      }
+    }
+  }
 
   const sendFCMTokensToBackend = async () => {
     const fcmToken = await AsyncStorage.getItem('fcmToken')
@@ -62,6 +82,7 @@ const IndexPage = () => {
     refetch()
     setRefreshing(false)
   },[])
+  
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
@@ -80,6 +101,23 @@ const IndexPage = () => {
 
 
   useEffect(() => {
+    const unsubscribeNotification = messaging().onMessage(async (remoteMessage) => {
+      console.log('A new FCM message arrived index!', JSON.stringify(remoteMessage));
+      const notification:NotificationContent={
+        id:uuid.v4().toString(),
+        title:remoteMessage.notification?.title||'',
+        description:remoteMessage.notification?.body ||''
+      }
+      setNotifications(prev=>[...prev,notification])
+       await Notifications.scheduleNotificationAsync({
+        content: {
+          title: remoteMessage.notification?.title,
+          body: remoteMessage.notification?.body,
+        },
+        trigger: null
+      });
+    });
+
     const checkPermissions = async () => {
       const hasRequested = await AsyncStorage.getItem('notificationPermissionsRequested');
       if (!hasRequested) {
@@ -101,6 +139,7 @@ const IndexPage = () => {
     
     return () => {
       subscription.remove();
+      unsubscribeNotification()
     };
   }, []);
 
@@ -119,16 +158,11 @@ const IndexPage = () => {
     );
   }
 
-  const linearGradient = [
-     colorscheme == 'light' ? (officeMode ?'#f9f9f9' :'#a1c4fd') : '#252C39',
-     colorscheme == 'light' ? 'white' : 'transparent']
-
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
 
-  return <>
-   <View style={styles.container}>
+  return <View style={styles.container}>
       <LinearGradient
         colors={linearGradientUnified}
         style={{ flex: 1 }}>
@@ -148,7 +182,6 @@ const IndexPage = () => {
 
       </LinearGradient>
     </View>
-  </>
 }
 
 export default IndexPage

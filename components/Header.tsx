@@ -11,6 +11,7 @@ import { MoonStar, Sun } from '@tamagui/lucide-icons';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
+import NotificationBox from './NotificationBox';
 
 const { width } = Dimensions.get('window');
 

@@ -1,5 +1,4 @@
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
-import { useUser } from '@/components/userContext';
 import { useEmailSigninMutation, useGoogleSigninMutation } from '@/hooks/userHooks';
 import { User } from '@/utils/user';
 import { Asset } from 'expo-asset';
