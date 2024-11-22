@@ -21,8 +21,8 @@ import { Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'r
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
-import LoadingWidget from '@/components/LoadingWidget';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
+import LoadingWidget from '@/components/LoadingWidget';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },

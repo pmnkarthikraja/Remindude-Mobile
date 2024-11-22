@@ -368,9 +368,9 @@ const styles = StyleSheet.create({
 
 const { height, width } = Dimensions.get('window');
 
-import LoadingWidget from '@/components/LoadingWidget';
 import { makeRedirectUri } from 'expo-auth-session';
 import { Modal } from 'react-native';
+import LoadingWidget from '@/components/LoadingWidget';
 
 const OtpModal: FunctionComponent<{ visible: boolean, onClose: () => void, onSubmit: (otp: string) => void }> = ({ visible, onClose, onSubmit }) => {
   const [otp, setOtp] = useState('');

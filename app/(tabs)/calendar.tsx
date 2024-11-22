@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
+import React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Calendar, CalendarList, CalendarUtils } from "react-native-calendars";

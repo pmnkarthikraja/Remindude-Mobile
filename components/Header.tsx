@@ -110,14 +110,14 @@ interface HeaderProps{
           style={styles.profilePic}
         />
         <TypingAnimation userName={user?.userName+'!' || ''}/>
-        <Switch
+        {/* <Switch
           value={officeMode}
           disabled={isLoading}
           onValueChange={toggleOffice}
           // trackColor={{ false: 'white', true: 'grey' }}
           // thumbColor={officeMode ? '#24cc5e' : Colors.light.tint}
           style={styles.switch}
-        />
+        /> */}
         <ThemedText>{officeMode ? 'Task':'Office'}</ThemedText>
         
         <Animated.View>

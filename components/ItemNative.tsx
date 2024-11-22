@@ -12,8 +12,8 @@ import { Path, Svg } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
 import { TouchableOpacity } from 'react-native';
 import { Avatar } from 'tamagui';
-import LoadingWidget from './LoadingWidget';
 import { useProfilePictureAndUsername } from './userContext';
+import LoadingWidget from './LoadingWidget';
 
 type ColorsObject = {
     primary: string,

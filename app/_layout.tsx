@@ -8,17 +8,20 @@ import { TamaguiProvider, createTamagui } from 'tamagui';
 import { config } from '@tamagui/config/v3';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import SplashScreenComponent from '@/components/SplashScreen';
+// import SplashScreenComponent from '@/components/SplashScreen';
 import { CategoryDataProvider } from '@/hooks/useCategoryData';
 import { ProfileContextProvider } from '@/hooks/useProfile';
 import {  UserProvider } from '@/components/userContext';
-import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
+// import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
 
 import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { PermissionsAndroid } from 'react-native';
+import SplashScreenComponent from '@/components/SplashScreen';
+import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
+import React from 'react';
 
 //permission for ios
 async function requestUserPermission() {

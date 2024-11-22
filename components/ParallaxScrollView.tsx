@@ -9,6 +9,7 @@ import Animated, {
 
 import { ThemedView } from '@/components/ThemedView';
 import Login from '@/app/login';
+import React from 'react';
 
 const HEADER_HEIGHT = 250;
 

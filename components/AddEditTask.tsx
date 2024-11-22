@@ -19,6 +19,7 @@ import { Colors } from "@/constants/Colors"
 import { XStack } from "tamagui"
 import Checklist from "./Checklist"
 import HolidayCalendar from "./HolidayCalenderTask"
+import React from "react"
 
 const lightColors = ['#F0F4C3', '#FFCDD2', '#D1C4E9'];
 

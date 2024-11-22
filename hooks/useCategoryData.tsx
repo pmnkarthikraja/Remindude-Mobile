@@ -1,5 +1,4 @@
 import { FormData } from '@/utils/category';
-import { agreementsData, insuranceRenewalData, iqamaRenewals, purchaseOrderData, visaDetailsData } from '@/utils/datasets';
 import React, { createContext, FunctionComponent, ReactNode, useContext, useState } from 'react';
 
 interface CategoryDataContext {
