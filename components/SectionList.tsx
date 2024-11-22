@@ -51,7 +51,6 @@ const SectionItems: FunctionComponent<{ flattenedData: (FormData|HeaderTitle)[],
     }
     } 
      />
-    // <Text>hii</Text>
     );
 };
 

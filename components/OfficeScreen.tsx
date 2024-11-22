@@ -1,10 +1,10 @@
 import { Colors } from '@/constants/Colors';
 import useBlinkingAnimation from '@/hooks/useAnimations';
 import { categorizeData, Category, FormData } from '@/utils/category';
-import { router } from 'expo-router';
+import { router, useNavigation, useRouter } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
-import { Easing, FlatList, Image, Animated as NativeAnimated, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Alert, Easing, FlatList, Image, Animated as NativeAnimated, Platform, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
@@ -121,6 +121,7 @@ interface CategoryCardProps extends CardProps {
 
 export function CategoryCard(props: CategoryCardProps) {
   const { items, category } = props
+  const router = useRouter()
 
 
   const colorscheme = useColorScheme();
@@ -152,7 +153,9 @@ export function CategoryCard(props: CategoryCardProps) {
   return (
     <Card
       style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
-      onPress={() => router.navigate(`/category/${category}`)}
+      onPress={() =>{
+        router.navigate(`/category/${category}`);
+      }}
       elevate
       size="$7"
       {...props}

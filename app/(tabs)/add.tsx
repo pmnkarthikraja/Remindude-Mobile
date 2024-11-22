@@ -1,11 +1,12 @@
 import HolidayCalendarOffice from '@/components/HolidayCalenderOffice';
 import { categoryImagePaths } from '@/components/OfficeScreen';
+import ShareToUsers from '@/components/ShareToUser';
 import { ThemedText } from '@/components/ThemedText';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
 import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
-import { AssignedTo, Category, FormData } from '@/utils/category';
+import { Category, FormData } from '@/utils/category';
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -16,11 +17,11 @@ import { debounce } from 'lodash';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
-import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
-import ShareToUsers from '@/components/ShareToUser';
+import LoadingWidget from '@/components/LoadingWidget';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 
 const categories: { label: string; value: Category }[] = [
@@ -51,13 +52,12 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       vendorCode: '',
       wantsCustomReminders: false,
       customReminderDates: [],
-      reminderDates:[],
+      reminderDates: [],
       completed: false,
     }
   });
   const { loading, user, officeMode } = useUser()
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const navigation = useNavigation()
   const [datePickerVisibility, setDatePickerVisibility] = useState<{ [key in AcceptedDateFields]: boolean }>({
     startDate: false,
     endDate: false,
@@ -82,9 +82,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const [totalValue, setTotalValue] = useState(watch('value') || '0')
   const data = watch()
 
-  interface UserProfile{
-    userName:string,
-    profilePicture:string|undefined
+  interface UserProfile {
+    userName: string,
+    profilePicture: string | undefined
   }[]
 
   // const users:UserProfile[] = usersData?.users.map(r=>{
@@ -144,35 +144,19 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      if (!isEdit && !officeMode) {
-        setIsSheetOpen(true)
-        setManualReminders(false)
-        setChildrenValues([])
-        setTotalValue('0')
-        doSetReminderDates()
-      }
-      if (isEdit && !officeMode) {
-        setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-        setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
-
-  // useOnNavigationFocus(()=>{
-  //   if (!isEdit && !officeMode) {
-  //     setIsSheetOpen(true)
-  //     setManualReminders(false)
-  //     setChildrenValues([])
-  //     setTotalValue('0')
-  //   }
-  //   if (isEdit && !officeMode) {
-  //     setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-  //     setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-  //   }
-  // })
+  useOnNavigationFocus(() => {
+    if (!isEdit && !officeMode) {
+      setIsSheetOpen(true)
+      setManualReminders(false)
+      setChildrenValues([])
+      setTotalValue('0')
+      doSetReminderDates()
+    }
+    if (isEdit && !officeMode) {
+      setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+      setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+    }
+  })
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -180,7 +164,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       [fieldName]: isOpen,
     }));
   };
-
 
   const doSetReminderDates = () => {
     const newWatch = watch()
@@ -294,14 +277,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     return <TaskEditScreen />
   }
 
-  if (loading ) {
-    return <ActivityIndicator size={'large'} />
+  if (loading) {
+    return <LoadingWidget />
   }
 
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (formdata: FormData) => {
     const data = formdata.category == 'Insurance Renewals' ? { ...formdata, value: totalValue } : formdata
-    console.log("on submit :",formdata)
+    console.log("on submit :", formdata)
     if (user != null) {
       if (!isEdit) {
         const id = uuid.v4().toString()
@@ -326,10 +309,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         }
       }
     }
-    setTimeout(() => {
-      reset()
-      router.navigate('/')
-    }, 1000)
+    // setTimeout(() => {
+
+    // }, 1000)
+    router.navigate('/')
+    reset()
   };
 
   type FieldName = FieldPath<FormData>
@@ -689,11 +673,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   }
 
 
-  const AssignedToComponent = ({ isEdit, data }:{isEdit:boolean,data:FormData}) => {
+  const AssignedToComponent = ({ isEdit, data }: { isEdit: boolean, data: FormData }) => {
     if (!isEdit || !data.assignedTo) return null;
-  
+
     return (
-      <View style={{flexDirection:'row',alignItems:'center',marginVertical:10}}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
         <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
         <Text style={styles.text}>
           Assigned to: <ThemedText style={styles.assignedToText}>{data.assignedTo.email}</ThemedText>
@@ -707,7 +691,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       case 'Agreements':
         return <>
           {/* {isEdit && data.assignedTo && <Text>Assigned to: {data.assignedTo.email}</Text>} */}
-          <AssignedToComponent data={data} isEdit={!!isEdit}/>
+          <AssignedToComponent data={data} isEdit={!!isEdit} />
 
           {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
           {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
@@ -740,7 +724,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {data.reminderDates?.concat(data.customReminderDates).map((value, index) =>
             <ThemedText style={{ paddingHorizontal: 30 }} key={index}>{index + 1}{'.'}{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
-       
+
         </>
       case 'Purchase Order':
         return <>
@@ -779,9 +763,17 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         return <>
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
           {renderTextInput('iqamaNumber', control, 'IQAMA Number', 'Enter IQAMA Number', errors)}
-          {renderTextInput('iqamaNumber', control, 'Contract Start Date (Not Implemented, skip this)', 'Skip This..(Not implemented)', errors)}
-          {renderTextInput('iqamaNumber', control, 'Contract End Date (Not Implemented, skip this)', 'Skip This..(Not implemented)', errors)}
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+
+          <ThemedText style={styles.label}>Contract Start Date:</ThemedText>
+          <HolidayCalendarOffice
+            datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='startDate' triggerReminderDates={() => { }} />
+
+          <ThemedText style={styles.label}>Contract End Date:</ThemedText>
+          <HolidayCalendarOffice
+            datetime={data.endDate} isEdit={!!isEdit} setValue={setValue}
+            fieldname='endDate' triggerReminderDates={() => { }} />
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
           {renderInstantDate('expiryDate')}
@@ -1038,7 +1030,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               </Text>
             )}
           </XStack>
-          {(addFormDataLoading || updateFormDataLoading) && <ActivityIndicator size={'large'} color={Colors.light.tint} />}
+          {/* {(addFormDataLoading || updateFormDataLoading) &&
+            <LoadingWidget />} */}
           <Sheet
             modal
             open={isSheetOpen}
@@ -1080,16 +1073,19 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
         {data.category && renderFormFields()}
 
-        <ShareToUsers onSelect={(user)=>{
-           if (user){
-            setValue('assignedTo',{
-              email:user.email,
-              reminderEnabled:user.enabledNotification,
+        <ShareToUsers onSelect={(user) => {
+          if (user) {
+            setValue('assignedTo', {
+              email: user.email,
+              reminderEnabled: user.enabledNotification,
             })
-           }else{
-            setValue('assignedTo',undefined)
-           }
-          }}/>
+          } else {
+            setValue('assignedTo', undefined)
+          }
+        }} />
+
+        {(addFormDataLoading || updateFormDataLoading) && <LoadingOverlay />
+        }
 
         <Button onPress={handleSubmit(onSubmit)} style={styles.submit} backgroundColor={Colors.light.tint} >
           {isEdit ? 'Update' : 'Add'}
@@ -1113,7 +1109,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: 'grey',
-    fontWeight:'bold'
+    fontWeight: 'bold'
   },
   assignedToText: {
     fontWeight: 'bold',
@@ -1178,8 +1174,8 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: 40,
-    width:150,
-    borderRadius:20,
+    width: 150,
+    borderRadius: 20,
     alignSelf: 'center',
     color: 'white'
   },
@@ -1245,10 +1241,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap:10
+    gap: 10
   },
   buttonText1: {
     fontSize: 16,
     fontWeight: '600',
+  },
+});
+
+const LoadingOverlay: React.FunctionComponent = () => {
+  return (
+    <Modal visible={true} transparent animationType="fade">
+      <View style={stylesLoadingOverlay.overlay}>
+        <LoadingWidget />
+      </View>
+    </Modal>
+  );
+};
+
+const stylesLoadingOverlay = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  spinnerContainer: {
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 10,
   },
 });

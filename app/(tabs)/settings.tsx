@@ -1,11 +1,11 @@
-import { ThemedText } from '@/components/ThemedText';
+import LoadingWidget from '@/components/LoadingWidget';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useProfileContext } from '@/hooks/useProfile';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TouchableHighlight, useColorScheme, Switch as NativeSwitch, Appearance, Platform } from 'react-native';
+import { Appearance, Switch as NativeSwitch, StyleSheet, TouchableHighlight, useColorScheme } from 'react-native';
 import { Avatar, Button, ListItem, Separator, SizeTokens, Stack as StackTamagui, Switch, Text, XStack, YStack } from 'tamagui';
 
 export default function SettingsScreen() {
@@ -13,7 +13,6 @@ export default function SettingsScreen() {
   const { loading, user, logout } = useUser()
   const systemTheme = Appearance.getColorScheme();
   const [switchOn, setSwitchOn] = useState(systemTheme == 'dark')
-  console.log("user: ", user?.googleId)
   const { profile } = useProfileContext()
   const toggleTheme = () => {
     const theme = systemTheme == 'dark' ? 'light' : 'dark'
@@ -22,7 +21,7 @@ export default function SettingsScreen() {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <LoadingWidget/>
   }
 
   return (
@@ -87,6 +86,7 @@ export default function SettingsScreen() {
 
         </StackTamagui>
       </YStack>
+      
     </LinearGradient>
   );
 }

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { router, useNavigation } from 'expo-router';
-import { useEmailSigninMutation, useResetPassword } from '@/hooks/userHooks';
+import LoadingWidget from '@/components/LoadingWidget';
 import { useUser } from '@/components/userContext';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
+import { useEmailSigninMutation, useResetPassword } from '@/hooks/userHooks';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ChangePasswordForm {
   currentPassword: string;
@@ -60,7 +61,7 @@ const ChangePassword = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Change Password</Text>
-        {loading && <ActivityIndicator  size={'large'}/>}
+        {loading && <LoadingWidget/>}
       {!isVerified && (
         <>
           <Controller

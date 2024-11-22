@@ -1,4 +1,5 @@
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import LoadingWidget from '@/components/LoadingWidget';
 import { useEmailSigninMutation, useGoogleSigninMutation } from '@/hooks/userHooks';
 import { User } from '@/utils/user';
 import { Asset } from 'expo-asset';
@@ -9,7 +10,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { FunctionComponent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Image, ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -103,7 +104,7 @@ const Login: FunctionComponent = () => {
           <Image source={{ uri: image }} style={styles.image} onError={e => console.log(e.nativeEvent.error)} />
           <Text style={styles.title}>Login</Text>
           {(isEmailSigninLoading || isGoogleSigninLoading) &&
-            <ActivityIndicator size="small" color="#0000ff" />
+            <LoadingWidget/>
           }
           <Text style={styles.errorText}>{isEmailSigninError && emailSigninError.response?.data.message || emailSigninError?.message}</Text>
           <Text style={styles.errorText}>{isGoogleSigninError && googleSigninError.response?.data.message || googleSigninError?.message}</Text>

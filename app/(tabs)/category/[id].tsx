@@ -1,3 +1,4 @@
+import LoadingWidget from '@/components/LoadingWidget';
 import { wait } from '@/components/OfficeScreen';
 import SectionItems, { HeaderTitle } from '@/components/SectionList';
 import { ThemedText } from '@/components/ThemedText';
@@ -12,10 +13,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
-import { FlatList, Platform, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { Button, Sheet, Text } from 'tamagui';
-import Item from './Item';
-import DeviceInfo from 'react-native-device-info';
 
 interface Section {
   title: HeaderTitle;
@@ -84,57 +83,57 @@ const reducer = (state: State, action: Action): State => {
 };
 
 
-interface RenderCategoryListProps {
-  title: string, data: FormData[], index: number, color: string
-}
-const RenderCategoryList: FunctionComponent<RenderCategoryListProps> = ({
-  color,
-  data,
-  index,
-  title
-}) => {
+// interface RenderCategoryListProps {
+//   title: string, data: FormData[], index: number, color: string
+// }
+// const RenderCategoryList: FunctionComponent<RenderCategoryListProps> = ({
+//   color,
+//   data,
+//   index,
+//   title
+// }) => {
 
-  const renderItem = useCallback(({ item }: { item: FormData }) => {
-    return <Item key={index} item={item} />;
-  }, []);
+//   const renderItem = useCallback(({ item }: { item: FormData }) => {
+//     return <Item key={index} item={item} />;
+//   }, []);
 
-  return (
-    // <View key={index}>
-    //   {data.length > 0 && <View key={index} style={{ gap: 5 }}>
-    //     {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
-    //       <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-    //     </Animated.View>}
-    //     {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
-    //     }
+//   return (
+//     // <View key={index}>
+//     //   {data.length > 0 && <View key={index} style={{ gap: 5 }}>
+//     //     {title == 'Renewal Pending' && <Animated.View style={animatedStyle}>
+//     //       <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+//     //     </Animated.View>}
+//     //     {title !== 'Renewal Pending' && <ThemedText style={[styles.category, { color, fontWeight: 'bold' }]}>{title}</ThemedText>
+//     //     }
 
-    //     {title == 'Renewal Pending' ?
-    //       <FlatList
-    //         // removeClippedSubviews={true}
-    //         // onEndReachedThreshold={0.5}
-    //         // initialNumToRender={4}
-    //         // maxToRenderPerBatch={5}
-    //         // updateCellsBatchingPeriod={5}
-    //         // windowSize={1}
-    //         keyExtractor={(item) => item.id}
-    //         data={data}
-    //         renderItem={renderItem}
-    //       />
-    //       :
-    //       <FlatList
-    //         keyExtractor={(item) => item.id}
-    //         data={data}
-    //         renderItem={renderItem}
-    //       />}
-    //   </View>}
-    // </View>
+//     //     {title == 'Renewal Pending' ?
+//     //       <FlatList
+//     //         // removeClippedSubviews={true}
+//     //         // onEndReachedThreshold={0.5}
+//     //         // initialNumToRender={4}
+//     //         // maxToRenderPerBatch={5}
+//     //         // updateCellsBatchingPeriod={5}
+//     //         // windowSize={1}
+//     //         keyExtractor={(item) => item.id}
+//     //         data={data}
+//     //         renderItem={renderItem}
+//     //       />
+//     //       :
+//     //       <FlatList
+//     //         keyExtractor={(item) => item.id}
+//     //         data={data}
+//     //         renderItem={renderItem}
+//     //       />}
+//     //   </View>}
+//     // </View>
 
-    <FlatList
-      keyExtractor={(item) => item.id}
-      data={data}
-      renderItem={renderItem}
-    />
-  )
-}
+//     <FlatList
+//       keyExtractor={(item) => item.id}
+//       data={data}
+//       renderItem={renderItem}
+//     />
+//   )
+// }
 
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
@@ -148,22 +147,22 @@ const CategoryPage = () => {
 
   useEffect(() => {
     const doRefetch = async () => {
-      const result = await refetch()
+      // const result = await refetch()
       // const deviceId = await DeviceInfo.getUniqueId();
 
       // console.log("device id:",deviceId)
 
+      const dummyAgreementsData = testAgreementsData
+      dispatch({ type: 'SET_INITIAL_DATA', payload: dummyAgreementsData || [] })
+      dispatch({ type: 'SET_DATA', payload: dummyAgreementsData || [] })
+      setIsLoading(false)
 
-      // dispatch({ type: 'SET_INITIAL_DATA', payload: testAgreementsData || [] })
-      // dispatch({ type: 'SET_DATA', payload: testAgreementsData || [] })
-      // setIsLoading(false)
-
-      if (result.data) {
-        const filteredFormData = result.data.filter(d => d.category === category);
-        dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
-        dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
-        setIsLoading(false)
-      }
+      // if (result.data) {
+      //   const filteredFormData = result.data.filter(d => d.category === category);
+      //   dispatch({ type: 'SET_INITIAL_DATA', payload: filteredFormData || [] })
+      //   dispatch({ type: 'SET_DATA', payload: filteredFormData || [] })
+      //   setIsLoading(false)
+      // }
     }
     doRefetch()
   }, [category]);
@@ -407,12 +406,7 @@ const CategoryPage = () => {
       )}
 
       {!isLoading &&selectedTab == 0 && flattenedData.length == 0 && (
-        <Lottie
-          source={require('../../../assets/Animation/Animation-no_data.json')}
-          autoPlay
-          loop
-          style={[styles.animation_no_data, { flexGrow: 10 }]}
-        />
+       <LoadingWidget/>
       )}
 
       {!isLoading && data.length > 0 && selectedTab == 1 && (
@@ -463,12 +457,7 @@ const CategoryPage = () => {
           style={styles.animation_no_data}
         />
       </>}
-      {(isLoading || formDataLoading || formData == undefined) && <Lottie
-        source={require('../../../assets/Animation/Animation -loading1.json')}
-        autoPlay
-        loop
-        style={styles.animation}
-      />}
+      {(isLoading || formDataLoading || formData == undefined) && <LoadingWidget/>}
       <View style={{ height: 80 }}></View>
     </LinearGradient>
   );

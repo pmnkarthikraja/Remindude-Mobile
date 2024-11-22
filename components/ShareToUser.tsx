@@ -3,23 +3,18 @@ import { Colors } from '@/constants/Colors';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import { ArrowDown, ArrowUp, Check as CheckIcon } from '@tamagui/lucide-icons';
 import React, { FunctionComponent, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import {  ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Avatar, Checkbox, Text } from 'tamagui';
-
-export interface UserProfile {
-    id: string,
-    userName: string;
-    profilePicture: string | undefined;
-    email: string,
-    avatarColor: string,
-    enabledNotification: boolean
-}
+import { UserProfile, useUser } from './userContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoadingWidget from './LoadingWidget';
 
 const ShareToUsers: FunctionComponent<{ onSelect: (user: UserProfile | undefined) => void }> = ({
     onSelect
 }) => {
-    const [users, setUsers] = useState<UserProfile[]>([]);
+    // const [users, setUsers] = useState<UserProfile[]>([]);
+    const {users,setUsers}= useUser()
     const [loading, setLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const colorscheme = useColorScheme();
@@ -38,7 +33,6 @@ const ShareToUsers: FunctionComponent<{ onSelect: (user: UserProfile | undefined
         }
         return color;
     };
-
 
     const loadUsers = async () => {
         setLoading(true);
@@ -72,6 +66,7 @@ const ShareToUsers: FunctionComponent<{ onSelect: (user: UserProfile | undefined
             }).filter(r => r != undefined)
 
             setUsers(users);
+            await AsyncStorage.setItem('users',JSON.stringify(users))
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -151,7 +146,7 @@ const ShareToUsers: FunctionComponent<{ onSelect: (user: UserProfile | undefined
                 <Text style={styles.shareButtonText}>{(!loading && showDropdown) ? 'Assign to ?' : 'Load Users'}</Text>
                 {(!showDropdown || loading) && <ArrowDown color={'white'} size={14} />}
                 {(showDropdown && !loading) && <ArrowUp color={'white'} size={14} />}
-                {loading && <ActivityIndicator size={10} color="white" />
+                {loading && <LoadingWidget/>
                 }
             </TouchableOpacity>
 

@@ -71,11 +71,11 @@ interface HeaderProps{
       transform: [{ translateX: translateX.value }],
     }));
   
-    const toggleTheme = () => {
-      const theme = systemTheme == 'dark' ? 'light' : 'dark'
-      setSwitchOn(theme == 'dark')
-      Appearance.setColorScheme(theme)
-    };
+    // const toggleTheme = () => {
+    //   const theme = systemTheme == 'dark' ? 'light' : 'dark'
+    //   setSwitchOn(theme == 'dark')
+    //   Appearance.setColorScheme(theme)
+    // };
   
     const toggleOffice = () => {
       setOfficeMode(!officeMode)
@@ -114,19 +114,11 @@ interface HeaderProps{
           value={officeMode}
           disabled={isLoading}
           onValueChange={toggleOffice}
-          trackColor={{ false: 'white', true: 'grey' }}
-          thumbColor={officeMode ? '#24cc5e' : Colors.light.tint}
+          // trackColor={{ false: 'white', true: 'grey' }}
+          // thumbColor={officeMode ? '#24cc5e' : Colors.light.tint}
           style={styles.switch}
         />
         <ThemedText>{officeMode ? 'Task':'Office'}</ThemedText>
-  
-        {/* <Switch
-          value={switchOn}
-          onValueChange={toggleTheme}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={switchOn ? '#f5dd4b' : '#f4f3f4'}
-          style={styles.switch}
-        /> */}
         
         <Animated.View>
           {systemTheme == 'dark' ? (

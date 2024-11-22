@@ -1,17 +1,19 @@
 import { HeaderTitle } from '@/components/SectionList';
 import { ThemedText } from '@/components/ThemedText';
-import { useTimeElapseAnimation } from '@/components/TimeAnimationProvider';
 import { useDeleteFormDataMutation } from '@/hooks/formDataHooks';
 import { Agreements, FormData, HouseRentalRenewal, InsuranceRenewals, IQAMARenewals, PurchaseOrder, VisaDetails } from '@/utils/category';
 import { FontAwesome, FontAwesome5, FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import moment from 'moment';
 import React, { FunctionComponent, useCallback, useState } from 'react';
-import { ActivityIndicator, Animated, Modal, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Animated, Modal, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
 
 import { Colors } from '@/constants/Colors';
 import { TouchableOpacity } from 'react-native';
+import { Avatar } from 'tamagui';
+import LoadingWidget from './LoadingWidget';
+import { useProfilePictureAndUsername } from './userContext';
 
 type ColorsObject = {
     primary: string,
@@ -47,7 +49,6 @@ export const isFormData = (item: FormData | HeaderTitle): item is FormData => {
 
 const Item = ({ item }: { item: FormData | HeaderTitle }) => {
     const colorscheme = useColorScheme();
-    const iconName = useTimeElapseAnimation()
     const { isLoading: deleteFormDataLoading, isError: isDeleteFormdataErr, mutateAsync: deleteFormData } = useDeleteFormDataMutation()
     const [modalState, setModalState] = useState<{ isVisible: boolean, itemId: string | null }>({ isVisible: false, itemId: null });
     const handleDelete = useCallback(async () => {
@@ -66,10 +67,6 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
 
     const openModal = useCallback(() => setModalState({ isVisible: true, itemId: (isFormData(item) && item.id) || '' }), [item]);
     const closeModal = useCallback(() => setModalState({ isVisible: false, itemId: null }), []);
-
-    const backgroundColor = colorscheme == 'light'
-        ? 'white'
-        : 'transparent'
 
     const colors: ColorsObject = {
         primary: '#1E88E5',  // Teal Blue for primary icons 
@@ -115,6 +112,47 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
         return <View style={styles.header}><Text style={[styles.headerText, { color: headerColor(item) }]}>{!isFormData(item) ? item : ''}</Text></View>
     }
 
+
+
+    const renderContent = useCallback((item: FormData, colors: ColorsObject, iconName: 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete') => {
+        const profilePicAndUserName = useProfilePictureAndUsername(item.assignedTo?.email || item.assignedBy || '')
+        const props = {
+            colors,
+            icon: iconName,
+            profilePicAndUserName,
+        }
+
+        switch (item.category) {
+            case 'Agreements':
+                return (
+                    <AgreementsItem item={item}  {...props} />
+                );
+            case 'Purchase Order':
+                return (
+                    <PurchaseOrderItem item={item} {...props} />
+                )
+            case 'Visa Details':
+                return (
+                    <VisaDetailsItem item={item} {...props} />
+                )
+            case 'IQAMA Renewals':
+                return (
+                    <IQAMARenewalsItem item={item} {...props} />
+                )
+            case 'Insurance Renewals':
+                return (
+                    <InsuranceRenewalsItem item={item} {...props} />
+                )
+            case 'House Rental Renewal':
+                return (
+                    <HouseRentalRenewalItem item={item} {...props} />
+                )
+
+            default:
+                return <ThemedText style={styles.itemText}>No data available.</ThemedText>;
+        }
+    }, [])
+
     return (
         <View style={styles.itemContainer}>
             <TouchableOpacity
@@ -127,8 +165,6 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
             >
 
                 <View style={styles.cardHeader}>
-                    {/* <UniqueBackground /> */}
-
                     <Svg viewBox='0 0 480 480' width="100%" height="130" style={{ position: 'absolute', opacity: 0.25 }}>
                         <Path fill={colorscheme == 'light' ? Colors.light.tint : 'white'} d='M480 240a160 160 0 0 0-240-138.6V0a160 160 0 0 0-138.6 240H0a160 160 0 0 0 240 138.6V480a160 160 0 0 0 138.6-240H480Z' />
                     </Svg>
@@ -136,17 +172,9 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
                     <Svg height="120" width="105%" style={styles.svgBottom}>
                         <Path d="M0,50 C100,150 300,-50 400,50 L400,200 L0,200 Z" fill={colorscheme == 'light' ? Colors.light.tint : 'white'} />
                     </Svg>
-                    {/* <Svg height="100%" width="105%" style={styles.svgBackground}>
-                        <Defs>
-                            <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <Stop offset="0%" stopColor="blue" stopOpacity="1" />
-                                <Stop offset="100%" stopColor="purple" stopOpacity="1" />
-                            </LinearGradient>
-                        </Defs>
-                        <Path d="M0,100 C150,200 250,0 400,100 L400,200 L0,200 Z" fill="url(#grad)" />
-                    </Svg> */}
 
-                    {renderContent(item, colors, iconName)}
+                    {renderContent(item, colors, 'timer-sand')}
+
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
                             style={[styles.button, { backgroundColor: getButtonColor(0) }]}
@@ -168,7 +196,7 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
                 {modalState.isVisible && (
                     <Modal visible={modalState.isVisible} onRequestClose={closeModal}>
                         <View style={styles.modalContent}>
-                            {deleteFormDataLoading && <ActivityIndicator size={'large'} />}
+                            {deleteFormDataLoading &&  <LoadingWidget />}
                             <Text style={styles.modalTitle}>Are you sure?</Text>
                             <Text>This action cannot be undone. Do you want to delete this item?</Text>
                             <View style={styles.modalButtonContainer}>
@@ -187,69 +215,11 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
     );
 };
 
-// const styles = StyleSheet.create({
-//   header:{
-//     flex:1,
-//     // backgroundColor:'red'
-//   },
-//   headerText:{
-//     color:'grey',
-//     padding:10,
-//     fontSize:16,
-//     fontWeight:'bold'
-//   },
-//   assignmentText: {
-//     fontSize: 14,
-//     marginLeft: 5,
-//   },
-//   username: {
-//     fontWeight: 'bold',
-//     color: 'orange',
-//   },
-//   itemContainer: {
-//     borderRadius: 8,
-//     padding: 10,
-//     shadowOpacity: 0.25,
-//     shadowRadius: 3.84,
-//   },
-//   cardStyle: {
-//     backgroundColor: 'transparent',
-//     borderColor: 'transparent',
-//   },
-//   cardBackground: {
-//     borderRadius: 10,
-//   },
-//   itemText: {
-//     fontSize: 16,
-//     marginBottom: 4,
-//   },
-//   text: {
-//     marginLeft: 6,
-//     fontWeight: 'bold',
-//     flexWrap: 'wrap',
-//     maxWidth: 180,
-//   },
-//   modalTitle: {
-//     fontWeight: 'bold',
-//   },
-//   svgTop: {
-//     position: 'absolute',
-//     top: 0,
-//     right: 0,
-//     opacity: 0.3
-//   },
-//   svgBottom: {
-//     position: 'absolute',
-//     bottom: 0,
-//     left: 0,
-//     opacity: 0.25
-//   }
-// });
+export default Item;
 
 const styles = StyleSheet.create({
     header: {
         flex: 1,
-        // backgroundColor:'red'
     },
     headerText: {
         color: 'grey',
@@ -378,8 +348,6 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Item;
-
 function differenceInDays(targetDate: Date): number {
     const endDate = moment(targetDate)
     const currentDate = moment()
@@ -413,43 +381,68 @@ const RenderStatus: FunctionComponent<{ targetDate: Date, isCompleted: boolean }
     </>
 })
 
+type UserInfo = { userName: string | undefined, profilePicture: string | undefined }
 
+const AssignedToOrBy: FunctionComponent<{ item: FormData, userName: string | undefined, profilePicture: string | undefined }> = ({
+    item,
+    profilePicture,
+    userName
+}) => {
+    const email = item.assignedTo ? item.assignedTo.email : item.assignedBy || ''
+    const firstLetter = userName ? userName.charAt(0).toUpperCase() : email.charAt(0).toUpperCase();
 
-const renderContent = (item: FormData, colors: ColorsObject, iconName: 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete') => {
-    switch (item.category) {
-        case 'Agreements':
-            return (
-                <AgreementsItem colors={colors} icon={iconName} item={item} />
-            );
-        case 'Purchase Order':
-            return (
-                <PurchaseOrderItem colors={colors} icon={iconName} item={item}/>
-            )
-        case 'Visa Details':
-            return (
-                <VisaDetailsItem colors={colors} icon={iconName} item={item} />
-            )
-        case 'IQAMA Renewals':
-            return (
-                <IQAMARenewalsItem colors={colors} icon={iconName} item={item}/>
-            )
-        case 'Insurance Renewals':
-            return (
-                <InsuranceRenewalsItem colors={colors} icon={iconName} item={item}/>
-            )
-        case 'House Rental Renewal':
-            return (
-                <HouseRentalRenewalItem colors={colors} icon={iconName} item={item}/>
-            )
+    return <View >
+        {item.assignedTo && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
+                <ThemedText style={styles.assignmentText}>Assigned To: </ThemedText>
 
-        default:
-            return <ThemedText style={styles.itemText}>No data available.</ThemedText>;
-    }
+                <View style={{ justifyContent: 'space-evenly', flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 10 }}>
+                    {profilePicture && <Avatar circular space size="$2">
+                        <Avatar.Image src={profilePicture || 'https://via.placeholder.com/150'} />
+                        <Avatar.Fallback bg="$gray4" />
+                    </Avatar>}
+                    {!profilePicture &&
+                        <Avatar circular size={'$2'} backgroundColor={Colors.light.tint} alignItems="center" justifyContent="center">
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                {firstLetter}
+                            </Text>
+                        </Avatar>
+                    }
+                    <Text style={styles.username}>{userName || item.assignedTo.email}</Text>
+                </View>
+            </View>
+        )}
+
+        {item.assignedBy && (
+            <View style={styles.assignmentContainer}>
+                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
+
+                <ThemedText style={styles.assignmentText}>Assigned By: </ThemedText>
+                <View style={{ justifyContent: 'space-evenly', flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 10 }}>
+                    {profilePicture && <Avatar circular space size="$2">
+                        <Avatar.Image src={profilePicture || 'https://via.placeholder.com/150'} />
+                        <Avatar.Fallback bg="$gray4" />
+                    </Avatar>}
+                    {!profilePicture &&
+                        <Avatar circular size={'$2'} backgroundColor={Colors.light.tint} alignItems="center" justifyContent="center">
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                {firstLetter}
+                            </Text>
+                        </Avatar>
+                    }
+                    <Text style={styles.username}>{userName || item.assignedBy}</Text>
+                </View>
+            </View>
+        )}
+    </View>
 }
+
 
 interface ItemProps {
     colors: ColorsObject,
     icon: 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete'
+    profilePicAndUserName: UserInfo
 }
 
 interface AgreementsItemProps extends ItemProps {
@@ -457,22 +450,11 @@ interface AgreementsItemProps extends ItemProps {
 }
 
 const AgreementsItem: FunctionComponent<AgreementsItemProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
-
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
         <View>
             <View style={styles.contentRow}>
                 <View>
@@ -517,22 +499,12 @@ interface PurchaseOrderProps extends ItemProps {
 }
 
 const PurchaseOrderItem: FunctionComponent<PurchaseOrderProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
 
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
         <View>
             <View style={styles.contentRow}>
                 <View>
@@ -578,22 +550,12 @@ interface VisaDetailsItemProps extends ItemProps {
 }
 
 const VisaDetailsItem: FunctionComponent<VisaDetailsItemProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
 
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
         <View>
             <View style={styles.contentRow}>
                 <View>
@@ -637,27 +599,18 @@ const VisaDetailsItem: FunctionComponent<VisaDetailsItemProps> = React.memo(({
 })
 
 
+
 interface IQAMARenewalsItemProps extends ItemProps {
     item: IQAMARenewals,
 }
 
 const IQAMARenewalsItem: FunctionComponent<IQAMARenewalsItemProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
 
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
         <View>
             <View style={styles.contentRow}>
                 <View>
@@ -706,22 +659,12 @@ interface InsuranceRenewalsItemProps extends ItemProps {
 }
 
 const InsuranceRenewalsItem: FunctionComponent<InsuranceRenewalsItemProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
 
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
         <View>
             <View style={styles.contentRow}>
                 <View>
@@ -774,22 +717,12 @@ interface HouseRentalRenewalProps extends ItemProps {
 }
 
 const HouseRentalRenewalItem: FunctionComponent<HouseRentalRenewalProps> = React.memo(({
-    colors, icon, item
+    colors, icon, item, profilePicAndUserName
 }) => {
+    const { profilePicture, userName } = profilePicAndUserName
     return <View >
-        {item.assignedTo && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-right" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned to: <Text style={styles.username}>{item.assignedTo.email}</Text></ThemedText>
-            </View>
-        )}
+        <AssignedToOrBy item={item} profilePicture={profilePicture} userName={userName} />
 
-        {item.assignedBy && (
-            <View style={styles.assignmentContainer}>
-                <MaterialCommunityIcons name="account-arrow-left" size={20} color="purple" />
-                <ThemedText style={styles.assignmentText}>Assigned By: <Text style={styles.username}>{item.assignedBy}</Text></ThemedText>
-            </View>
-        )}
         <View>
             <View style={styles.contentRow}>
                 <View>

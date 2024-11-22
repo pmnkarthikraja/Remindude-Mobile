@@ -1,13 +1,13 @@
-import React, { FunctionComponent, useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ImageBackground, Image, Alert, ActivityIndicator, TouchableWithoutFeedback, Keyboard, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Asset } from 'expo-asset';
-import { router } from 'expo-router';
-import { User } from '@/utils/user';
 import { useEmailSigninMutation, useEmailSignupMutation, useGoogleSignupMutation, useSendOTPMutation, useVerifyOTPMutation } from '@/hooks/userHooks';
-import { Controller, useForm } from 'react-hook-form';
+import { User } from '@/utils/user';
+import { Asset } from 'expo-asset';
 import * as Google from 'expo-auth-session/providers/google';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import React, { FunctionComponent, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Alert, Dimensions, Image, ImageBackground, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -131,7 +131,7 @@ const Signup = () => {
           <Text style={styles.title}>Register your account</Text>
 
           {(isEmailSignupLoading || isEmailSigninLoading || sendotploading || isGoogleSignupLoading) &&
-            <ActivityIndicator size="small" color="#0000ff" />
+            <LoadingWidget/>
           }
           <Text style={styles.errorText}>
             {isEmailSignupError && emailSignupError.response?.data.message
@@ -368,8 +368,9 @@ const styles = StyleSheet.create({
 
 const { height, width } = Dimensions.get('window');
 
-import { Modal } from 'react-native';
+import LoadingWidget from '@/components/LoadingWidget';
 import { makeRedirectUri } from 'expo-auth-session';
+import { Modal } from 'react-native';
 
 const OtpModal: FunctionComponent<{ visible: boolean, onClose: () => void, onSubmit: (otp: string) => void }> = ({ visible, onClose, onSubmit }) => {
   const [otp, setOtp] = useState('');

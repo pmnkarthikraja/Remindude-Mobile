@@ -1,45 +1,42 @@
-import { ThemedView } from "@/components/ThemedView"
+import LoadingWidget from "@/components/LoadingWidget"
 import { useGetFormDataById } from "@/hooks/formDataHooks"
+import { LinearGradient } from "expo-linear-gradient"
 import { Stack, useLocalSearchParams } from "expo-router"
-import { ActivityIndicator, Alert, StyleSheet, View } from "react-native"
+import { Alert, StyleSheet, useColorScheme, View } from "react-native"
 import DynamicForm from "../../add"
 
 const Item = () => {
-    const {item} = useLocalSearchParams()
-    // const [target,setTarget]=useState<FormData|undefined>(undefined)
-    console.log("id:",item)
-    const { data:formData, isLoading:formDataLoading, error:getFormDataError, isError,refetch } = useGetFormDataById(item as string);
+    const { item } = useLocalSearchParams()
+    const colorScheme = useColorScheme()
+    const { data: formData, isLoading: formDataLoading, error: getFormDataError, isError, refetch } = useGetFormDataById(item as string);
 
-    // useEffect(()=>{
-    //     const got =formData && formData.find(i=>i.id==item)
-    //     setTarget(got)
-    //     setloading(false)
-    // },[item])
-
-    if (isError){
-        Alert.alert("Error",getFormDataError?.message)
+    if (isError) {
+        Alert.alert("Error", getFormDataError?.message)
     }
 
-    if (formDataLoading){
-        return <ThemedView style={styles.container}>
-            <ActivityIndicator size={'large'}/>
-        </ThemedView>
+    if (formDataLoading) {
+        return <LinearGradient
+            style={styles.container}
+            colors={[colorScheme == 'light' ? '#a1c4fd' : '#252C39', colorScheme == 'light' ? 'white' : 'transparent']}
+        >
+            <LoadingWidget />
+        </LinearGradient>
     }
 
     return <View>
         <Stack.Screen options={{
-            title:'Edit ',
-            headerShown:false
-        }}/>
-        {formData && <DynamicForm isEdit  editItem={formData}/>}
+            title: 'Edit ',
+            headerShown: false
+        }} />
+        {formData && <DynamicForm isEdit editItem={formData} />}
     </View>
 }
 
 const styles = StyleSheet.create({
     container: {
-      flex: 1,
-      justifyContent:'center',
-      padding: 16,
+        flex: 1,
+        justifyContent: 'center',
+        padding: 16,
     },
 })
 

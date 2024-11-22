@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type IconName = 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete';
+export type IconName = 'timer-sand' | 'timer-sand-paused' | 'timer-sand-complete';
 
 const TimeAnimationContext = createContext<IconName>('timer-sand');
 

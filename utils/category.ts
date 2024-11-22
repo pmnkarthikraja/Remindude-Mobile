@@ -20,7 +20,7 @@ export interface Agreements extends BaseFormData {
   clientName: string;
   vendorCode: string;
   startDate: Date; 
-  endDate: Date;
+  endDate: Date; 
 }
 
 export interface PurchaseOrder extends BaseFormData {
@@ -49,6 +49,8 @@ export interface IQAMARenewals  extends BaseFormData{
   employeeName: string;
   iqamaNumber: string;
   expiryDate: Date;
+  startDate:Date;
+  endDate:Date
 }
 
 export interface InsuranceRenewals  extends BaseFormData{
@@ -215,7 +217,7 @@ const sortData = (data: FormData[], sortBy: SortType): FormData[] => {
 };
 
 export const getEndDate = (item: FormData): Date | null => {
-  if ('endDate' in item) return item.endDate;
+  if (item.category!= 'IQAMA Renewals' && 'endDate' in item) return item.endDate;
   if ('poEndDate' in item) return item.poEndDate;
   if ('visaEndDate' in item) return item.visaEndDate;
   if ('expiryDate' in item) return item.expiryDate;

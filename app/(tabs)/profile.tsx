@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import { Avatar, Button, Input, XStack, YStack, Text } from 'tamagui';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import LoadingWidget from '@/components/LoadingWidget';
 import { ThemedText } from '@/components/ThemedText';
+import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
-import { ArrowLeft, Mail, Pencil, User as UserIcon } from '@tamagui/lucide-icons';
-import { router } from 'expo-router';
 import { useProfileContext } from '@/hooks/useProfile';
 import { useEditProfileMutation } from '@/hooks/userHooks';
-import { useUser } from '@/components/userContext';
+import { ArrowLeft, Mail, Pencil, User as UserIcon } from '@tamagui/lucide-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useColorScheme } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { Avatar, Button, Input, Text, XStack, YStack } from 'tamagui';
 
 export default function ProfileUpdateScreen() {
     const { profile: defaultProfilePic } = useProfileContext()
@@ -31,7 +32,7 @@ export default function ProfileUpdateScreen() {
     }, [user]);
 
     if (loading) {
-        return <ActivityIndicator size={'large'} />
+        return <LoadingWidget/>
     }
 
     const pickImage = async () => {
@@ -93,7 +94,7 @@ export default function ProfileUpdateScreen() {
                 </XStack>
                 <Toast position='top' type='error' />
 
-                {isLoading && <ActivityIndicator size={'large'} />}
+                {isLoading && <LoadingWidget/>}
                {isprofileupdateerr && <Text style={{color:'red'}}>{profileupdateErr?.response?.data.message ||  "Sorry, Please try again later!"}</Text>}
                 <XStack ai="center" jc="center" mt="$6" onPress={pickImage}>
                     <Avatar circular size="$10">

@@ -39,7 +39,7 @@ export default function NotificationBox() {
     useEffect(()=>{
         if (isOpen){
             Animated.timing(animatedHeight, {
-                toValue: !isOpen ? 0 : notificationCount <= 5 ? (notificationCount * 75) : 370,
+                toValue: !isOpen ? 0 : notificationCount <= 5 ? (notificationCount * 80) : 420,
                 duration: 300,
                 useNativeDriver: false,
             }).start();
@@ -70,7 +70,6 @@ export default function NotificationBox() {
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => (
                         <View style={styles.notificationItem}>
-
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Text style={[styles.title, { color: light ? "#666" : "white" }]}>{item.title}</Text>
                                 <Entypo onPress={() => { setNotifications(n=>n.filter(i=>i.id!=item.id)) }} size={18} name="circle-with-cross" color={light ? 'black' : 'yellow'} />
@@ -80,15 +79,6 @@ export default function NotificationBox() {
                         </View>
                     )}
                 />
-
-                {/* <ScrollView scrollEnabled showsVerticalScrollIndicator style={{zIndex:40,backfaceVisibility:'hidden'}}>
-            {notifications.map((item,index)=>
-                <View style={styles.notificationItem} key={index}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.description}>{item.description}</Text>
-            </View>
-            )}
-        </ScrollView> */}
             </Animated.View>
         </View>
     );
@@ -131,7 +121,6 @@ const styles = StyleSheet.create({
     notificationList: {
         overflow: 'hidden',
         width: 250,
-        // backgroundColor: '#fff',
         borderRadius: 10,
         position: 'relative',
         margin: 'auto',
@@ -141,13 +130,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 5,
-
-        // borderStyle:'solid',
-        // borderWidth:1,
-        // borderColor:'red'
     },
     notificationItem: {
-        padding: 10,
+        padding: 20,
         borderBottomColor: '#ccc',
         borderBottomWidth: 0.5,
         position: 'relative'

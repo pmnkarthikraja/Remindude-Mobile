@@ -1,24 +1,19 @@
-import { Alert, useColorScheme, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
 import Header from '@/components/Header';
-import { NotificationContent, useUser } from '@/components/userContext';
+import LoadingWidget from '@/components/LoadingWidget';
 import OfficeScreen from '@/components/OfficeScreen';
 import TaskScreen from '@/components/TaskScreen';
+import { NotificationContent, useUser } from '@/components/userContext';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import * as Notifications from 'expo-notifications';
-import { ThemedView } from '@/components/ThemedView';
-import Lottie from 'lottie-react-native';
-import { useNavigation } from 'expo-router';
-import useOnNavigationFocus from '@/hooks/useNavigationFocus';
-import axios from 'axios';
 import messaging from '@react-native-firebase/messaging';
-import uuid from 'react-native-uuid'
-
-
+import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
+import { useNavigation } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, StyleSheet, useColorScheme, View } from 'react-native';
+import uuid from 'react-native-uuid';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,27 +24,27 @@ Notifications.setNotificationHandler({
 });
 
 const IndexPage = () => {
-  const {officeMode,user,loading:getuserloading,setNotifications}= useUser()
+  const { officeMode, user, loading: getuserloading, setNotifications } = useUser()
   const colorscheme = useColorScheme()
-  const [isloading,setloading]=useState(true)
-  const [refreshing,setRefreshing]=useState(false)
-  const { data:formData, isLoading, error:getFormDataError ,refetch} = useGetFormData();
-  const [isConnected,setIsConnected]=useState(true)
+  const [isloading, setloading] = useState(true)
+  const [refreshing, setRefreshing] = useState(true)
+  const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
+  const [isConnected, setIsConnected] = useState(true)
   const navigation = useNavigation()
 
   const removeTokenonsignedout = async () => {
     const fcmToken = await AsyncStorage.getItem('fcmToken')
     const BASE_URL = "https://remindude.vercel.app";
-    if (fcmToken){
+    if (fcmToken) {
       try {
-        await axios.delete(`${BASE_URL}/fcmTokens`,{
-          data:{
+        await axios.delete(`${BASE_URL}/fcmTokens`, {
+          data: {
             email: user?.email,
             token: fcmToken,
           }
         });
-      }catch(e){
-        console.log("error on removing the token: ",e)
+      } catch (e) {
+        console.log("error on removing the token: ", e)
       }
     }
   }
@@ -65,7 +60,7 @@ const IndexPage = () => {
           email: user?.email,
           token: fcmToken,
         });
-  
+
         await AsyncStorage.setItem('isFCMTokenSent', 'true'); //one time only we should send to backend
         console.log('FCM token sent to backend successfully');
       } catch (error) {
@@ -77,21 +72,21 @@ const IndexPage = () => {
   }
 
 
-  const onRefresh= useCallback(async ()=>{
-    setRefreshing(true)
+  const onRefresh = useCallback(async () => {
     refetch()
     setRefreshing(false)
-  },[])
-  
+  }, [])
+
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-     if (state.isConnected!=null){ 
-      setIsConnected(state.isConnected);
-      onRefresh()
-      if (!state.isConnected) {
-        Alert.alert('No Internet Connection', 'You are currently offline.');
-      }}
+      if (state.isConnected != null) {
+        setIsConnected(state.isConnected);
+        onRefresh()
+        if (!state.isConnected) {
+          Alert.alert('No Internet Connection', 'You are currently offline.');
+        }
+      }
     });
 
     return () => {
@@ -103,13 +98,14 @@ const IndexPage = () => {
   useEffect(() => {
     const unsubscribeNotification = messaging().onMessage(async (remoteMessage) => {
       console.log('A new FCM message arrived index!', JSON.stringify(remoteMessage));
-      const notification:NotificationContent={
-        id:uuid.v4().toString(),
-        title:remoteMessage.notification?.title||'',
-        description:remoteMessage.notification?.body ||''
+      const notification: NotificationContent = {
+        id: uuid.v4().toString(),
+        title: remoteMessage.notification?.title || '',
+        description: remoteMessage.notification?.body || ''
       }
-      setNotifications(prev=>[...prev,notification])
-       await Notifications.scheduleNotificationAsync({
+      setNotifications(prev => [...prev, notification])
+      // await AsyncStorage.setItem('notifications',JSON.stringify([...notifications,notification]))
+      await Notifications.scheduleNotificationAsync({
         content: {
           title: remoteMessage.notification?.title,
           body: remoteMessage.notification?.body,
@@ -136,52 +132,45 @@ const IndexPage = () => {
       }
     );
     setloading(false)
-    
+
     return () => {
       subscription.remove();
       unsubscribeNotification()
     };
   }, []);
 
-  const masterLoading = isloading || isLoading || formData==undefined
-
-  if (getuserloading) {
-    return (
-        <ThemedView style={styles.container}>
-        <Lottie
-                source={require('../../../assets/Animation/Animation -loading1.json')}
-                autoPlay
-                loop
-                style={styles.loadingAnimation}
-              />
-        </ThemedView>
-    );
-  }
-
   const linearGradientUnified = [
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
 
+  const masterLoading = isloading || isLoading || formData == undefined || refreshing
+
+  if (getuserloading || masterLoading) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={linearGradientUnified}
+          style={{ flex: 1 }}>
+          <Header user={user} isLoading={masterLoading} />
+         <LoadingWidget/>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+
   return <View style={styles.container}>
-      <LinearGradient
-        colors={linearGradientUnified}
-        style={{ flex: 1 }}>
-        <Header user={user} isLoading={masterLoading}/>
+    <LinearGradient
+      colors={linearGradientUnified}
+      style={{ flex: 1 }}>
+      <Header user={user} isLoading={masterLoading} />
 
-        {masterLoading &&   
-        
-        <Lottie
-                source={require('../../../assets/Animation/Animation -loading1.json')}
-                autoPlay
-                loop
-                style={styles.loadingAnimation}
-              />}
+      {(!officeMode && !masterLoading && !getuserloading) && <OfficeScreen formData={formData} 
+      onRefresh={onRefresh} refreshing={refreshing} isConnected={isConnected} />}
+      {(officeMode && !masterLoading && !getuserloading) && <TaskScreen />}
 
-        {!officeMode && !masterLoading && <OfficeScreen formData={formData} onRefresh={onRefresh} refreshing={refreshing} isConnected={isConnected}/>}
-        {officeMode && <TaskScreen/>}
-
-      </LinearGradient>
-    </View>
+    </LinearGradient>
+  </View>
 }
 
 export default IndexPage
@@ -237,12 +226,6 @@ const styles = StyleSheet.create({
   animation: {
     width: 'auto',
     height: 150,
-  },
-  loadingAnimation:{
-    flex:1,
-    justifyContent:'center',
-    width:'auto',
-    height:150
   },
   animation2: {
     width: 'auto',

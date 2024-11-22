@@ -1,18 +1,17 @@
 import { useResetPassword, useSendOTPMutation, useVerifyOTPMutation } from '@/hooks/userHooks';
-import React, { useState, useEffect, FunctionComponent } from 'react';
+import React, { FunctionComponent, useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
+    Alert,
+    Keyboard,
     Modal,
     StyleSheet,
-    ActivityIndicator,
-    Alert,
+    Text,
+    TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    Keyboard,
+    View
 } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import LoadingWidget from './LoadingWidget';
 
 export interface ForgotPasswordModalProps {
     triggerModal: () => void,
@@ -112,7 +111,7 @@ const ForgotPasswordModal: FunctionComponent<ForgotPasswordModalProps> = ({
                             </TouchableOpacity>
 
                             {loading ? (
-                                <ActivityIndicator size="large" color="#007BFF" />
+                                <LoadingWidget/>
                             ) : (
                                 <>
                                     {step === 1 && (
