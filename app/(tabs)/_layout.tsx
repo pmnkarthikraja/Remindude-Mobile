@@ -61,7 +61,6 @@ export default function TabLayout() {
     }}>
     <Tabs.Screen name='index' options={{ href: null, headerShown: false }} />
     <Tabs.Screen name='profile' options={{ href: null, headerShown: false }} />
-    {/* <Tabs.Screen name='taskRoute' options={{href:null, headerShown:false}} /> */}
 
     <Tabs.Screen
       name="category"
@@ -80,6 +79,7 @@ export default function TabLayout() {
         ),
       }}
     />
+
     {<Tabs.Screen
       name="tasks"
       options={{
@@ -98,6 +98,7 @@ export default function TabLayout() {
         ),
       }}
     />}
+
     <Tabs.Screen
       name='add'
       options={{
@@ -119,6 +120,7 @@ export default function TabLayout() {
         )
       }}
     />
+
     <Tabs.Screen
       name="calendar"
       options={{
@@ -136,6 +138,7 @@ export default function TabLayout() {
         ),
       }}
     />
+
     <Tabs.Screen
       name="settings"
       options={{
@@ -152,6 +155,7 @@ export default function TabLayout() {
         ),
       }}
     />
+
   </Tabs>
   );
 }

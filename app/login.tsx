@@ -79,7 +79,7 @@ const Login: FunctionComponent = () => {
   }
 
   const image = Asset.fromModule(require('../assets/images/login-image.png')).uri;
-  //on mobile, raw path is not working. thats why we're giving this.ßß
+  //on mobile, raw path is not working. thats why we're giving this.
   const handleForgotPassword = () => {
     setForgotModal(true)
   };

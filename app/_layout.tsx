@@ -22,6 +22,7 @@ import { PermissionsAndroid } from 'react-native';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { TimeAnimationProvider } from '@/components/TimeAnimationProvider';
 import React from 'react';
+import RealmCustomProvider from '@/providers/RealmCustomProvider';
 
 //permission for ios
 async function requestUserPermission() {
@@ -167,6 +168,7 @@ export default function RootLayout() {
             <TamaguiProvider config={tamaguiConfig}>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <QueryClientProvider client={queryClient}>
+                  <RealmCustomProvider>
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Settings' }} />
                     <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -174,6 +176,7 @@ export default function RootLayout() {
                     <Stack.Screen name="change-password" options={{ headerShown: true, title: 'Change Password' }} />
                     <Stack.Screen name="+not-found" />
                   </Stack>
+                  </RealmCustomProvider>
                 </QueryClientProvider>
               </ThemeProvider>
             </TamaguiProvider>

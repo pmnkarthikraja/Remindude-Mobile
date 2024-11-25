@@ -32,23 +32,6 @@ const IndexPage = () => {
   const [isConnected, setIsConnected] = useState(true)
   const navigation = useNavigation()
 
-  const removeTokenonsignedout = async () => {
-    const fcmToken = await AsyncStorage.getItem('fcmToken')
-    const BASE_URL = "https://remindude.vercel.app";
-    if (fcmToken) {
-      try {
-        await axios.delete(`${BASE_URL}/fcmTokens`, {
-          data: {
-            email: user?.email,
-            token: fcmToken,
-          }
-        });
-      } catch (e) {
-        console.log("error on removing the token: ", e)
-      }
-    }
-  }
-
   const sendFCMTokensToBackend = async () => {
     const fcmToken = await AsyncStorage.getItem('fcmToken')
     const isTokenSent = await AsyncStorage.getItem('isFCMTokenSent');
@@ -222,6 +205,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    // backgroundColor:'#F3E5F5'
+    // backgroundColor:'#E3F2FD'
   },
   animation: {
     width: 'auto',

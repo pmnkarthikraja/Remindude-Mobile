@@ -303,22 +303,10 @@ const OfficeScreen: FunctionComponent<OfficeScreenProps> = ({
           <>
             {isConnected && <>
               <Lottie
-                source={require('../assets/Animation/Animation2.json')}
-                autoPlay
-                loop
-                style={styles.animation2}
-              />
-              <Lottie
                 source={require('../assets/Animation/Animation.json')}
                 autoPlay
                 loop
                 style={styles.animation}
-              />
-              <Lottie
-                source={require('../assets/Animation/Animation2.json')}
-                autoPlay
-                loop
-                style={styles.animation2}
               />
             </>}
 

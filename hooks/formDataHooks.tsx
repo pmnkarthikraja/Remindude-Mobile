@@ -1,8 +1,9 @@
 import { useUser } from "@/components/userContext";
-import { FormData, parseDateForSingleItem, parseDates } from "@/utils/category";
-import axios, { AxiosError, AxiosResponse } from "axios";
+import { FormData, parseDateForSingleItem } from "@/utils/category";
+import axios, { AxiosError } from "axios";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import {} from '@realm/react'
 
 interface AxiosErrorType {
   message: string,
@@ -68,23 +69,23 @@ export const useGetFormData = () => {
   const { data, error, isLoading ,refetch,isError} = useQuery({
     queryKey: ['formdata', email],
     queryFn: async () => {
-      const res = await axios.get(`https://remindude.vercel.app/formdata/${email}`, {
-        params: { email },
-      });
-      return res.data as FormData[];
+      // const res = await axios.get(`https://remindude.vercel.app/formdata/${email}`, {
+      //   params: { email },
+      // });
+      // return res.data as FormData[];
     },
     enabled: !!email,
     refetchOnWindowFocus: false, 
     staleTime: 5 * 60 * 1000, 
   });
 
-  const parsedData = useMemo(() => {
-    if (!data) return [];
-    return parseDates(data);
-  },[data]);
+  // const parsedData = useMemo(() => {
+  //   if (!data) return [];
+  //   return parseDates(data);
+  // },[data]);
 
   return {
-    data: parsedData,
+    data: [],
     error,
     isLoading,
     refetch,

@@ -5,9 +5,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
+import { Agreements } from '@/models/Category';
 import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useQuery } from '@realm/react';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -143,6 +145,9 @@ const CategoryPage = () => {
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
+  const agreemenstsData = useQuery<Agreements>('Agreements')
+
+console.log(" data   -+-+-+   :",data)
 
 
   useEffect(() => {
@@ -153,8 +158,26 @@ const CategoryPage = () => {
       // console.log("device id:",deviceId)
 
       const dummyAgreementsData = testAgreementsData
-      dispatch({ type: 'SET_INITIAL_DATA', payload: dummyAgreementsData || [] })
-      dispatch({ type: 'SET_DATA', payload: dummyAgreementsData || [] })
+      const agreementsArray:FormData[] = agreemenstsData.map(item => (
+        {
+          id:item._id.toString(),
+        email: item.email,
+        remarks: item.remarks || '',
+        wantsCustomReminders: item.wantsCustomReminders,
+        completed: item.completed,
+        category: 'Agreements',
+        clientName:item.clientName,
+        vendorCode:item.vendorCode,
+        endDate:item.endDate,
+        startDate:item.startDate,
+        customReminderDates:[new Date()],
+        reminderDates:[new Date()],
+      }as FormData));
+
+
+      console.log("agreemtns data---:",agreementsArray)
+      dispatch({ type: 'SET_INITIAL_DATA', payload: agreementsArray  })
+      dispatch({ type: 'SET_DATA', payload: agreementsArray  })
       setIsLoading(false)
 
       // if (result.data) {

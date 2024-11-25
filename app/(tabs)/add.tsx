@@ -6,7 +6,7 @@ import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
 import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
-import { Category, FormData } from '@/utils/category';
+import { Category, FormData } from '@/utils/category'
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,12 +17,186 @@ import { debounce } from 'lodash';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
-import { Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import {
+  Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme,
+  Animated,
+  Dimensions,
+  ScrollView,
+  View,
+  Image
+} from 'react-native';
 import uuid from 'react-native-uuid';
-import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
+import { Button, Checkbox,  Input, Sheet, Text, TextArea, XStack, YStack } from 'tamagui';
 import TaskEditScreen from './tasks/[taskid]';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import LoadingWidget from '@/components/LoadingWidget';
+import { useQuery, useRealm } from '@realm/react';
+import { BSON, Object } from 'realm'
+import Realm from 'realm'
+
+
+function addToRealmDB(realm:Realm, formData:FormData, isEdit:boolean,){
+  const uniqueId = new BSON.ObjectId();
+  switch (formData.category){
+    case 'Agreements':
+      realm.write(() => {
+        realm.create(Agreements, {
+          _id: uniqueId,
+          category: 'Agreements',
+          clientName: formData.clientName,
+          completed: formData.completed,
+          assignedBy: formData.assignedBy || '',
+          assignedTo: formData.assignedTo ? {
+            email:formData.assignedTo?.email,
+            reminderEnabled:formData.assignedTo?.reminderEnabled
+          } as AssignedTo : undefined,          
+          customReminderDates: formData.customReminderDates,
+          endDate: formData.endDate,
+          vendorCode: formData.vendorCode,
+          email: formData.email,
+          remarks: formData.remarks,
+          startDate: formData.startDate,
+          wantsCustomReminders: formData.wantsCustomReminders,
+          reminderDates: formData.reminderDates,
+        })
+      })
+      break;
+    case 'IQAMA Renewals':
+      realm.write(() => {
+        realm.create(IQAMARenewals, {
+          _id: uniqueId,
+          category: 'IQAMA Renewals',
+          completed: formData.completed,
+          assignedBy: formData.assignedBy || '',
+          assignedTo: formData.assignedTo ? {
+            email:formData.assignedTo?.email,
+            reminderEnabled:formData.assignedTo?.reminderEnabled
+          } as AssignedTo : undefined,
+          customReminderDates: formData.customReminderDates,
+          endDate: formData.endDate,
+          email: formData.email,
+          remarks: formData.remarks,
+          startDate: formData.startDate,
+          wantsCustomReminders: formData.wantsCustomReminders,
+          reminderDates: formData.reminderDates,
+          employeeName:formData.employeeName,
+          iqamaNumber:formData.iqamaNumber,
+          expiryDate:formData.expiryDate,
+        })
+      })
+      break;
+      case 'Insurance Renewals':
+        realm.write(() => {
+          realm.create(InsuranceRenewals, {
+            _id: uniqueId,
+            category: 'Insurance Renewals',
+            completed: formData.completed,
+            assignedBy: formData.assignedBy || '',
+            assignedTo: formData.assignedTo ? {
+              email:formData.assignedTo?.email,
+              reminderEnabled:formData.assignedTo?.reminderEnabled
+            } as AssignedTo : undefined,
+            customReminderDates: formData.customReminderDates,
+            email: formData.email,
+            remarks: formData.remarks,
+            wantsCustomReminders: formData.wantsCustomReminders,
+            reminderDates: formData.reminderDates,
+            employeeName:formData.employeeName,
+            childrenInsuranceValues:formData.childrenInsuranceValues,
+            employeeInsuranceValue:formData.employeeInsuranceValue,
+            insuranceCategory:formData.insuranceCategory,
+            insuranceCompany:formData.insuranceCompany,
+            insuranceStartDate:formData.insuranceStartDate,
+            insuranceEndDate:formData.insuranceEndDate,
+            spouseInsuranceValue:formData.spouseInsuranceValue,
+            value:formData.value
+          })
+        })
+        break;
+        case 'Purchase Order':
+          realm.write(() => {
+            realm.create(PurchaseOrder, {
+              _id: uniqueId,
+              category: 'Purchase Order',
+              completed: formData.completed,
+              assignedBy: formData.assignedBy || '',
+              assignedTo: formData.assignedTo ? {
+                email:formData.assignedTo?.email,
+                reminderEnabled:formData.assignedTo?.reminderEnabled
+              } as AssignedTo : undefined,
+              customReminderDates: formData.customReminderDates,
+              email: formData.email,
+              remarks: formData.remarks,
+              wantsCustomReminders: formData.wantsCustomReminders,
+              reminderDates: formData.reminderDates,
+              clientName:formData.clientName,
+              consultant:formData.consultant,
+              entryDate:formData.entryDate,
+              poIssueDate:formData.poIssueDate,
+              poEndDate:formData.poEndDate,
+              poNumber:formData.poNumber,
+            })
+          })
+          break;
+          case 'Visa Details':
+            realm.write(() => {
+              realm.create(VisaDetails, {
+                _id: uniqueId,
+                category: 'Visa Details',
+                completed: formData.completed,
+                assignedBy: formData.assignedBy || '',
+                assignedTo: formData.assignedTo ? {
+                  email:formData.assignedTo?.email,
+                  reminderEnabled:formData.assignedTo?.reminderEnabled
+                } as AssignedTo : undefined,
+                customReminderDates: formData.customReminderDates,
+                email: formData.email,
+                remarks: formData.remarks,
+                wantsCustomReminders: formData.wantsCustomReminders,
+                reminderDates: formData.reminderDates,
+                clientName:formData.clientName,
+                consultantName:formData.consultantName,
+                sponsor:formData.sponsor,
+                visaEndDate:formData.visaEndDate,
+                visaEntryDate:formData.visaEntryDate,
+                visaNumber:formData.visaNumber,
+                visaExpiryDate:formData.visaExpiryDate
+              })
+            })
+            break;
+            case 'House Rental Renewal':
+            realm.write(() => {
+              realm.create(HouseRentalRenewal, {
+                _id: uniqueId,
+                category: 'House Rental Renewal',
+                completed: formData.completed,
+                assignedBy: formData.assignedBy || '',
+                assignedTo: formData.assignedTo ? {
+                  email:formData.assignedTo?.email,
+                  reminderEnabled:formData.assignedTo?.reminderEnabled
+                } as AssignedTo : undefined,
+                customReminderDates: formData.customReminderDates,
+                email: formData.email,
+                remarks: formData.remarks,
+                wantsCustomReminders: formData.wantsCustomReminders,
+                reminderDates: formData.reminderDates,
+                consultantName:formData.consultantName,
+                houseOwnerName:formData.houseOwnerName,
+                location:formData.location,
+                rentAmount:formData.rentAmount,
+                startDate:formData.startDate,
+                endDate:formData.endDate,
+              })
+            })
+            break;
+  }
+}
+
+
+import { Agreements, AssignedTo, HouseRentalRenewal, InsuranceRenewals, IQAMARenewals, PurchaseOrder, VisaDetails } from '../../models/Category'
+
+const { height } = Dimensions.get('window');
+
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -76,23 +250,15 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
   const { isLoading: addFormDataLoading, mutateAsync: addFormData } = useCreateFormDataMutation()
   const { isLoading: updateFormDataLoading, mutateAsync: updateFormData } = useUpdateFormDataMutation()
-  // const {usersLoading,usersData } =useGetAllUsers()
   const { errors } = formState
   const [childrenValues, setChildrenValues] = useState<string[]>(watch('childrenInsuranceValues') || []);
   const [totalValue, setTotalValue] = useState(watch('value') || '0')
+  const realm = useRealm()
+  const agreementsData = useQuery('Agreements')
+  const colorScheme = useColorScheme()
+  const [scaleAnim] = useState(new Animated.Value(1)); // For hover and press effects
+
   const data = watch()
-
-  interface UserProfile {
-    userName: string,
-    profilePicture: string | undefined
-  }[]
-
-  // const users:UserProfile[] = usersData?.users.map(r=>{
-  //   return {
-  //     userName: r.userName,
-  //     profilePicture:r.profilePicture
-  //   }
-  // }).filter(r=>r) || []
 
   const addChild = () => {
     if (data.category == 'Insurance Renewals') {
@@ -144,19 +310,19 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  useOnNavigationFocus(() => {
-    if (!isEdit && !officeMode) {
-      setIsSheetOpen(true)
-      setManualReminders(false)
-      setChildrenValues([])
-      setTotalValue('0')
-      doSetReminderDates()
-    }
-    if (isEdit && !officeMode) {
-      setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
-      setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
-    }
-  })
+  // useOnNavigationFocus(() => {
+  //   if (!isEdit && !officeMode) {
+  //     setIsSheetOpen(true)
+  //     setManualReminders(false)
+  //     setChildrenValues([])
+  //     setTotalValue('0')
+  //     doSetReminderDates()
+  //   }
+  //   if (isEdit && !officeMode) {
+  //     setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
+  //     setChildrenValues(watch('childrenInsuranceValues')?.filter(r => r != '') || [])
+  //   }
+  // })
 
   const toggleDatePickerVisibility = (fieldName: AcceptedDateFields, isOpen: boolean) => {
     setDatePickerVisibility((prev) => ({
@@ -171,107 +337,107 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     setValue('reminderDates', reminderDates)
   }
 
-  const debouncedReset = debounce((category: Category) => {
-    if (!isEdit) {
-      switch (category) {
-        case 'Agreements':
-          reset({
-            category: 'Agreements',
-            clientName: '',
-            startDate: new Date(),
-            endDate: new Date(),
-            vendorCode: '',
-            wantsCustomReminders: false,
-            customReminderDates: [],
-            completed: false,
-          });
-          break;
-        case 'Insurance Renewals':
-          reset({
-            category: 'Insurance Renewals',
-            employeeName: '',
-            insuranceCompany: '',
-            insuranceStartDate: new Date(),
-            insuranceEndDate: new Date(),
-            wantsCustomReminders: false,
-            customReminderDates: [],
-            remarks: '',
-            reminderDates: [],
-            completed: false,
-            childrenInsuranceValues: [],
-            spouseInsuranceValue: '',
-            employeeInsuranceValue: ''
-          });
-          break;
-        case 'IQAMA Renewals':
-          reset({
-            category: 'IQAMA Renewals',
-            employeeName: '',
-            expiryDate: new Date(),
-            iqamaNumber: '',
-            wantsCustomReminders: false,
-            customReminderDates: [],
-            remarks: '',
-            reminderDates: [],
-            completed: false,
-          });
-          break;
-        case 'Purchase Order':
-          reset({
-            category: 'Purchase Order',
-            clientName: '',
-            consultant: '',
-            entryDate: new Date(),
-            poIssueDate: new Date(),
-            poEndDate: new Date(),
-            wantsCustomReminders: false,
-            customReminderDates: [],
-            remarks: '',
-            reminderDates: [],
-            completed: false,
-          });
-          break;
-        case 'House Rental Renewal':
-          reset({
-            category: 'House Rental Renewal',
-            consultantName: '',
-            houseOwnerName: '',
-            customReminderDates: [],
-            email: '',
-            endDate: new Date(),
-            location: '',
-            remarks: '',
-            reminderDates: [],
-            rentAmount: '',
-            startDate: new Date(),
-            wantsCustomReminders: false,
-            completed: false,
-          })
-          break;
-        default:
-          reset({
-            category: 'Visa Details',
-            clientName: '',
-            consultantName: '',
-            sponsor: '',
-            visaEntryDate: new Date(),
-            visaEndDate: new Date(),
-            wantsCustomReminders: false,
-            customReminderDates: [],
-            remarks: '',
-            reminderDates: [],
-            completed: false,
-          });
-          break;
-      }
-    }
-  }, 300);
+  // const debouncedReset = debounce((category: Category) => {
+  //   if (!isEdit) {
+  //     switch (category) {
+  //       case 'Agreements':
+  //         reset({
+  //           category: 'Agreements',
+  //           clientName: '',
+  //           startDate: new Date(),
+  //           endDate: new Date(),
+  //           vendorCode: '',
+  //           wantsCustomReminders: false,
+  //           customReminderDates: [],
+  //           completed: false,
+  //         });
+  //         break;
+  //       case 'Insurance Renewals':
+  //         reset({
+  //           category: 'Insurance Renewals',
+  //           employeeName: '',
+  //           insuranceCompany: '',
+  //           insuranceStartDate: new Date(),
+  //           insuranceEndDate: new Date(),
+  //           wantsCustomReminders: false,
+  //           customReminderDates: [],
+  //           remarks: '',
+  //           reminderDates: [],
+  //           completed: false,
+  //           childrenInsuranceValues: [],
+  //           spouseInsuranceValue: '',
+  //           employeeInsuranceValue: ''
+  //         });
+  //         break;
+  //       case 'IQAMA Renewals':
+  //         reset({
+  //           category: 'IQAMA Renewals',
+  //           employeeName: '',
+  //           expiryDate: new Date(),
+  //           iqamaNumber: '',
+  //           wantsCustomReminders: false,
+  //           customReminderDates: [],
+  //           remarks: '',
+  //           reminderDates: [],
+  //           completed: false,
+  //         });
+  //         break;
+  //       case 'Purchase Order':
+  //         reset({
+  //           category: 'Purchase Order',
+  //           clientName: '',
+  //           consultant: '',
+  //           entryDate: new Date(),
+  //           poIssueDate: new Date(),
+  //           poEndDate: new Date(),
+  //           wantsCustomReminders: false,
+  //           customReminderDates: [],
+  //           remarks: '',
+  //           reminderDates: [],
+  //           completed: false,
+  //         });
+  //         break;
+  //       case 'House Rental Renewal':
+  //         reset({
+  //           category: 'House Rental Renewal',
+  //           consultantName: '',
+  //           houseOwnerName: '',
+  //           customReminderDates: [],
+  //           email: '',
+  //           endDate: new Date(),
+  //           location: '',
+  //           remarks: '',
+  //           reminderDates: [],
+  //           rentAmount: '',
+  //           startDate: new Date(),
+  //           wantsCustomReminders: false,
+  //           completed: false,
+  //         })
+  //         break;
+  //       default:
+  //         reset({
+  //           category: 'Visa Details',
+  //           clientName: '',
+  //           consultantName: '',
+  //           sponsor: '',
+  //           visaEntryDate: new Date(),
+  //           visaEndDate: new Date(),
+  //           wantsCustomReminders: false,
+  //           customReminderDates: [],
+  //           remarks: '',
+  //           reminderDates: [],
+  //           completed: false,
+  //         });
+  //         break;
+  //     }
+  //   }
+  // }, 300);
 
-  useEffect(() => {
-    debouncedReset(data.category);
-  }, [data.category]);
+  // useEffect(() => {
+  //   debouncedReset(data.category);
+  // }, [data.category]);
 
-  const colorScheme = useColorScheme()
+
 
   if (officeMode) {
     return <TaskEditScreen />
@@ -291,7 +457,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         const withId: FormData = { ...data, id, email: user.email }
         await buildNotifications(withId, 'Add')
         try {
-          await addFormData(withId)
+          addToRealmDB(realm,withId,false)
+          // await addFormData(withId)
           setTotalValue('0')
         } catch (e) {
           console.log("error on axios:", e)
@@ -326,7 +493,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     errorss: FieldErrors<FormData>,
     disabled?: boolean,
     rules?: object,
-
   ) => {
     return (
       <>
@@ -686,6 +852,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
+  const Line = () => {
+    return <View style={{ height: 1, borderWidth: 0.2, borderStyle: 'dashed', borderColor: 'skyblue', width: '100%', backgroundColor: '', marginVertical: 5 }}></View>
+  }
+
   const renderFormFields = () => {
     switch (data.category) {
       case 'Agreements':
@@ -694,17 +864,26 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <AssignedToComponent data={data} isEdit={!!isEdit} />
 
           {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
+          <Line />
           {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
+          <Line />
+
           {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <Line />
+
           <ThemedText style={styles.label}>Start Date:</ThemedText>
 
           <HolidayCalendarOffice
             datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
             fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+          <Line />
+
 
           <ThemedText style={styles.label}>End Date:</ThemedText>
 
           {renderInstantDate('endDate')}
+          <Line />
+
 
           <HolidayCalendarOffice
             triggerReminderDates={doSetReminderDates}
@@ -953,9 +1132,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.03,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+
   return (
-    <LinearGradient
-      colors={[colorScheme == 'light' ? '#a1c4fd' : '#252C39', colorScheme == 'light' ? 'white' : 'transparent']}
+    <View
     >
       <Stack.Screen options={{
         headerShown: false
@@ -988,7 +1182,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             Back
           </ThemedText>
         </XStack>
-        <YStack space="$4" alignItems="center" justifyContent="center">
+
+        {/* <YStack space="$4" alignItems="center" justifyContent="center">
           <XStack
             ai="center"
             jc="space-between"
@@ -1030,8 +1225,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               </Text>
             )}
           </XStack>
-          {/* {(addFormDataLoading || updateFormDataLoading) &&
-            <LoadingWidget />} */}
           <Sheet
             modal
             open={isSheetOpen}
@@ -1069,7 +1262,71 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               </YStack>
             </Sheet.Frame>
           </Sheet>
-        </YStack>
+        </YStack> */}
+
+        <View style={stylesCategorySelector.container}>
+          <Animated.View
+            style={[
+              stylesCategorySelector.categorySelector,
+              {
+                transform: [{ scale: scaleAnim }],
+                backgroundColor: Colors.light.tint,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => setIsSheetOpen(true)}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              activeOpacity={0.8}
+            >
+              {data.category ? (
+                <View style={stylesCategorySelector.categoryContent}>
+                  <Image
+                    source={categoryImagePaths[data.category]}
+                    style={stylesCategorySelector.categoryImage}
+                  />
+                  <Text style={stylesCategorySelector.categoryText}>{data.category}</Text>
+                </View>
+              ) : (
+                <Text style={stylesCategorySelector.categoryText}>Select a Category</Text>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Modal
+            transparent
+            visible={isSheetOpen}
+            animationType="slide"
+            onRequestClose={() => setIsSheetOpen(false)}
+          >
+            <View style={stylesCategorySelector.modalBackdrop}>
+              <View style={stylesCategorySelector.sheet}>
+                <View style={stylesCategorySelector.sheetHandle} />
+                {categories.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={stylesCategorySelector.button}
+                    onPress={() => {
+                      // setSelectedCategory(item.value);
+                      setIsSheetOpen(false);
+                      setValue('category', item.value)
+                    }}
+                  >
+                    <View style={stylesCategorySelector.buttonContent}>
+                      <Image
+                        source={categoryImagePaths[item.value]}
+                        style={stylesCategorySelector.categoryImage}
+                      />
+                      <Text style={stylesCategorySelector.buttonText}>{item.label}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </Modal>
+        </View>
+
 
         {data.category && renderFormFields()}
 
@@ -1092,7 +1349,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </Button>
         <View style={{ height: 200 }}></View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -1249,6 +1506,72 @@ const styles = StyleSheet.create({
   },
 });
 
+const stylesCategorySelector = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 25,
+    borderWidth: 0.5,
+    borderColor: 'white',
+    padding: 15,
+  },
+  categoryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  categoryText: {
+    color: 'white',
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  sheet: {
+    // backgroundColor: '#a1c4fd',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: height * 0.5,
+  },
+  sheetHandle: {
+    width: 50,
+    height: 5,
+    backgroundColor: '#ccc',
+    borderRadius: 10,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 5,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'aliceblue',
+    marginLeft: 10,
+  },
+});
+
 const LoadingOverlay: React.FunctionComponent = () => {
   return (
     <Modal visible={true} transparent animationType="fade">
@@ -1274,3 +1597,25 @@ const stylesLoadingOverlay = StyleSheet.create({
     borderRadius: 10,
   },
 });
+
+
+
+// const categories: { label: string; value: Category }[] = [
+//   { label: 'Agreements', value: 'Agreements' },
+//   { label: 'Purchase Order', value: 'Purchase Order' },
+//   { label: 'Visa Details', value: 'Visa Details' },
+//   { label: 'IQAMA Renewals', value: 'IQAMA Renewals' },
+//   { label: 'Insurance Renewals', value: 'Insurance Renewals' },
+//   { label: 'House Rental Renewal', value: 'House Rental Renewal' },
+// ];
+
+
+
+// const AddForm = () =>{
+//   return <View>
+    
+//   </View>
+// }
+
+
+// export default AddForm
