@@ -5,7 +5,9 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
-import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
+import { categorizeData, Category, FormData, getEndDate, testAgreementsData } from '@/utils/category';
+import { getAgreements } from '@/utils/database/agreementsDb';
+import { getPurchaseOrders } from '@/utils/database/purchaseOrderDb';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
@@ -135,10 +137,24 @@ const reducer = (state: State, action: Action): State => {
 //   )
 // }
 
+
+const getCateogirizedData = async (category:Category) =>{
+  switch (category){
+    case 'Agreements':
+      return await getAgreements()
+    case 'Purchase Order':
+      return await getPurchaseOrders()
+    default:
+      return []
+  }
+}
+
+
+
 const CategoryPage = () => {
   const { id: category } = useLocalSearchParams<{ id: string }>();
   const [state, dispatch] = useReducer(reducer, { ...initialState });
-  const { data: formData, isLoading: formDataLoading, error: getFormDataError, refetch } = useGetFormData();
+  // const { data: formData, isLoading: formDataLoading, error: getFormDataError, refetch } = useGetFormData();
   const { initialData: got, selectedTab, data, endDate, modalVisible, refreshing, showEndPicker, showStartPicker, startDate } = state
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
@@ -152,9 +168,10 @@ const CategoryPage = () => {
 
       // console.log("device id:",deviceId)
 
-      const dummyAgreementsData = testAgreementsData
-      dispatch({ type: 'SET_INITIAL_DATA', payload: dummyAgreementsData || [] })
-      dispatch({ type: 'SET_DATA', payload: dummyAgreementsData || [] })
+      // const dummyAgreementsData = testAgreementsData
+      const dbCategorizedData = await getCateogirizedData(category as Category)
+      dispatch({ type: 'SET_INITIAL_DATA', payload: dbCategorizedData || [] })
+      dispatch({ type: 'SET_DATA', payload: dbCategorizedData || [] })
       setIsLoading(false)
 
       // if (result.data) {
@@ -198,35 +215,34 @@ const CategoryPage = () => {
     dispatch({ type: 'SET_DATA', payload: payload })
   }
 
-  useLayoutEffect(() => {
-    if (Platform.OS == 'ios') {
-      navigation.setOptions({
-        title: `${category} Details`,
-        headerSearchBarOptions: {
-          placeholder: 'search..',
-          headerIconColor: colourscheme === 'light' ? 'black' : 'white',
-          textColor: colourscheme === 'light' ? 'black' : 'white',
-          shouldShowHintSearchIcon: true,
-          placement: 'stacked',
-          onChangeText: (e: any) => handleSearch(e.nativeEvent.text),
-        },
-        headerRight: () => (
-          <Button
-            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
-            icon={
-              <>
-                {!hasFilterApplied && <Filter color={colourscheme === 'light' ? 'black' : 'white'} />}
-                {hasFilterApplied && <Filter fill={colourscheme === 'light' ? 'black' : 'white'} color={colourscheme === 'light' ? 'black' : 'white'} />}
-                {hasFilterApplied && <Text style={{ color: colourscheme === 'light' ? 'black' : 'white' }}>1</Text>}
-              </>
-            }
-            style={{ marginRight: 10, backgroundColor: 'transparent' }}
-          />
-        ),
-      });
-    }
-
-  }, [navigation, category, colourscheme, hasFilterApplied, handleSearch]);
+  // useLayoutEffect(() => {
+  //   if (Platform.OS == 'ios') {
+  //     navigation.setOptions({
+  //       title: `${category} Details`,
+  //       headerSearchBarOptions: {
+  //         placeholder: 'search..',
+  //         headerIconColor: colourscheme === 'light' ? 'black' : 'white',
+  //         textColor: colourscheme === 'light' ? 'black' : 'white',
+  //         shouldShowHintSearchIcon: true,
+  //         placement: 'stacked',
+  //         onChangeText: (e: any) => handleSearch(e.nativeEvent.text),
+  //       },
+  //       headerRight: () => (
+  //         <Button
+  //           onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
+  //           icon={
+  //             <>
+  //               {!hasFilterApplied && <Filter color={colourscheme === 'light' ? 'black' : 'white'} />}
+  //               {hasFilterApplied && <Filter fill={colourscheme === 'light' ? 'black' : 'white'} color={colourscheme === 'light' ? 'black' : 'white'} />}
+  //               {hasFilterApplied && <Text style={{ color: colourscheme === 'light' ? 'black' : 'white' }}>1</Text>}
+  //             </>
+  //           }
+  //           style={{ marginRight: 10, backgroundColor: 'transparent' }}
+  //         />
+  //       ),
+  //     });
+  //   }
+  // }, [navigation, category, colourscheme, hasFilterApplied, handleSearch]);
 
 
   const handleFilter = (startDate: Date | null, endDate: Date | null) => {
@@ -457,7 +473,8 @@ const CategoryPage = () => {
           style={styles.animation_no_data}
         />
       </>}
-      {(isLoading || formDataLoading || formData == undefined) && <LoadingWidget/>}
+      {/* {(isLoading || formDataLoading || formData == undefined) && <LoadingWidget/>} */}
+      {isLoading && <LoadingWidget />}
       <View style={{ height: 80 }}></View>
     </LinearGradient>
   );

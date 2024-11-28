@@ -1,7 +1,6 @@
 import { ThemedView } from '@/components/ThemedView';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
-import { useGetFormData } from '@/hooks/formDataHooks';
 import { filterTasks, filterTasksCategory, Task } from '@/utils/task';
 import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -28,7 +27,7 @@ const TaskPage: FunctionComponent = () => {
     setTasks(contextTasks)
   }, [contextTasks, contextSetTasks])
 
-  const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
+  // const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
 
   const { thisMonthTasks, thisWeekTasks, todayTasks, tomorrowTasks } = filterTasks(tasks)
 
@@ -37,7 +36,7 @@ const TaskPage: FunctionComponent = () => {
     colorscheme == 'light' ? 'white' : 'transparent']
 
 
-  if (isloading || isLoading || loading || formData == undefined) {
+  if (isloading || loading ) {
     return (
       <LinearGradient
         colors={linearGradientUnified}

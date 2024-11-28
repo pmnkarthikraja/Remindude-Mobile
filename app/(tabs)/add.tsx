@@ -5,8 +5,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
-import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
-import { Category, FormData } from '@/utils/category';
+import { addDays, calculateReminderDates, calculateReminderDatesV2 } from '@/utils/calculateReminder';
+import { Agreements, Category, FormData, PurchaseOrder } from '@/utils/category';
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -16,7 +16,7 @@ import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
 import moment from 'moment';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
+import { Control, Controller, FieldErrors, FieldPath, useForm, WatchObserver } from 'react-hook-form';
 import { Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
 import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View, XStack, YStack } from 'tamagui';
@@ -24,6 +24,8 @@ import TaskEditScreen from './tasks/[taskid]';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import LoadingWidget from '@/components/LoadingWidget';
 import RenderCustomReminderDates from '@/components/Forms/RenderCustomReminderDates';
+import { saveAgreement } from '@/utils/database/agreementsDb';
+import { savePurchaseOrder } from '@/utils/database/purchaseOrderDb';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -74,7 +76,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     visaExpiryDate: false
   });
   const [manualReminders, setManualReminders] = useState(!isEdit ? false : editItem?.wantsCustomReminders && editItem.wantsCustomReminders)
-  const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
+  // const [iosDate, setIosDate] = useState<Date | undefined>(undefined)
   const { isLoading: addFormDataLoading, mutateAsync: addFormData } = useCreateFormDataMutation()
   const { isLoading: updateFormDataLoading, mutateAsync: updateFormData } = useUpdateFormDataMutation()
   // const {usersLoading,usersData } =useGetAllUsers()
@@ -87,13 +89,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     userName: string,
     profilePicture: string | undefined
   }[]
-
-  // const users:UserProfile[] = usersData?.users.map(r=>{
-  //   return {
-  //     userName: r.userName,
-  //     profilePicture:r.profilePicture
-  //   }
-  // }).filter(r=>r) || []
 
   const addChild = () => {
     if (data.category == 'Insurance Renewals') {
@@ -151,7 +146,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       setManualReminders(false)
       setChildrenValues([])
       setTotalValue('0')
-      doSetReminderDates()
+      // doSetReminderDates()
     }
     if (isEdit && !officeMode) {
       setValue('childrenInsuranceValues', watch('childrenInsuranceValues')?.filter(r => r != ''))
@@ -166,9 +161,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }));
   };
 
-  const doSetReminderDates = () => {
-    const newWatch = watch()
-    const reminderDates = calculateReminderDates(newWatch).reminderDates
+  const doSetReminderDates = (category:Category,field:FieldPath<FormData>) => {
+    const targetDate = watch(field) as Date
+    const reminderDates = calculateReminderDatesV2(category,targetDate)
     setValue('reminderDates', reminderDates)
   }
 
@@ -282,6 +277,17 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     return <LoadingWidget />
   }
 
+  const addOrEditCategorizedDataIntoDb = async (data:FormData) => {
+    switch (data.category){
+      case 'Agreements':
+        await saveAgreement(data as Agreements)
+      case 'Purchase Order':
+        await savePurchaseOrder(data as PurchaseOrder)
+      default:
+        return
+    }
+  }
+
   /////////-----------------------------------FORM SUBMISSION-----------------------------------------------
   const onSubmit = async (formdata: FormData) => {
     const data = formdata.category == 'Insurance Renewals' ? { ...formdata, value: totalValue } : formdata
@@ -292,7 +298,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         const withId: FormData = { ...data, id, email: user.email }
         await buildNotifications(withId, 'Add')
         try {
-          await addFormData(withId)
+          await addOrEditCategorizedDataIntoDb(withId)
+          // await addFormData(withId)
           setTotalValue('0')
         } catch (e) {
           console.log("error on axios:", e)
@@ -303,7 +310,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         const updateData: FormData = { ...data, email: user.email }
 
         try {
-          await updateFormData(updateData)
+          await addOrEditCategorizedDataIntoDb(updateData)
+          // await updateFormData(updateData)
           setTotalValue('0')
         } catch (e) {
           console.log("error on axios:", e)
@@ -456,34 +464,38 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   //   }
   // }
 
-  const renderInstantDate = (fieldName: AcceptedDateFields) => {
+  const renderInstantDate = (category:Category,fieldName: AcceptedDateFields) => {
     return <>
       {fieldName !== 'customReminderDate' && <XStack marginBottom={20}>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={async () => {
-            setValue(fieldName, addDays(new Date(), 30));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 30)
+            setValue(fieldName, targetDate);
+            doSetReminderDates(category,fieldName)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+30days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 60));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 60)
+            setValue(fieldName, targetDate);
+            doSetReminderDates(category,fieldName)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+60days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 90));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 90)
+            setValue(fieldName, targetDate);
+            doSetReminderDates(category,fieldName)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+90days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.box, { backgroundColor: 'orange', borderColor: 'white' }]} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 0));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 0)
+            setValue(fieldName, targetDate);
+            doSetReminderDates(category,fieldName)
           }}>
           <Text fontSize={11} textAlign='center' color={'red'} fontWeight={'bold'}>Reset</Text>
         </TouchableOpacity>
@@ -687,7 +699,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
-  const renderFormFields = useMemo(() => {
+  const renderFormFields = () => {
     switch (data.category) {
       case 'Agreements':
         return <>
@@ -701,14 +713,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <HolidayCalendarOffice
             datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='startDate' triggerReminderDates={()=>doSetReminderDates('Agreements','endDate')} />
 
           <ThemedText style={styles.label}>End Date:</ThemedText>
 
-          {renderInstantDate('endDate')}
+          {renderInstantDate('Agreements', 'endDate')}
 
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>doSetReminderDates('Agreements','endDate')}
             datetime={data.endDate} isEdit={!!isEdit} setValue={setValue} fieldname='endDate' />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
@@ -741,13 +753,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <HolidayCalendarOffice
             datetime={data.poIssueDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='poIssueDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='poIssueDate' triggerReminderDates={()=>doSetReminderDates('Purchase Order','poEndDate')} />
 
           <ThemedText style={styles.label}>PO End Date:</ThemedText>
-          {renderInstantDate('poEndDate')}
+          {renderInstantDate( 'Purchase Order','poEndDate')}
           <HolidayCalendarOffice
             datetime={data.poEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='poEndDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='poEndDate' triggerReminderDates={()=>doSetReminderDates('Purchase Order','poEndDate')} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
@@ -784,10 +796,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             fieldname='endDate' triggerReminderDates={() => { }} />
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
-          {renderInstantDate('expiryDate')}
+          {renderInstantDate('IQAMA Renewals','expiryDate')}
 
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>doSetReminderDates('IQAMA Renewals','expiryDate')}
             datetime={data.expiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='expiryDate' />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
@@ -817,19 +829,19 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Visa Expiry Date: </ThemedText>
           {/* {renderDatePicker(new Date(), 'visaExpiryDate')} */}
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>doSetReminderDates('Visa Details','visaEntryDate')}
             datetime={data.visaExpiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='visaExpiryDate' />
 
           <ThemedText style={styles.label}>Visa Entry Date:</ThemedText>
           <HolidayCalendarOffice
             datetime={data.visaEntryDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='visaEntryDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='visaEntryDate' triggerReminderDates={()=>doSetReminderDates('Visa Details','visaEntryDate')} />
 
           <ThemedText style={styles.label}>Visa Exit Before Date:</ThemedText>
-          {renderInstantDate('visaEndDate')}
+          {renderInstantDate('Visa Details','visaEndDate')}
           <HolidayCalendarOffice
             datetime={data.visaEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='visaEndDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='visaEndDate' triggerReminderDates={()=>doSetReminderDates('Visa Details','visaEntryDate')} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
@@ -911,14 +923,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Insurance Start Date:</ThemedText>
           <HolidayCalendarOffice
             datetime={data.insuranceStartDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='insuranceStartDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='insuranceStartDate' triggerReminderDates={()=>doSetReminderDates('Insurance Renewals','insuranceEndDate')} />
 
           <ThemedText style={styles.label}>Insurance End Date:</ThemedText>
-          {renderInstantDate('insuranceEndDate')}
+          {renderInstantDate('Insurance Renewals','insuranceEndDate')}
 
           <HolidayCalendarOffice
             datetime={data.insuranceEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='insuranceEndDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='insuranceEndDate' triggerReminderDates={()=>doSetReminderDates('Insurance Renewals','insuranceEndDate')}  />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
@@ -947,13 +959,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Rental Start Date:</ThemedText>
           <HolidayCalendarOffice
             datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='startDate' triggerReminderDates={()=>doSetReminderDates('House Rental Renewal','endDate')} />
 
           <ThemedText style={styles.label}>Rental End Date:</ThemedText>
-          {renderInstantDate('endDate')}
+          {renderInstantDate('House Rental Renewal','endDate')}
           <HolidayCalendarOffice
             datetime={data.endDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='endDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='endDate' triggerReminderDates={()=>doSetReminderDates('House Rental Renewal','endDate')} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
@@ -974,7 +986,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       default:
         return <></>
     }
-  },[data])
+  }
 
   return (
     <LinearGradient
@@ -1093,7 +1105,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           </Sheet>
         </YStack>
 
-        {data.category && renderFormFields}
+        {data.category && renderFormFields()}
 
         <ShareToUsers onSelect={(user) => {
           if (user) {
