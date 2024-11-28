@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
 import moment from 'moment';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import { Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import uuid from 'react-native-uuid';
@@ -23,6 +23,7 @@ import { Button, Checkbox, Image, Input, ScrollView, Sheet, Text, TextArea, View
 import TaskEditScreen from './tasks/[taskid]';
 import useOnNavigationFocus from '@/hooks/useNavigationFocus';
 import LoadingWidget from '@/components/LoadingWidget';
+import RenderCustomReminderDates from '@/components/Forms/RenderCustomReminderDates';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -445,15 +446,15 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
-  const confirmCustomIosDate = () => {
-    if (iosDate) {
-      toggleDatePickerVisibility('customReminderDate', false);
-      const dates = data.customReminderDates || []
-      dates.push(iosDate)
-      setValue('customReminderDates', dates)
-      setIosDate(undefined)
-    }
-  }
+  // const confirmCustomIosDate = () => {
+  //   if (iosDate) {
+  //     toggleDatePickerVisibility('customReminderDate', false);
+  //     const dates = data.customReminderDates || []
+  //     dates.push(iosDate)
+  //     setValue('customReminderDates', dates)
+  //     setIosDate(undefined)
+  //   }
+  // }
 
   const renderInstantDate = (fieldName: AcceptedDateFields) => {
     return <>
@@ -490,155 +491,155 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     </>
   }
 
-  const buildMaxDate = (currentFormData: FormData): Date | undefined => {
-    switch (currentFormData.category) {
-      case 'Agreements':
-        return currentFormData.endDate
-      case 'Insurance Renewals':
-        return currentFormData.insuranceEndDate
-      case 'IQAMA Renewals':
-        return currentFormData.expiryDate
-      case 'Purchase Order':
-        return currentFormData.poEndDate
-      case 'Visa Details':
-        return currentFormData.visaEndDate
-      case 'House Rental Renewal':
-        return currentFormData.endDate
-      default:
-        return undefined
-    }
-  }
+  // const buildMaxDate = (currentFormData: FormData): Date | undefined => {
+  //   switch (currentFormData.category) {
+  //     case 'Agreements':
+  //       return currentFormData.endDate
+  //     case 'Insurance Renewals':
+  //       return currentFormData.insuranceEndDate
+  //     case 'IQAMA Renewals':
+  //       return currentFormData.expiryDate
+  //     case 'Purchase Order':
+  //       return currentFormData.poEndDate
+  //     case 'Visa Details':
+  //       return currentFormData.visaEndDate
+  //     case 'House Rental Renewal':
+  //       return currentFormData.endDate
+  //     default:
+  //       return undefined
+  //   }
+  // }
 
-  const renderCustomReminderDates = () => {
-    return <>
-      <XStack alignItems="center" gap={'$2'} marginBottom={10}>
-        <Checkbox size="$4" backgroundColor={Colors.light.tint}
-          checked={manualReminders}
-          onCheckedChange={e => {
-            setManualReminders(e => !e);
-            if (data.wantsCustomReminders && isEdit) {
-              setValue('customReminderDates', [])
-              setValue('wantsCustomReminders', !data.wantsCustomReminders)
-            } else {
-              setValue('wantsCustomReminders', true)
-            }
-          }}>
-          <Checkbox.Indicator >
-            <Check color={'white'} />
-          </Checkbox.Indicator>
-        </Checkbox>
-        <ThemedText  >
-          would you like to recieve custom reminders?
-        </ThemedText>
-      </XStack>
+  // const renderCustomReminderDates = () => {
+  //   return <>
+  //     <XStack alignItems="center" gap={'$2'} marginBottom={10}>
+  //       <Checkbox size="$4" backgroundColor={Colors.light.tint}
+  //         checked={manualReminders}
+  //         onCheckedChange={e => {
+  //           setManualReminders(e => !e);
+  //           if (data.wantsCustomReminders && isEdit) {
+  //             setValue('customReminderDates', [])
+  //             setValue('wantsCustomReminders', !data.wantsCustomReminders)
+  //           } else {
+  //             setValue('wantsCustomReminders', true)
+  //           }
+  //         }}>
+  //         <Checkbox.Indicator >
+  //           <Check color={'white'} />
+  //         </Checkbox.Indicator>
+  //       </Checkbox>
+  //       <ThemedText  >
+  //         would you like to recieve custom reminders?
+  //       </ThemedText>
+  //     </XStack>
 
-      {manualReminders && <>
-        <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
-        <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'}
-          onPress={() => setDatePickerVisibility((prev) => ({
-            ...prev,
-            ['customReminderDate']: true,
-          }))} />
+  //     {manualReminders && <>
+  //       <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
+  //       <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'}
+  //         onPress={() => setDatePickerVisibility((prev) => ({
+  //           ...prev,
+  //           ['customReminderDate']: true,
+  //         }))} />
 
-        {Platform.OS !== 'ios' && datePickerVisibility['customReminderDate'] && (
-          <DateTimePicker
-            id='customReminderDate'
-            value={new Date()}
-            mode="date"
-            display="default"
-            maximumDate={buildMaxDate(data)}
-            minimumDate={new Date()}
-            onChange={(e, date) => {
-              if (date) {
-                toggleDatePickerVisibility('customReminderDate', false);
-                const dates = data.customReminderDates || []
-                if (e.type == 'set') {
-                  const newDate = new Date(date.setHours(10, 0, 0))
-                  dates.push(newDate)
-                  setValue('customReminderDates', dates)
-                }
-              }
-              toggleDatePickerVisibility('customReminderDate', false);
-            }}
-          />
-        )}
+  //       {Platform.OS !== 'ios' && datePickerVisibility['customReminderDate'] && (
+  //         <DateTimePicker
+  //           id='customReminderDate'
+  //           value={new Date()}
+  //           mode="date"
+  //           display="default"
+  //           maximumDate={buildMaxDate(data)}
+  //           minimumDate={new Date()}
+  //           onChange={(e, date) => {
+  //             if (date) {
+  //               toggleDatePickerVisibility('customReminderDate', false);
+  //               const dates = data.customReminderDates || []
+  //               if (e.type == 'set') {
+  //                 const newDate = new Date(date.setHours(10, 0, 0))
+  //                 dates.push(newDate)
+  //                 setValue('customReminderDates', dates)
+  //               }
+  //             }
+  //             toggleDatePickerVisibility('customReminderDate', false);
+  //           }}
+  //         />
+  //       )}
 
-        {Platform.OS == 'ios' && datePickerVisibility['customReminderDate'] && (
-          <>
-            <Sheet
-              modal
-              dismissOnSnapToBottom
-              open={datePickerVisibility['customReminderDate']}
-              onOpenChange={(open: boolean) => toggleDatePickerVisibility('customReminderDate', open)}
-              snapPoints={[50, 100]}
-            >
-              <Sheet.Frame padding="$4"
-                backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
-                <Sheet.Handle />
-                <YStack space>
-                  <DateTimePicker
-                    id='customReminderDateIos'
-                    value={iosDate || new Date()}
-                    mode="date"
-                    display="spinner"
-                    maximumDate={buildMaxDate(data)}
-                    minimumDate={new Date()}
-                    onChange={(e, date) => {
-                      if (date && Platform.OS == 'ios' && e.type == 'set') {
-                        const newDate = new Date(date.setHours(10, 0, 0))
-                        setIosDate(newDate)
-                      }
-                    }}
-                  />
-                  <Button style={{ backgroundColor: Colors.light.tint }} onPress={confirmCustomIosDate}>Confirm</Button>
-                </YStack>
-              </Sheet.Frame>
-            </Sheet>
-          </>)}
+  //       {Platform.OS == 'ios' && datePickerVisibility['customReminderDate'] && (
+  //         <>
+  //           <Sheet
+  //             modal
+  //             dismissOnSnapToBottom
+  //             open={datePickerVisibility['customReminderDate']}
+  //             onOpenChange={(open: boolean) => toggleDatePickerVisibility('customReminderDate', open)}
+  //             snapPoints={[50, 100]}
+  //           >
+  //             <Sheet.Frame padding="$4"
+  //               backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+  //               <Sheet.Handle />
+  //               <YStack space>
+  //                 <DateTimePicker
+  //                   id='customReminderDateIos'
+  //                   value={iosDate || new Date()}
+  //                   mode="date"
+  //                   display="spinner"
+  //                   maximumDate={buildMaxDate(data)}
+  //                   minimumDate={new Date()}
+  //                   onChange={(e, date) => {
+  //                     if (date && Platform.OS == 'ios' && e.type == 'set') {
+  //                       const newDate = new Date(date.setHours(10, 0, 0))
+  //                       setIosDate(newDate)
+  //                     }
+  //                   }}
+  //                 />
+  //                 <Button style={{ backgroundColor: Colors.light.tint }} onPress={confirmCustomIosDate}>Confirm</Button>
+  //               </YStack>
+  //             </Sheet.Frame>
+  //           </Sheet>
+  //         </>)}
 
 
-        <YStack>
-          {data.customReminderDates?.length > 0 && (
-            <XStack flexWrap="wrap" justifyContent="space-between">
-              {data.customReminderDates.map((date, idx) => (
-                <XStack
-                  key={idx}
-                  width="48%"
-                  paddingVertical={5}
-                >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 10,
-                      backgroundColor: 'orange',
-                      borderRadius: 10,
-                      padding: 5,
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <CalendarRange size={20} color={'white'} marginHorizontal={10} />
-                    <Text color={'white'}>{date.toLocaleDateString()}</Text>
-                    <X
-                      size={20}
-                      color={'red'}
-                      onPress={() => {
-                        const dates = data.customReminderDates;
-                        setValue(
-                          'customReminderDates',
-                          dates.filter((_, index) => index !== idx)
-                        );
-                      }}
-                    />
-                  </View>
-                </XStack>
-              ))}
-            </XStack>
-          )}
-        </YStack>
-      </>}
-    </>
-  }
+  //       <YStack>
+  //         {data.customReminderDates?.length > 0 && (
+  //           <XStack flexWrap="wrap" justifyContent="space-between">
+  //             {data.customReminderDates.map((date, idx) => (
+  //               <XStack
+  //                 key={idx}
+  //                 width="48%"
+  //                 paddingVertical={5}
+  //               >
+  //                 <View
+  //                   style={{
+  //                     flexDirection: 'row',
+  //                     gap: 10,
+  //                     backgroundColor: 'orange',
+  //                     borderRadius: 10,
+  //                     padding: 5,
+  //                     alignItems: 'center',
+  //                     justifyContent: 'space-between',
+  //                   }}
+  //                 >
+  //                   <CalendarRange size={20} color={'white'} marginHorizontal={10} />
+  //                   <Text color={'white'}>{date.toLocaleDateString()}</Text>
+  //                   <X
+  //                     size={20}
+  //                     color={'red'}
+  //                     onPress={() => {
+  //                       const dates = data.customReminderDates;
+  //                       setValue(
+  //                         'customReminderDates',
+  //                         dates.filter((_, index) => index !== idx)
+  //                       );
+  //                     }}
+  //                   />
+  //                 </View>
+  //               </XStack>
+  //             ))}
+  //           </XStack>
+  //         )}
+  //       </YStack>
+  //     </>}
+  //   </>
+  // }
 
   const CheckMark = (): JSX.Element => (<FontAwesome6 name="check"
     style={{ position: 'absolute', right: -5, color: colorScheme == 'light' ? 'black' : 'white' }} />)
@@ -686,7 +687,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     );
   };
 
-  const renderFormFields = () => {
+  const renderFormFields = useMemo(() => {
     switch (data.category) {
       case 'Agreements':
         return <>
@@ -714,7 +715,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
 
           <View style={styles.caution}>
             <Ionicons name='alert-circle' size={21} color={'yellow'} />
@@ -749,7 +753,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           {renderStatus()}
 
 
-          {renderCustomReminderDates()}
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -785,7 +793,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -822,7 +834,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+            <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
 
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
@@ -908,7 +923,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+           <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -939,7 +958,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+           <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'} setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders} setValue={setValue} toggleDatePickerVisibility={toggleDatePickerVisibility} isEdit={!!isEdit} manualReminders={manualReminders}
+          />
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -951,7 +974,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       default:
         return <></>
     }
-  }
+  },[data])
 
   return (
     <LinearGradient
@@ -1030,8 +1053,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               </Text>
             )}
           </XStack>
-          {/* {(addFormDataLoading || updateFormDataLoading) &&
-            <LoadingWidget />} */}
+
           <Sheet
             modal
             open={isSheetOpen}
@@ -1071,7 +1093,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           </Sheet>
         </YStack>
 
-        {data.category && renderFormFields()}
+        {data.category && renderFormFields}
 
         <ShareToUsers onSelect={(user) => {
           if (user) {
