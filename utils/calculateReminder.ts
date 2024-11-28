@@ -1,4 +1,4 @@
-import { FormData } from "./category";
+import { Category, FormData } from "./category";
 
 const subtractDays = (date: Date, days: number): (Date|undefined) => {
     const newDate = new Date(date);
@@ -66,4 +66,37 @@ export const calculateReminderDates = (formdata: FormData): FormData => {
     }
 
     return formdata;
+};
+
+
+export const calculateReminderDatesV2 = (category:Category,date:Date): Date[] => {
+    switch (category) {
+        case 'Agreements': {
+            // const { endDate } = formdata;
+            return [subtractDays(date,90),subtractDays(date,60),subtractDays(date,30)].filter(d=>!!d)    
+        }
+
+        case 'Purchase Order': {
+            return [subtractDays(date,90),subtractDays(date,60),subtractDays(date,30)].filter(d=>!!d)  
+        }
+
+        case 'Visa Details': {
+            return [subtractDays(addDays(date, 90), 7),subtractDays(addDays(date, 90), 3)].filter(d=>!!d)
+        }
+
+          case 'IQAMA Renewals': {
+            return [subtractDays(date, 30),subtractDays(date, 15),subtractDays(date, 5)].filter(d=>!!d)
+          }
+
+        case 'Insurance Renewals': {
+            return [subtractDays(date, 30),subtractDays(date, 15),subtractDays(date, 5)].filter(d=>!!d)
+        }
+
+        case 'House Rental Renewal': {
+            return [subtractDays(date, 40),subtractDays(date, 20),subtractDays(date, 5)].filter(d=>!!d)
+        }
+
+        default:
+            throw new Error('Unsupported document category');
+    }
 };

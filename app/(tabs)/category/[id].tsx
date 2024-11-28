@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
-import { Agreements } from '@/models/Category';
+import { Agreements, FormData as FormDataSchema, VisaDetails } from '@/models/Category';
 import { categorizeData, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,6 +17,7 @@ import Lottie from 'lottie-react-native';
 import React, { FunctionComponent, useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { Button, Sheet, Text } from 'tamagui';
+import realm from 'realm'
 
 interface Section {
   title: HeaderTitle;
@@ -145,10 +146,15 @@ const CategoryPage = () => {
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
-  const agreemenstsData = useQuery<Agreements>('Agreements')
 
-console.log(" data   -+-+-+   :",data)
+  const categoryData = useQuery(FormDataSchema, (collection) => collection.filtered('category == $0', category), [category])
 
+  const agreementsdata = useQuery<FormDataSchema>('FormData').filtered('category == $0', category)
+
+  const visaData = useQuery<VisaDetails>('VisaDetails')
+  const agreementsData = useQuery<Agreements>('Agreements')
+
+  // console.log(" data   -+-+-+   :",agData)
 
   useEffect(() => {
     const doRefetch = async () => {
@@ -158,26 +164,32 @@ console.log(" data   -+-+-+   :",data)
       // console.log("device id:",deviceId)
 
       const dummyAgreementsData = testAgreementsData
-      const agreementsArray:FormData[] = agreemenstsData.map(item => (
-        {
-          id:item._id.toString(),
-        email: item.email,
-        remarks: item.remarks || '',
-        wantsCustomReminders: item.wantsCustomReminders,
-        completed: item.completed,
-        category: 'Agreements',
-        clientName:item.clientName,
-        vendorCode:item.vendorCode,
-        endDate:item.endDate,
-        startDate:item.startDate,
-        customReminderDates:[new Date()],
-        reminderDates:[new Date()],
-      }as FormData));
+      // const agreementsArray:FormData[] = agreemenstsData.map(item => (
+      //   {
+      //     id:item._id,
+      //   email: item.email,
+      //   remarks: item.remarks || '',
+      //   wantsCustomReminders: item.wantsCustomReminders,
+      //   completed: item.completed,
+      //   assignedBy:item.assignedBy,
+      //   assignedTo:item.assignedTo,
+      //   category: 'Agreements',
+      //   clientName:item.clientName,
+      //   vendorCode:item.vendorCode,
+      //   endDate:item.endDate,
+      //   startDate:item.startDate,
+      //   customReminderDates:[new Date()],
+      //   reminderDates:[new Date()],
+      // }as FormData));
+
+      // const dbData = formsData.forEach(d=>{
+
+      // })
 
 
-      console.log("agreemtns data---:",agreementsArray)
-      dispatch({ type: 'SET_INITIAL_DATA', payload: agreementsArray  })
-      dispatch({ type: 'SET_DATA', payload: agreementsArray  })
+      console.log("agreemtns data---:", categoryData)
+      dispatch({ type: 'SET_INITIAL_DATA', payload: [] })
+      dispatch({ type: 'SET_DATA', payload: [] })
       setIsLoading(false)
 
       // if (result.data) {
@@ -428,15 +440,15 @@ console.log(" data   -+-+-+   :",data)
         <SectionItems flattenedData={flattenedData} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 0 && flattenedData.length == 0 && (
-       <LoadingWidget/>
+      {!isLoading && selectedTab == 0 && flattenedData.length == 0 && (
+        <LoadingWidget />
       )}
 
       {!isLoading && data.length > 0 && selectedTab == 1 && (
         <SectionItems flattenedData={completed} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 1 && completed.length == 0 && (
+      {!isLoading && selectedTab == 1 && completed.length == 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -449,7 +461,7 @@ console.log(" data   -+-+-+   :",data)
         <SectionItems flattenedData={assignedTasksToYou} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 2 && assignedTasksToYou.length == 0 && (
+      {!isLoading && selectedTab == 2 && assignedTasksToYou.length == 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -462,7 +474,7 @@ console.log(" data   -+-+-+   :",data)
         <SectionItems flattenedData={assignedTasksToOthers} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 3 && assignedTasksToOthers.length == 0 && (
+      {!isLoading && selectedTab == 3 && assignedTasksToOthers.length == 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -480,7 +492,7 @@ console.log(" data   -+-+-+   :",data)
           style={styles.animation_no_data}
         />
       </>}
-      {(isLoading || formDataLoading || formData == undefined) && <LoadingWidget/>}
+      {(isLoading || formDataLoading || formData == undefined) && <LoadingWidget />}
       <View style={{ height: 80 }}></View>
     </LinearGradient>
   );
@@ -618,8 +630,8 @@ const TaskTabs: FunctionComponent<TaskTabsProps> = React.memo(({
   const handleTabPress = (index: number) => {
     setSelectedTab(index);
 
-    const xOffset = index * tabWidth - (tabWidth/2 ); 
-    if (scrollViewRef.current){
+    const xOffset = index * tabWidth - (tabWidth / 2);
+    if (scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ x: xOffset, animated: true });
     }
   };
@@ -627,7 +639,7 @@ const TaskTabs: FunctionComponent<TaskTabsProps> = React.memo(({
 
   return (
     <ScrollView ref={scrollViewRef} horizontal showsHorizontalScrollIndicator={false}
-    scrollsToTop
+      scrollsToTop
       style={{ flexGrow: 0 }}>
       <View style={stylesTab.tabsContainer}>
         <TouchableOpacity onPress={() => handleTabPress(0)} style={[stylesTab.tab, selectedTab === 0 && stylesTab.activeTab]}>

@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
-import { addDays, calculateReminderDates } from '@/utils/calculateReminder';
+import { addDays, calculateReminderDates, calculateReminderDatesV2 } from '@/utils/calculateReminder';
 import { Category, FormData } from '@/utils/category'
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
 import moment from 'moment';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Control, Controller, FieldErrors, FieldPath, useForm } from 'react-hook-form';
 import {
   Modal, Platform, StyleSheet, TouchableOpacity, useColorScheme,
@@ -194,6 +194,11 @@ function addToRealmDB(realm:Realm, formData:FormData, isEdit:boolean,){
 
 
 import { Agreements, AssignedTo, HouseRentalRenewal, InsuranceRenewals, IQAMARenewals, PurchaseOrder, VisaDetails } from '../../models/Category'
+import RenderTextInput from '@/components/Forms/RenderTextInput';
+import RenderTextBoxInput from '@/components/Forms/RenderTextBoxInput';
+import RenderCustomReminderDates from '@/components/Forms/RenderCustomReminderDates';
+import RenderInstanceDate from '@/components/Forms/RenderInstantDate';
+import RenderStatus from '@/components/Forms/RenderStates';
 
 const { height } = Dimensions.get('window');
 
@@ -259,6 +264,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const [scaleAnim] = useState(new Animated.Value(1)); // For hover and press effects
 
   const data = watch()
+  console.log("rendering..")
 
   const addChild = () => {
     if (data.category == 'Insurance Renewals') {
@@ -331,11 +337,21 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }));
   };
 
-  const doSetReminderDates = () => {
-    const newWatch = watch()
-    const reminderDates = calculateReminderDates(newWatch).reminderDates
-    setValue('reminderDates', reminderDates)
-  }
+  // const doSetReminderDates = () => {
+  //   const newWatch = watch()
+  //   const reminderDates = calculateReminderDates(newWatch).reminderDates
+  //   setValue('reminderDates', reminderDates)
+  // }
+
+  const debouncedSetReminderDates = useCallback(
+    debounce((category:Category, endDate:Date) => {
+      if (category) {
+        const reminderDates = calculateReminderDatesV2(category, endDate);
+        setValue("reminderDates", reminderDates, { shouldDirty: true });
+      }
+    }, 50),
+    []
+  );
 
   // const debouncedReset = debounce((category: Category) => {
   //   if (!isEdit) {
@@ -621,34 +637,38 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  const renderInstantDate = (fieldName: AcceptedDateFields) => {
+  const renderInstantDate = (category:Category, fieldName: AcceptedDateFields) => {
     return <>
       {fieldName !== 'customReminderDate' && <XStack marginBottom={20}>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={async () => {
-            setValue(fieldName, addDays(new Date(), 30));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 30)
+            setValue(fieldName, targetDate);
+            debouncedSetReminderDates(category,targetDate)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+30days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 60));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 60)
+            setValue(fieldName, targetDate);
+            debouncedSetReminderDates(category,targetDate)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+60days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.box} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 90));
-            doSetReminderDates()
+            const targetDate  = addDays(new Date(), 90)
+            setValue(fieldName, targetDate);
+            debouncedSetReminderDates(category,targetDate)
           }}>
           <Text fontSize={10} textAlign='center' color={Colors.light.tint} fontWeight={'bold'}>+90days</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.box, { backgroundColor: 'orange', borderColor: 'white' }]} activeOpacity={0.7}
           onPress={() => {
-            setValue(fieldName, addDays(new Date(), 0));
-            doSetReminderDates()
+            const targetDate = addDays(new Date(), 0)
+            setValue(fieldName, targetDate);
+            debouncedSetReminderDates(category,targetDate)
           }}>
           <Text fontSize={11} textAlign='center' color={'red'} fontWeight={'bold'}>Reset</Text>
         </TouchableOpacity>
@@ -675,136 +695,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   }
 
-  const renderCustomReminderDates = () => {
-    return <>
-      <XStack alignItems="center" gap={'$2'} marginBottom={10}>
-        <Checkbox size="$4" backgroundColor={Colors.light.tint}
-          checked={manualReminders}
-          onCheckedChange={e => {
-            setManualReminders(e => !e);
-            if (data.wantsCustomReminders && isEdit) {
-              setValue('customReminderDates', [])
-              setValue('wantsCustomReminders', !data.wantsCustomReminders)
-            } else {
-              setValue('wantsCustomReminders', true)
-            }
-          }}>
-          <Checkbox.Indicator >
-            <Check color={'white'} />
-          </Checkbox.Indicator>
-        </Checkbox>
-        <ThemedText  >
-          would you like to recieve custom reminders?
-        </ThemedText>
-      </XStack>
-
-      {manualReminders && <>
-        <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
-        <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'}
-          onPress={() => setDatePickerVisibility((prev) => ({
-            ...prev,
-            ['customReminderDate']: true,
-          }))} />
-
-        {Platform.OS !== 'ios' && datePickerVisibility['customReminderDate'] && (
-          <DateTimePicker
-            id='customReminderDate'
-            value={new Date()}
-            mode="date"
-            display="default"
-            maximumDate={buildMaxDate(data)}
-            minimumDate={new Date()}
-            onChange={(e, date) => {
-              if (date) {
-                toggleDatePickerVisibility('customReminderDate', false);
-                const dates = data.customReminderDates || []
-                if (e.type == 'set') {
-                  const newDate = new Date(date.setHours(10, 0, 0))
-                  dates.push(newDate)
-                  setValue('customReminderDates', dates)
-                }
-              }
-              toggleDatePickerVisibility('customReminderDate', false);
-            }}
-          />
-        )}
-
-        {Platform.OS == 'ios' && datePickerVisibility['customReminderDate'] && (
-          <>
-            <Sheet
-              modal
-              dismissOnSnapToBottom
-              open={datePickerVisibility['customReminderDate']}
-              onOpenChange={(open: boolean) => toggleDatePickerVisibility('customReminderDate', open)}
-              snapPoints={[50, 100]}
-            >
-              <Sheet.Frame padding="$4"
-                backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
-                <Sheet.Handle />
-                <YStack space>
-                  <DateTimePicker
-                    id='customReminderDateIos'
-                    value={iosDate || new Date()}
-                    mode="date"
-                    display="spinner"
-                    maximumDate={buildMaxDate(data)}
-                    minimumDate={new Date()}
-                    onChange={(e, date) => {
-                      if (date && Platform.OS == 'ios' && e.type == 'set') {
-                        const newDate = new Date(date.setHours(10, 0, 0))
-                        setIosDate(newDate)
-                      }
-                    }}
-                  />
-                  <Button style={{ backgroundColor: Colors.light.tint }} onPress={confirmCustomIosDate}>Confirm</Button>
-                </YStack>
-              </Sheet.Frame>
-            </Sheet>
-          </>)}
-
-
-        <YStack>
-          {data.customReminderDates?.length > 0 && (
-            <XStack flexWrap="wrap" justifyContent="space-between">
-              {data.customReminderDates.map((date, idx) => (
-                <XStack
-                  key={idx}
-                  width="48%"
-                  paddingVertical={5}
-                >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 10,
-                      backgroundColor: 'orange',
-                      borderRadius: 10,
-                      padding: 5,
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <CalendarRange size={20} color={'white'} marginHorizontal={10} />
-                    <Text color={'white'}>{date.toLocaleDateString()}</Text>
-                    <X
-                      size={20}
-                      color={'red'}
-                      onPress={() => {
-                        const dates = data.customReminderDates;
-                        setValue(
-                          'customReminderDates',
-                          dates.filter((_, index) => index !== idx)
-                        );
-                      }}
-                    />
-                  </View>
-                </XStack>
-              ))}
-            </XStack>
-          )}
-        </YStack>
-      </>}
-    </>
-  }
 
   const CheckMark = (): JSX.Element => (<FontAwesome6 name="check"
     style={{ position: 'absolute', right: -5, color: colorScheme == 'light' ? 'black' : 'white' }} />)
@@ -856,44 +746,56 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     return <View style={{ height: 1, borderWidth: 0.2, borderStyle: 'dashed', borderColor: 'skyblue', width: '100%', backgroundColor: '', marginVertical: 5 }}></View>
   }
 
-  const renderFormFields = () => {
+  const renderFormFields = useMemo(() => {
     switch (data.category) {
       case 'Agreements':
         return <>
           {/* {isEdit && data.assignedTo && <Text>Assigned to: {data.assignedTo.email}</Text>} */}
           <AssignedToComponent data={data} isEdit={!!isEdit} />
 
-          {renderTextInput('clientName', control, 'Client Name', 'Enter Client Name', errors)}
+          <RenderTextInput  control={control} errorss={errors} isLightTheme={colorScheme=='light'} label='Client Name' name='clientName' placeholder='Enter client name' />
           <Line />
-          {renderTextInput('vendorCode', control, 'Vendor Code', 'Enter Vendor Code', errors)}
+          <RenderTextInput  control={control} errorss={errors} isLightTheme={colorScheme=='light'} label='Vendor Code' name='vendorCode' placeholder='Enter Vendor Code' />
           <Line />
 
-          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+          <RenderTextBoxInput control={control} errorss={errors} isLightTheme={colorScheme=='light'} label='Remarks (if any)' name='remarks' placeholder='Enter Remarks' />
           <Line />
 
           <ThemedText style={styles.label}>Start Date:</ThemedText>
 
           <HolidayCalendarOffice
             datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='startDate' triggerReminderDates={()=>debouncedSetReminderDates('Agreements',data.endDate)} />
           <Line />
 
 
           <ThemedText style={styles.label}>End Date:</ThemedText>
 
-          {renderInstantDate('endDate')}
+          {/* {renderInstantDate('Agreements', 'endDate')} */}
+          <RenderInstanceDate fieldName='endDate' setValue={setValue} doSetReminderDates={()=>debouncedSetReminderDates('Agreements',data.endDate)}/>
           <Line />
 
 
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>debouncedSetReminderDates(data.category,data.endDate)}
             datetime={data.endDate} isEdit={!!isEdit} setValue={setValue} fieldname='endDate' />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
 
-          {renderStatus()}
+          {/* {renderStatus()} */}
 
-          {renderCustomReminderDates()}
+          <RenderStatus completed={data.completed} isLightTheme={colorScheme=='light'} onChange={e=>setValue('completed',e)}/>
+
+          {/* {renderCustomReminderDates()} */}
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'}
+          manualReminders={manualReminders}
+          setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders}
+          setValue={(key,value)=>setValue(key as FieldPath<FormData>,value)}
+          toggleDatePickerVisibility={toggleDatePickerVisibility}
+          isEdit={false}
+          />
 
           <View style={styles.caution}>
             <Ionicons name='alert-circle' size={21} color={'yellow'} />
@@ -916,19 +818,31 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
           <HolidayCalendarOffice
             datetime={data.poIssueDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='poIssueDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='poIssueDate' triggerReminderDates={()=>debouncedSetReminderDates('Purchase Order',data.poEndDate)} />
 
           <ThemedText style={styles.label}>PO End Date:</ThemedText>
-          {renderInstantDate('poEndDate')}
+          {/* {renderInstantDate('Purchase Order', 'poEndDate')} */}
           <HolidayCalendarOffice
             datetime={data.poEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='poEndDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='poEndDate' triggerReminderDates={()=>debouncedSetReminderDates('Purchase Order',data.poEndDate)} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
 
-          {renderCustomReminderDates()}
+          {/* {renderCustomReminderDates()} */}
+
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'}
+          manualReminders={manualReminders}
+          setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders}
+          setValue={(key,value)=>setValue(key as FieldPath<FormData>,value)}
+          toggleDatePickerVisibility={toggleDatePickerVisibility}
+          isEdit={false}
+          />
+
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -937,7 +851,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
         </>
-
       case 'IQAMA Renewals':
         return <>
           {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
@@ -955,16 +868,28 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             fieldname='endDate' triggerReminderDates={() => { }} />
 
           <ThemedText style={styles.label}>IQAMA Expiry Date</ThemedText>
-          {renderInstantDate('expiryDate')}
+          {renderInstantDate('IQAMA Renewals','expiryDate')}
 
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>debouncedSetReminderDates('IQAMA Renewals',data.expiryDate)}
             datetime={data.expiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='expiryDate' />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+          {/* {renderCustomReminderDates()} */}
+
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'}
+          manualReminders={manualReminders}
+          setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders}
+          setValue={(key,value)=>setValue(key as FieldPath<FormData>,value)}
+          toggleDatePickerVisibility={toggleDatePickerVisibility}
+          isEdit={false}
+          />
+
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -984,24 +909,34 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Visa Expiry Date: </ThemedText>
           {/* {renderDatePicker(new Date(), 'visaExpiryDate')} */}
           <HolidayCalendarOffice
-            triggerReminderDates={doSetReminderDates}
+            triggerReminderDates={()=>debouncedSetReminderDates('IQAMA Renewals',data.visaEntryDate)}
             datetime={data.visaExpiryDate} isEdit={!!isEdit} setValue={setValue} fieldname='visaExpiryDate' />
 
           <ThemedText style={styles.label}>Visa Entry Date:</ThemedText>
           <HolidayCalendarOffice
             datetime={data.visaEntryDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='visaEntryDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='visaEntryDate' triggerReminderDates={()=>debouncedSetReminderDates('IQAMA Renewals',data.visaEntryDate)} />
 
           <ThemedText style={styles.label}>Visa Exit Before Date:</ThemedText>
-          {renderInstantDate('visaEndDate')}
+          {renderInstantDate( 'IQAMA Renewals','visaEndDate')}
           <HolidayCalendarOffice
             datetime={data.visaEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='visaEndDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='visaEndDate' triggerReminderDates={()=>debouncedSetReminderDates('IQAMA Renewals',data.visaEntryDate)} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+          {/* {renderCustomReminderDates()} */}
+
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'}
+          manualReminders={manualReminders}
+          setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders}
+          setValue={(key,value)=>setValue(key as FieldPath<FormData>,value)}
+          toggleDatePickerVisibility={toggleDatePickerVisibility}
+          isEdit={false}
+          />
 
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
@@ -1011,91 +946,91 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
           )}
         </>
-      case 'Insurance Renewals':
-        return <>
-          {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
-          {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company', errors)}
-          {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category', errors)}
+      // case 'Insurance Renewals':
+      //   return <>
+      //     {renderTextInput('employeeName', control, 'Employee Name', 'Enter Employee Name', errors)}
+      //     {renderTextInput('insuranceCompany', control, 'Insurance Company', 'Enter Insurance Company', errors)}
+      //     {renderTextInput('insuranceCategory', control, 'Insurance Category', 'Enter Insurance Category', errors)}
 
-          {renderNumberInput('employeeInsuranceValue', control, 'Employee Insurance Value', "Enter employee's insured value", errors)}
-          {renderNumberInput('spouseInsuranceValue', control, 'Spouse Insurance Value', "Enter spouse's insured value", errors)}
+      //     {renderNumberInput('employeeInsuranceValue', control, 'Employee Insurance Value', "Enter employee's insured value", errors)}
+      //     {renderNumberInput('spouseInsuranceValue', control, 'Spouse Insurance Value', "Enter spouse's insured value", errors)}
 
 
 
-          {childrenValues.map((childValue, index) => (
-            <XStack key={index} style={{ alignItems: 'center', gap: 10 }}>
-              <View style={{ flexDirection: 'column', flex: 1 }}>
-                <ThemedText>{`Child ${index + 1} Insurance Value`}</ThemedText>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Input
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
-                        color: colorScheme === 'light' ? 'black' : 'white',
-                        width: '90%'
-                      },
-                    ]} placeholder={`Enter child ${index + 1} insured value`}
-                    value={childValue}
-                    onChangeText={(value) => updateChildValue(index, value)}
-                    keyboardType="numeric"
-                  />
-                  <Ionicons
-                    name="trash"
-                    size={20}
-                    color="red"
-                    onPress={() => removeChild(index)}
-                  />
-                </View>
-              </View>
-            </XStack>
-          ))}
+      //     {childrenValues.map((childValue, index) => (
+      //       <XStack key={index} style={{ alignItems: 'center', gap: 10 }}>
+      //         <View style={{ flexDirection: 'column', flex: 1 }}>
+      //           <ThemedText>{`Child ${index + 1} Insurance Value`}</ThemedText>
+      //           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      //             <Input
+      //               style={[
+      //                 styles.input,
+      //                 {
+      //                   backgroundColor: colorScheme === 'light' ? 'white' : 'transparent',
+      //                   color: colorScheme === 'light' ? 'black' : 'white',
+      //                   width: '90%'
+      //                 },
+      //               ]} placeholder={`Enter child ${index + 1} insured value`}
+      //               value={childValue}
+      //               onChangeText={(value) => updateChildValue(index, value)}
+      //               keyboardType="numeric"
+      //             />
+      //             <Ionicons
+      //               name="trash"
+      //               size={20}
+      //               color="red"
+      //               onPress={() => removeChild(index)}
+      //             />
+      //           </View>
+      //         </View>
+      //       </XStack>
+      //     ))}
 
-          {(data.childrenInsuranceValues == undefined || data.childrenInsuranceValues.length < 4) && (
-            <Button
-              onPress={addChild}
-              style={{ backgroundColor: Colors.light.tint, color: 'white', marginVertical: 20, width: 150, height: 30, margin: 'auto', marginTop: 10 }}
-            >Add Children +</Button>
-          )}
+      //     {(data.childrenInsuranceValues == undefined || data.childrenInsuranceValues.length < 4) && (
+      //       <Button
+      //         onPress={addChild}
+      //         style={{ backgroundColor: Colors.light.tint, color: 'white', marginVertical: 20, width: 150, height: 30, margin: 'auto', marginTop: 10 }}
+      //       >Add Children +</Button>
+      //     )}
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 10 }}>
-            <NotebookPen color={'grey'} size={15} />
-            <Text style={{ textAlign: 'center', color: 'grey', fontSize: 12 }}>You can add upto 4 child</Text>
-          </View>
+      //     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 10 }}>
+      //       <NotebookPen color={'grey'} size={15} />
+      //       <Text style={{ textAlign: 'center', color: 'grey', fontSize: 12 }}>You can add upto 4 child</Text>
+      //     </View>
 
-          <YStack alignItems="center" marginVertical={20}>
-            <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Total Insured Value</ThemedText>
-            <ThemedText style={{ fontSize: 24, color: '#1E88E5' }}>{`$${totalValue || 0}`}</ThemedText>
-          </YStack>
+      //     <YStack alignItems="center" marginVertical={20}>
+      //       <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Total Insured Value</ThemedText>
+      //       <ThemedText style={{ fontSize: 24, color: '#1E88E5' }}>{`$${totalValue || 0}`}</ThemedText>
+      //     </YStack>
 
-          {renderTextInput('value', control, 'Total Insurance Value', 'Calculating Sum Insured Value..', errors, true)}
+      //     {renderTextInput('value', control, 'Total Insurance Value', 'Calculating Sum Insured Value..', errors, true)}
 
-          {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
+      //     {renderTextBoxInput('remarks', control, 'Remarks (if any)', 'Enter Remarks')}
 
-          <ThemedText style={styles.label}>Insurance Start Date:</ThemedText>
-          <HolidayCalendarOffice
-            datetime={data.insuranceStartDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='insuranceStartDate' triggerReminderDates={doSetReminderDates} />
+      //     <ThemedText style={styles.label}>Insurance Start Date:</ThemedText>
+      //     <HolidayCalendarOffice
+      //       datetime={data.insuranceStartDate} isEdit={!!isEdit} setValue={setValue}
+      //       fieldname='insuranceStartDate' triggerReminderDates={()=>debouncedSetReminderDates('Insurance Renewals',data.insuranceEndDate)} />
 
-          <ThemedText style={styles.label}>Insurance End Date:</ThemedText>
-          {renderInstantDate('insuranceEndDate')}
+      //     <ThemedText style={styles.label}>Insurance End Date:</ThemedText>
+      //     {renderInstantDate('Insurance Renewals','insuranceEndDate')}
 
-          <HolidayCalendarOffice
-            datetime={data.insuranceEndDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='insuranceEndDate' triggerReminderDates={doSetReminderDates} />
+      //     <HolidayCalendarOffice
+      //       datetime={data.insuranceEndDate} isEdit={!!isEdit} setValue={setValue}
+      //       fieldname='insuranceEndDate' triggerReminderDates={()=>debouncedSetReminderDates('Insurance Renewals',data.insuranceEndDate)} />
 
-          <ThemedText style={styles.label}>Status: </ThemedText>
-          {renderStatus()}
+      //     <ThemedText style={styles.label}>Status: </ThemedText>
+      //     {renderStatus()}
 
-          {renderCustomReminderDates()}
-          <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
-          {data.reminderDates?.map((value, index) =>
-            <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
-          )}
-          {data.customReminderDates?.map((value, index) =>
-            <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
-          )}
-        </>
+      //     {renderCustomReminderDates()}
+      //     <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
+      //     {data.reminderDates?.map((value, index) =>
+      //       <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
+      //     )}
+      //     {data.customReminderDates?.map((value, index) =>
+      //       <ThemedText key={index}>{moment(value).format('ddd DD-MM-YYYY HH:00:SS a')}</ThemedText>
+      //     )}
+      //   </>
       case 'House Rental Renewal':
         return <>
           {renderTextInput('houseOwnerName', control, 'House Owner Name', 'Enter House Owner Name', errors)}
@@ -1107,18 +1042,29 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <ThemedText style={styles.label}>Rental Start Date:</ThemedText>
           <HolidayCalendarOffice
             datetime={data.startDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='startDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='startDate' triggerReminderDates={()=>debouncedSetReminderDates('Insurance Renewals',data.endDate)} />
 
           <ThemedText style={styles.label}>Rental End Date:</ThemedText>
-          {renderInstantDate('endDate')}
+          {renderInstantDate('Insurance Renewals','endDate')}
           <HolidayCalendarOffice
             datetime={data.endDate} isEdit={!!isEdit} setValue={setValue}
-            fieldname='endDate' triggerReminderDates={doSetReminderDates} />
+            fieldname='endDate' triggerReminderDates={()=>debouncedSetReminderDates('Insurance Renewals',data.endDate)} />
 
           <ThemedText style={styles.label}>Status: </ThemedText>
           {renderStatus()}
 
-          {renderCustomReminderDates()}
+          {/* {renderCustomReminderDates()} */}
+
+          <RenderCustomReminderDates data={data} datePickerVisibility={datePickerVisibility}
+          isLightTheme={colorScheme=='light'}
+          manualReminders={manualReminders}
+          setDatePickerVisibility={setDatePickerVisibility}
+          setManualReminders={setManualReminders}
+          setValue={(key,value)=>setValue(key as FieldPath<FormData>,value)}
+          toggleDatePickerVisibility={toggleDatePickerVisibility}
+          isEdit={false}
+          />
+
           <ThemedText style={{ color: 'red' }}>You will get notified on these dates.</ThemedText>
           {data.reminderDates?.map((value, index) =>
             <ThemedText key={index}>{moment(value).format('DD-MM-YYYY HH:00:SS a')}</ThemedText>
@@ -1130,7 +1076,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       default:
         return <></>
     }
-  }
+  },[data])
 
 
   const handlePressIn = () => {
@@ -1182,87 +1128,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             Back
           </ThemedText>
         </XStack>
-
-        {/* <YStack space="$4" alignItems="center" justifyContent="center">
-          <XStack
-            ai="center"
-            jc="space-between"
-            backgroundColor={Colors.light.tint}
-            borderRadius={25}
-            borderStyle='solid'
-            borderWidth={0.5}
-            borderColor={'white'}
-            padding="$3"
-            hoverStyle={{
-              backgroundColor: '$accentColorHover',
-              transform: [{ scale: 1.03 }],
-            }}
-            pressStyle={{
-              transform: [{ scale: 1.03 }],
-            }}
-            onPress={() => !isEdit && setIsSheetOpen(true)}
-          >
-            {data.category ? (
-              <XStack ai="center" space="$2">
-                <Image
-                  source={categoryImagePaths[data.category]}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 12,
-                  }}
-                />
-                <YStack>
-                  <Text style={{ color: 'white' }}>
-                    {data.category}
-                  </Text>
-                </YStack>
-
-              </XStack>
-            ) : (
-              <Text color="white" ai="center">
-                Select a Category
-              </Text>
-            )}
-          </XStack>
-          <Sheet
-            modal
-            open={isSheetOpen}
-            dismissOnSnapToBottom
-            onOpenChange={(open: boolean) => setIsSheetOpen(open)}
-            snapPoints={[50, 100]}
-          >
-            <Sheet.Frame padding="$4"
-              backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
-              <Sheet.Handle />
-              <YStack space>
-                {categories.map((item, index) => (
-                  <TouchableOpacity key={index}
-                    activeOpacity={0.8}
-                    style={[styles.button, { backgroundColor: Colors.light.tint }]}
-                    onPress={() => {
-                      setIsSheetOpen(false)
-                      setValue('category', item.value)
-                    }}
-                  >
-                    <View style={styles.buttonContent}>
-                      <Image
-                        source={categoryImagePaths[item.value]}
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 12,
-                        }}
-                      />
-                      <Text style={[styles.buttonText1, { color: 'aliceblue' }]}>{item.label}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-
-              </YStack>
-            </Sheet.Frame>
-          </Sheet>
-        </YStack> */}
 
         <View style={stylesCategorySelector.container}>
           <Animated.View
@@ -1328,7 +1193,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         </View>
 
 
-        {data.category && renderFormFields()}
+        {data.category && renderFormFields}
 
         <ShareToUsers onSelect={(user) => {
           if (user) {
@@ -1619,3 +1484,138 @@ const stylesLoadingOverlay = StyleSheet.create({
 
 
 // export default AddForm
+
+
+
+
+
+  // const renderCustomReminderDates = () => {
+  //   return <>
+  //     <XStack alignItems="center" gap={'$2'} marginBottom={10}>
+  //       <Checkbox size="$4" backgroundColor={Colors.light.tint}
+  //         checked={manualReminders}
+  //         onCheckedChange={e => {
+  //           setManualReminders(e => !e);
+  //           if (data.wantsCustomReminders && isEdit) {
+  //             setValue('customReminderDates', [])
+  //             setValue('wantsCustomReminders', !data.wantsCustomReminders)
+  //           } else {
+  //             setValue('wantsCustomReminders', true)
+  //           }
+  //         }}>
+  //         <Checkbox.Indicator >
+  //           <Check color={'white'} />
+  //         </Checkbox.Indicator>
+  //       </Checkbox>
+  //       <ThemedText  >
+  //         would you like to recieve custom reminders?
+  //       </ThemedText>
+  //     </XStack>
+
+  //     {manualReminders && <>
+  //       <ThemedText >Please mention the dates you wants to recieve reminders</ThemedText>
+  //       <Plus color={colorScheme == 'light' ? Colors.light.tint : 'white'}
+  //         onPress={() => setDatePickerVisibility((prev) => ({
+  //           ...prev,
+  //           ['customReminderDate']: true,
+  //         }))} />
+
+  //       {Platform.OS !== 'ios' && datePickerVisibility['customReminderDate'] && (
+  //         <DateTimePicker
+  //           id='customReminderDate'
+  //           value={new Date()}
+  //           mode="date"
+  //           display="default"
+  //           maximumDate={buildMaxDate(data)}
+  //           minimumDate={new Date()}
+  //           onChange={(e, date) => {
+  //             if (date) {
+  //               toggleDatePickerVisibility('customReminderDate', false);
+  //               const dates = data.customReminderDates || []
+  //               if (e.type == 'set') {
+  //                 const newDate = new Date(date.setHours(10, 0, 0))
+  //                 dates.push(newDate)
+  //                 setValue('customReminderDates', dates)
+  //               }
+  //             }
+  //             toggleDatePickerVisibility('customReminderDate', false);
+  //           }}
+  //         />
+  //       )}
+
+  //       {Platform.OS == 'ios' && datePickerVisibility['customReminderDate'] && (
+  //         <>
+  //           <Sheet
+  //             modal
+  //             dismissOnSnapToBottom
+  //             open={datePickerVisibility['customReminderDate']}
+  //             onOpenChange={(open: boolean) => toggleDatePickerVisibility('customReminderDate', open)}
+  //             snapPoints={[50, 100]}
+  //           >
+  //             <Sheet.Frame padding="$4"
+  //               backgroundColor={colorScheme == 'light' ? "#a1c4fd" : 'black'}>
+  //               <Sheet.Handle />
+  //               <YStack space>
+  //                 <DateTimePicker
+  //                   id='customReminderDateIos'
+  //                   value={iosDate || new Date()}
+  //                   mode="date"
+  //                   display="spinner"
+  //                   maximumDate={buildMaxDate(data)}
+  //                   minimumDate={new Date()}
+  //                   onChange={(e, date) => {
+  //                     if (date && Platform.OS == 'ios' && e.type == 'set') {
+  //                       const newDate = new Date(date.setHours(10, 0, 0))
+  //                       setIosDate(newDate)
+  //                     }
+  //                   }}
+  //                 />
+  //                 <Button style={{ backgroundColor: Colors.light.tint }} onPress={confirmCustomIosDate}>Confirm</Button>
+  //               </YStack>
+  //             </Sheet.Frame>
+  //           </Sheet>
+  //         </>)}
+
+
+  //       <YStack>
+  //         {data.customReminderDates?.length > 0 && (
+  //           <XStack flexWrap="wrap" justifyContent="space-between">
+  //             {data.customReminderDates.map((date, idx) => (
+  //               <XStack
+  //                 key={idx}
+  //                 width="48%"
+  //                 paddingVertical={5}
+  //               >
+  //                 <View
+  //                   style={{
+  //                     flexDirection: 'row',
+  //                     gap: 10,
+  //                     backgroundColor: 'orange',
+  //                     borderRadius: 10,
+  //                     padding: 5,
+  //                     alignItems: 'center',
+  //                     justifyContent: 'space-between',
+  //                   }}
+  //                 >
+  //                   <CalendarRange size={20} color={'white'} marginHorizontal={10} />
+  //                   <Text color={'white'}>{date.toLocaleDateString()}</Text>
+  //                   <X
+  //                     size={20}
+  //                     color={'red'}
+  //                     onPress={() => {
+  //                       const dates = data.customReminderDates;
+  //                       setValue(
+  //                         'customReminderDates',
+  //                         dates.filter((_, index) => index !== idx)
+  //                       );
+  //                     }}
+  //                   />
+  //                 </View>
+  //               </XStack>
+  //             ))}
+  //           </XStack>
+  //         )}
+  //       </YStack>
+  //     </>}
+  //   </>
+  // }

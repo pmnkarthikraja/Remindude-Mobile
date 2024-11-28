@@ -28,61 +28,57 @@ const HolidayCalendarOffice: React.FC<HolidayCalendarOfficeProps> = ({
     fieldname,
     triggerReminderDates
 }) => {
-    const INITIAL_DATE = CalendarUtils.getCalendarDateString(datetime || new Date())
-    const navigation = useNavigation()
-
+    const INITIAL_DATE = useMemo(() => CalendarUtils.getCalendarDateString(datetime || new Date()), [datetime]);
     const [selected, setSelected] = useState<string>(INITIAL_DATE);
     const [calendarVisible, setCalendarVisible] = useState(false);
     const animatedHeight = useRef(new Animated.Value(0)).current;
     const colorscheme = useColorScheme()
 
-    // useEffect(() => {
-    //     const unsubscribe = navigation.addListener('focus', () => {
-    //         setSelected(INITIAL_DATE)
-    //     });
-    //     return unsubscribe;
-    // }, [navigation]);
-
     useOnNavigationFocus(()=>{
-        setSelected(INITIAL_DATE)
+        if (selected !== INITIAL_DATE) {
+            setSelected(INITIAL_DATE);
+        }
     })
 
     useEffect(() => {
-        if (datetime && selected !== CalendarUtils.getCalendarDateString(datetime)) {
-            setSelected(CalendarUtils.getCalendarDateString(datetime));
+        const formattedDate = CalendarUtils.getCalendarDateString(datetime);
+        if (datetime && selected !== formattedDate) {
+            setSelected(formattedDate);
         }
-    }, [datetime])
+    }, [datetime]);
+
+
 
     useEffect(() => {
-        const currentDate = new Date(selected) || datetime;
-        const updatedDate = new Date(datetime);
-        updatedDate.setFullYear(currentDate.getFullYear());
-        updatedDate.setMonth(currentDate.getMonth());
-        updatedDate.setDate(currentDate.getDate());
-        setValue(fieldname, updatedDate);
-        triggerReminderDates()
-    }, [selected])
+        const debounceUpdate = setTimeout(() => {
+            if (selected) {
+                const currentDate = new Date(selected) || datetime;
+                const updatedDate = new Date(datetime);
+                updatedDate.setFullYear(currentDate.getFullYear());
+                updatedDate.setMonth(currentDate.getMonth());
+                updatedDate.setDate(currentDate.getDate());
+                setValue(fieldname, updatedDate);
+                triggerReminderDates();
+            }
+        }, 300); 
+    
+        return () => clearTimeout(debounceUpdate);
+    }, [selected]);
 
-    const toggleCalendarVisibility = () => {
-        if (calendarVisible) {
-            Animated.timing(animatedHeight, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            }).start(() => setCalendarVisible(false));
-        } else {
-            setCalendarVisible(true); 
-            Animated.timing(animatedHeight, {
-                toValue: 360, 
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
-        }
-    };
+
+    const toggleCalendarVisibility = useCallback(() => {
+        Animated.timing(animatedHeight, {
+            toValue: calendarVisible ? 0 : 360,
+            duration: 300,
+            useNativeDriver: false,
+        }).start(() => setCalendarVisible((prev) => !prev));
+    }, [calendarVisible, animatedHeight]);
 
     const onDayPress = useCallback((day: any) => {
         setSelected(day.dateString);
     }, []);
+
+
 
     const marked = useMemo(() => {
         return {
@@ -114,37 +110,44 @@ const HolidayCalendarOffice: React.FC<HolidayCalendarOfficeProps> = ({
         '2025-08-15': { holiday: 'Independence Day', color: '#32CD32' },
     };
 
-    const iconColor = colorscheme=='light'?'black':'white'
+    const renderCustomHeader = useMemo(() => {
+        const holidayInfo = holidays[selected];
+        const iconColor = colorscheme === 'light' ? 'black' : 'white';
 
-    const renderCustomHeader = () => {
-        const holidayInfo = holidays[selected as keyof HolidayMap];
         return (
-            <TouchableOpacity style={[stylesHolidayCalendar.headerContainer, colorscheme=='light' ? {backgroundColor: '#E4F3E9'} :{
-                backgroundColor:Colors.light.tint
-            }]} onPress={toggleCalendarVisibility}>
+            <TouchableOpacity
+                style={[
+                    stylesHolidayCalendar.headerContainer,
+                    colorscheme === 'light' ? { backgroundColor: '#E4F3E9' } : { backgroundColor: Colors.light.tint },
+                ]}
+                onPress={toggleCalendarVisibility}
+            >
                 {holidayInfo ? (
-                    <View style={{flexDirection:'row',gap:10}}>
-                    <Fontisto name="holiday-village" size={18} color={iconColor} />
-                    <ThemedText numberOfLines={1} ellipsizeMode="tail" style={stylesHolidayCalendar.holidayText}>
-                        {`${holidayInfo.holiday} on ${selected}`}
-                    </ThemedText>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <Fontisto name="holiday-village" size={18} color={iconColor} />
+                        <ThemedText numberOfLines={1} ellipsizeMode="tail" style={stylesHolidayCalendar.holidayText}>
+                            {`${holidayInfo.holiday} on ${selected}`}
+                        </ThemedText>
                     </View>
                 ) : (
-                    <View style={{flexDirection:'row',alignItems:'center',gap:5}} >
-                    <CalendarDays size={15} color={iconColor}/>
-                    <ThemedText style={stylesHolidayCalendar.noHolidayText}>{moment(selected).format('DD-MM-YYYY (dddd)')}</ThemedText>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                        <CalendarDays size={15} color={iconColor} />
+                        <ThemedText style={stylesHolidayCalendar.noHolidayText}>
+                            {moment(selected).format('DD-MM-YYYY (dddd)')}
+                        </ThemedText>
                     </View>
                 )}
-                    <ThemedText>{calendarVisible ? '▲' : '▼'}</ThemedText>
+                <ThemedText>{calendarVisible ? '▲' : '▼'}</ThemedText>
             </TouchableOpacity>
         );
-    };
+    }, [selected, holidays, calendarVisible, colorscheme, toggleCalendarVisibility]);
+
 
     return (
         <View style={stylesHolidayCalendar.container}>
-            {renderCustomHeader()}
+            {renderCustomHeader}
             <Animated.View style={{ height: animatedHeight, overflow: 'hidden' }}>
-            {calendarVisible && <Calendar
+            { <Calendar
                 key={INITIAL_DATE}
                 testId={INITIAL_DATE}
                 markingType={'custom'}
