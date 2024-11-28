@@ -8,6 +8,10 @@ import React, { useEffect, useState } from 'react'
 import { getAgreementById } from "@/utils/database/agreementsDb"
 import { FormData } from "@/utils/category"
 import { getPurchaseOrderById } from "@/utils/database/purchaseOrderDb"
+import { getVisaDetailById } from "@/utils/database/visaDetailsDb"
+import { getIqamaRenewalById } from "@/utils/database/iqamaRenewalsDb"
+import { getInsuranceRenewalById } from "@/utils/database/insuranceRenewals"
+import { getHouseRentalRenewalById } from "@/utils/database/houseRentalRenewalDb"
 
 const Item = () => {
     const { item } = useLocalSearchParams()
@@ -22,11 +26,10 @@ const Item = () => {
 
     useEffect(()=>{
         const loadEditItem = async () => {
-            const got =await getAgreementById(item as string) || await getPurchaseOrderById(item as string)
+            const got =await getAgreementById(item as string) || await getPurchaseOrderById(item as string) || await getVisaDetailById(item as string) || await getIqamaRenewalById(item as string) || await getInsuranceRenewalById(item as string) || await getHouseRentalRenewalById(item as string)
             setFormData(got as unknown as FormData)
             setisloading(false)
         }
-
         loadEditItem()
     },[item])
 

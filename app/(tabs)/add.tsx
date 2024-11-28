@@ -6,11 +6,11 @@ import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
 import { useCreateFormDataMutation, useUpdateFormDataMutation } from '@/hooks/formDataHooks';
 import { addDays, calculateReminderDates, calculateReminderDatesV2 } from '@/utils/calculateReminder';
-import { Agreements, Category, FormData, PurchaseOrder } from '@/utils/category';
+import { Agreements, Category, FormData, HouseRentalRenewal, InsuranceRenewals, IQAMARenewals, PurchaseOrder, VisaDetails } from '@/utils/category';
 import { buildNotifications } from '@/utils/pushNotifications';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ArrowLeft, CalendarRange, Check, NotebookPen, Plus, X } from '@tamagui/lucide-icons';
+import { ArrowLeft, CalendarRange, Check, ChevronDown, ChevronUp, NotebookPen, Plus, X } from '@tamagui/lucide-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useNavigation } from 'expo-router';
 import { debounce } from 'lodash';
@@ -26,6 +26,10 @@ import LoadingWidget from '@/components/LoadingWidget';
 import RenderCustomReminderDates from '@/components/Forms/RenderCustomReminderDates';
 import { saveAgreement } from '@/utils/database/agreementsDb';
 import { savePurchaseOrder } from '@/utils/database/purchaseOrderDb';
+import { saveVisaDetail } from '@/utils/database/visaDetailsDb';
+import { saveIqamaRenewal } from '@/utils/database/iqamaRenewalsDb';
+import { saveInsuranceRenewal } from '@/utils/database/insuranceRenewals';
+import { saveHouseRentalRenewal } from '@/utils/database/houseRentalRenewalDb';
 
 const categories: { label: string; value: Category }[] = [
   { label: 'Agreements', value: 'Agreements' },
@@ -281,8 +285,22 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     switch (data.category){
       case 'Agreements':
         await saveAgreement(data as Agreements)
+        break
       case 'Purchase Order':
         await savePurchaseOrder(data as PurchaseOrder)
+        break
+      case 'Visa Details':
+        await saveVisaDetail(data as VisaDetails)
+        break
+      case 'IQAMA Renewals':
+        await saveIqamaRenewal(data as IQAMARenewals)
+        break
+      case 'Insurance Renewals':
+        await saveInsuranceRenewal(data as InsuranceRenewals)
+        break
+      case 'House Rental Renewal':
+        await saveHouseRentalRenewal(data as HouseRentalRenewal)
+        break
       default:
         return
     }
@@ -1054,10 +1072,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                 />
                 <YStack>
                   <Text style={{ color: 'white' }}>
-                    {data.category}
+                    {data.category} 
                   </Text>
                 </YStack>
-
+             <ChevronDown color={'white'} size={'$1'}/>
               </XStack>
             ) : (
               <Text color="white" ai="center">

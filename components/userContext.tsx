@@ -57,6 +57,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks,setTasks]=useState<Task[]>([])
   const [notifications,setNotifications]=useState<NotificationContent[]>([])
 
+  console.log("render context.")
+
   useEffect(() => {
     const loadUsers = async () => {
       setLoading(true);

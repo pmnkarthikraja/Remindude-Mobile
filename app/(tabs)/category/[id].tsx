@@ -7,7 +7,11 @@ import { Colors } from '@/constants/Colors';
 import { useGetFormData } from '@/hooks/formDataHooks';
 import { categorizeData, Category, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import { getAgreements } from '@/utils/database/agreementsDb';
+import { getHouseRentalRenewals } from '@/utils/database/houseRentalRenewalDb';
+import { getInsuranceRenewals } from '@/utils/database/insuranceRenewals';
+import { getIqamaRenewals } from '@/utils/database/iqamaRenewalsDb';
 import { getPurchaseOrders } from '@/utils/database/purchaseOrderDb';
+import { getVisaDetails } from '@/utils/database/visaDetailsDb';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
@@ -143,12 +147,20 @@ const getCateogirizedData = async (category:Category) =>{
     case 'Agreements':
       return await getAgreements()
     case 'Purchase Order':
+      console.log("case po ?")
       return await getPurchaseOrders()
+    case 'Visa Details':
+      return await getVisaDetails()
+    case 'IQAMA Renewals':
+      return await getIqamaRenewals()
+    case 'Insurance Renewals':
+      return await getInsuranceRenewals()
+    case 'House Rental Renewal':
+      return await getHouseRentalRenewals()
     default:
       return []
   }
 }
-
 
 
 const CategoryPage = () => {
@@ -170,6 +182,7 @@ const CategoryPage = () => {
 
       // const dummyAgreementsData = testAgreementsData
       const dbCategorizedData = await getCateogirizedData(category as Category)
+
       dispatch({ type: 'SET_INITIAL_DATA', payload: dbCategorizedData || [] })
       dispatch({ type: 'SET_DATA', payload: dbCategorizedData || [] })
       setIsLoading(false)

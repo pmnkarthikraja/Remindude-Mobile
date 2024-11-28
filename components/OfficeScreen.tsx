@@ -12,6 +12,7 @@ import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
 import NotificationBox from './NotificationBox';
 
 
+
 interface AnimatedCountProps {
   finalCount: number,
   textcolor: string
@@ -287,6 +288,7 @@ const OfficeScreen: FunctionComponent<OfficeScreenProps> = ({
   formData,
   isConnected
 }) => {
+
 
   return (
     <View>

@@ -14,6 +14,13 @@ import { useNavigation } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet, useColorScheme, View } from 'react-native';
 import uuid from 'react-native-uuid';
+import { getAgreements } from '@/utils/database/agreementsDb';
+import { getPurchaseOrders } from '@/utils/database/purchaseOrderDb';
+import { getVisaDetails } from '@/utils/database/visaDetailsDb';
+import { getIqamaRenewals } from '@/utils/database/iqamaRenewalsDb';
+import { getInsuranceRenewals } from '@/utils/database/insuranceRenewals';
+import { getHouseRentalRenewals } from '@/utils/database/houseRentalRenewalDb';
+import { FormData } from '@/utils/category';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -28,9 +35,42 @@ const IndexPage = () => {
   const colorscheme = useColorScheme()
   const [isloading, setloading] = useState(true)
   const [refreshing, setRefreshing] = useState(true)
-  const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
+  // const { data: formData, isLoading, error: getFormDataError, refetch } = useGetFormData();
   const [isConnected, setIsConnected] = useState(true)
   const navigation = useNavigation()
+  const [formData,setFormData]=useState<FormData[] >([])
+
+
+  const retrieveFromAsyncDb = async () =>{
+    const allData: FormData[] = [];
+
+    const agreementsData = await getAgreements()
+    allData.push(...agreementsData)
+
+    const poData = await getPurchaseOrders()
+
+    allData.push(...poData)
+
+    const visaDetailsData = await getVisaDetails()
+
+    allData.push(...visaDetailsData)
+
+    const iqamaRenewalsData = await getIqamaRenewals()
+    allData.push(...iqamaRenewalsData)
+
+    const insuranceRenewalsData = await getInsuranceRenewals()
+    allData.push(...insuranceRenewalsData)
+
+    const houseRentalRenewalsData = await getHouseRentalRenewals()
+    allData.push(...houseRentalRenewalsData)
+
+    setFormData(allData)
+  }
+
+  useEffect(()=>{
+    //retrive all data from db.
+    retrieveFromAsyncDb()
+  },[])
 
   const removeTokenonsignedout = async () => {
     const fcmToken = await AsyncStorage.getItem('fcmToken')
@@ -73,7 +113,8 @@ const IndexPage = () => {
 
 
   const onRefresh = useCallback(async () => {
-    refetch()
+    // refetch()
+    await retrieveFromAsyncDb()
     setRefreshing(false)
   }, [])
 
@@ -143,7 +184,8 @@ const IndexPage = () => {
     colorscheme == 'light' ? '#a1c4fd' : '#252C39',
     colorscheme == 'light' ? 'white' : 'transparent']
 
-  const masterLoading = isloading || isLoading || formData == undefined || refreshing
+  // const masterLoading = isloading || isLoading || formData == undefined || refreshing
+  const masterLoading = isloading || refreshing
 
   if (getuserloading || masterLoading) {
     return (
@@ -165,8 +207,8 @@ const IndexPage = () => {
       style={{ flex: 1 }}>
       <Header user={user} isLoading={masterLoading} />
 
-      {(!officeMode && !masterLoading && !getuserloading) && <OfficeScreen formData={formData} 
-      onRefresh={onRefresh} refreshing={refreshing} isConnected={isConnected} />}
+      {(!officeMode && !masterLoading && !getuserloading) && <OfficeScreen
+      onRefresh={onRefresh} refreshing={refreshing} isConnected={isConnected} formData={formData}/>}
       {(officeMode && !masterLoading && !getuserloading) && <TaskScreen />}
 
     </LinearGradient>
