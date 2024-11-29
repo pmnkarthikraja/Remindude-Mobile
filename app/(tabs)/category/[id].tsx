@@ -3,8 +3,9 @@ import { wait } from '@/components/OfficeScreen';
 import SectionItems, { HeaderTitle } from '@/components/SectionList';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useUser } from '@/components/userContext';
 import { Colors } from '@/constants/Colors';
-import { useGetFormData } from '@/hooks/formDataHooks';
+import { useBulkOperationFormData, useGetFormData } from '@/hooks/formDataHooks';
 import { categorizeData, Category, FormData, getEndDate, testAgreementsData } from '@/utils/category';
 import { getAgreements } from '@/utils/database/agreementsDb';
 import { getHouseRentalRenewals } from '@/utils/database/houseRentalRenewalDb';
@@ -15,6 +16,7 @@ import { getVisaDetails } from '@/utils/database/visaDetailsDb';
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarRange, Filter } from '@tamagui/lucide-icons';
+import { isAxiosError } from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import Lottie from 'lottie-react-native';
@@ -142,8 +144,8 @@ const reducer = (state: State, action: Action): State => {
 // }
 
 
-const getCateogirizedData = async (category:Category) =>{
-  switch (category){
+const getCateogirizedData = async (category: Category) => {
+  switch (category) {
     case 'Agreements':
       return await getAgreements()
     case 'Purchase Order':
@@ -171,6 +173,7 @@ const CategoryPage = () => {
   const colourscheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true)
   const navigation = useNavigation()
+  const { user } = useUser()
 
 
   useEffect(() => {
@@ -182,6 +185,8 @@ const CategoryPage = () => {
 
       // const dummyAgreementsData = testAgreementsData
       const dbCategorizedData = await getCateogirizedData(category as Category)
+
+
 
       dispatch({ type: 'SET_INITIAL_DATA', payload: dbCategorizedData || [] })
       dispatch({ type: 'SET_DATA', payload: dbCategorizedData || [] })
@@ -434,15 +439,12 @@ const CategoryPage = () => {
         <SectionItems flattenedData={flattenedData} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 0 && flattenedData.length == 0 && (
-       <LoadingWidget/>
-      )}
 
       {!isLoading && data.length > 0 && selectedTab == 1 && (
         <SectionItems flattenedData={completed} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 1 && completed.length == 0 && (
+      {!isLoading && selectedTab == 1 && completed.length == 0 && data.length != 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -451,11 +453,11 @@ const CategoryPage = () => {
         />
       )}
 
-      {!isLoading && data.length > 0 && selectedTab == 2 && (
+      {!isLoading && data.length > 0 && selectedTab == 2 && data.length != 0 && (
         <SectionItems flattenedData={assignedTasksToYou} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 2 && assignedTasksToYou.length == 0 && (
+      {!isLoading && selectedTab == 2 && assignedTasksToYou.length == 0 && data.length != 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -464,11 +466,11 @@ const CategoryPage = () => {
         />
       )}
 
-      {!isLoading && data.length > 0 && selectedTab == 3 && (
+      {!isLoading && data.length > 0 && selectedTab == 3 && data.length != 0 && (
         <SectionItems flattenedData={assignedTasksToOthers} renewal={renewal} />
       )}
 
-      {!isLoading &&selectedTab == 3 && assignedTasksToOthers.length == 0 && (
+      {!isLoading && selectedTab == 3 && assignedTasksToOthers.length == 0 && data.length != 0 && (
         <Lottie
           source={require('../../../assets/Animation/Animation-no_data.json')}
           autoPlay
@@ -570,9 +572,10 @@ const styles = StyleSheet.create({
     height: 250,
   },
   animation_no_data: {
-    width: 'auto',
-    height: 250,
-    flex: 1
+    width: 150,
+    height: 150,
+    flex: 1,
+    marginHorizontal: 'auto'
   }
 });
 
@@ -625,8 +628,8 @@ const TaskTabs: FunctionComponent<TaskTabsProps> = React.memo(({
   const handleTabPress = (index: number) => {
     setSelectedTab(index);
 
-    const xOffset = index * tabWidth - (tabWidth/2 ); 
-    if (scrollViewRef.current){
+    const xOffset = index * tabWidth - (tabWidth / 2);
+    if (scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ x: xOffset, animated: true });
     }
   };
@@ -634,7 +637,7 @@ const TaskTabs: FunctionComponent<TaskTabsProps> = React.memo(({
 
   return (
     <ScrollView ref={scrollViewRef} horizontal showsHorizontalScrollIndicator={false}
-    scrollsToTop
+      scrollsToTop
       style={{ flexGrow: 0 }}>
       <View style={stylesTab.tabsContainer}>
         <TouchableOpacity onPress={() => handleTabPress(0)} style={[stylesTab.tab, selectedTab === 0 && stylesTab.activeTab]}>

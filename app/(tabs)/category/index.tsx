@@ -31,7 +31,7 @@ Notifications.setNotificationHandler({
 });
 
 const IndexPage = () => {
-  const { officeMode, user, loading: getuserloading, setNotifications } = useUser()
+  const { officeMode, user, loading: getuserloading, setNotifications,retrieveFromAsyncDb,pullToRefresh } = useUser()
   const colorscheme = useColorScheme()
   const [isloading, setloading] = useState(true)
   const [refreshing, setRefreshing] = useState(true)
@@ -41,35 +41,14 @@ const IndexPage = () => {
   const [formData,setFormData]=useState<FormData[] >([])
 
 
-  const retrieveFromAsyncDb = async () =>{
-    const allData: FormData[] = [];
-
-    const agreementsData = await getAgreements()
-    allData.push(...agreementsData)
-
-    const poData = await getPurchaseOrders()
-
-    allData.push(...poData)
-
-    const visaDetailsData = await getVisaDetails()
-
-    allData.push(...visaDetailsData)
-
-    const iqamaRenewalsData = await getIqamaRenewals()
-    allData.push(...iqamaRenewalsData)
-
-    const insuranceRenewalsData = await getInsuranceRenewals()
-    allData.push(...insuranceRenewalsData)
-
-    const houseRentalRenewalsData = await getHouseRentalRenewals()
-    allData.push(...houseRentalRenewalsData)
-
-    setFormData(allData)
-  }
+ 
 
   useEffect(()=>{
     //retrive all data from db.
-    retrieveFromAsyncDb()
+    const doRetriveFormData = async () => {
+      setFormData(await retrieveFromAsyncDb())
+    }
+    doRetriveFormData()
   },[])
 
   const removeTokenonsignedout = async () => {
@@ -114,7 +93,8 @@ const IndexPage = () => {
 
   const onRefresh = useCallback(async () => {
     // refetch()
-    await retrieveFromAsyncDb()
+    const data= await retrieveFromAsyncDb()
+    setFormData(data)
     setRefreshing(false)
   }, [])
 

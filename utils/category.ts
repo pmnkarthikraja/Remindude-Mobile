@@ -465,7 +465,7 @@ function getRandomDates(min: number, max: number): Date[] {
   return Array.from({ length: count }, () => getRandomDate(new Date(), new Date(2025, 11, 31)));
 }
 
-export const testAgreementsData: Agreements[] = Array.from({ length: 200 }, (_, i) => {
+export const testAgreementsData: Agreements[] = Array.from({ length: 400 }, (_, i) => {
   const hasAssignedTo = Math.random() < 0.5; 
   
   return ({

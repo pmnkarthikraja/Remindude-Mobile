@@ -9,11 +9,38 @@ interface AxiosErrorType {
   success: boolean
 }
 
+// const API_URL = 'http://localhost:4000'
+const API_URL = 'https://remindude.vercel.app'
+
+type BulkOperationPayload = {
+  formData:FormData[]
+  email:string
+}
+
+export const useBulkOperationFormData = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    (payload: BulkOperationPayload) => axios.post(`${API_URL}/formdata-bulkoperation`,{
+      formDataArray:payload.formData,
+      email:payload.email
+    }),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries('formdata');
+      },
+      onError: (e: AxiosError<AxiosErrorType>) => {
+        console.log("error on bulk operation of formdata", e);
+      }
+    }
+  );
+};
+
 export const useCreateFormDataMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(
-    (formData: FormData) => axios.post('https://remindude.vercel.app/formdata',{
+    (formData: FormData) => axios.post(`${API_URL}/formdata`,{
         ...formData
       }),
     {
@@ -31,7 +58,7 @@ export const useUpdateFormDataMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(
-    (formData: FormData) => axios.put(`https://remindude.vercel.app/formdata/${formData.id}`,{
+    (formData: FormData) => axios.put(`${API_URL}/formdata/${formData.id}`,{
       ...formData
     }),
     {
@@ -49,7 +76,7 @@ export const useDeleteFormDataMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(
-    (id:string) => axios.delete(`https://remindude.vercel.app/formdata/${id}`),
+    (id:string) => axios.delete(`${API_URL}/formdata/${id}`),
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('formdata');
@@ -68,7 +95,7 @@ export const useGetFormData = () => {
   const { data, error, isLoading ,refetch,isError} = useQuery({
     queryKey: ['formdata', email],
     queryFn: async () => {
-      const res = await axios.get(`https://remindude.vercel.app/formdata/${email}`, {
+      const res = await axios.get(`${API_URL}/formdata/${email}`, {
         params: { email },
       });
       return res.data as FormData[];
@@ -96,7 +123,7 @@ export const useGetFormDataById = (id:string) => {
   const { data, error, isLoading ,refetch,isError} = useQuery<FormData, AxiosError<any>>({
     queryKey: ['formdata', id],
     queryFn: async () => {
-      const res = await axios.get(`https://remindude.vercel.app/formdata/id/${id}`, {
+      const res = await axios.get(`${API_URL}/formdata/id/${id}`, {
         params: { id },
       });
       return res.data as FormData

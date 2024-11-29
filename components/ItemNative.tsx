@@ -14,6 +14,12 @@ import { TouchableOpacity } from 'react-native';
 import { Avatar } from 'tamagui';
 import { useProfilePictureAndUsername } from './userContext';
 import LoadingWidget from './LoadingWidget';
+import { deleteAgreement } from '@/utils/database/agreementsDb';
+import { deletePurchaseOrder } from '@/utils/database/purchaseOrderDb';
+import { deleteInsuranceRenewal } from '@/utils/database/insuranceRenewals';
+import { deleteVisaDetail } from '@/utils/database/visaDetailsDb';
+import { deleteIqamaRenewal } from '@/utils/database/iqamaRenewalsDb';
+import { deleteHouseRentalRenewal } from '@/utils/database/houseRentalRenewalDb';
 
 type ColorsObject = {
     primary: string,
@@ -46,15 +52,39 @@ export const isFormData = (item: FormData | HeaderTitle): item is FormData => {
     return (item as FormData).id !== undefined;
 };
 
+async function deleteFormDataInAsyncDb(item:FormData){
+    switch (item.category){
+        case 'Agreements':
+            return await deleteAgreement(item.id)
+        case 'Purchase Order':
+            return await deletePurchaseOrder(item.id)
+        case 'Insurance Renewals':
+            return await deleteInsuranceRenewal(item.id)
+        case 'Visa Details':
+            return await deleteVisaDetail(item.id)
+        case 'IQAMA Renewals':
+            return await deleteIqamaRenewal(item.id)
+        case 'House Rental Renewal':
+            return await deleteHouseRentalRenewal(item.id)
+        default:
+            return
+    }
+}
+
 
 const Item = ({ item }: { item: FormData | HeaderTitle }) => {
     const colorscheme = useColorScheme();
-    const { isLoading: deleteFormDataLoading, isError: isDeleteFormdataErr, mutateAsync: deleteFormData } = useDeleteFormDataMutation()
+    // const { isLoading: deleteFormDataLoading, isError: isDeleteFormdataErr, mutateAsync: deleteFormData } = useDeleteFormDataMutation()
+    const [isLoading,setLoading]=useState(false)
     const [modalState, setModalState] = useState<{ isVisible: boolean, itemId: string | null }>({ isVisible: false, itemId: null });
+
     const handleDelete = useCallback(async () => {
         try {
             if (isFormData(item)) {
-                await deleteFormData(item.id)
+                setLoading(true)
+                // await deleteFormData(item.id)
+                await deleteFormDataInAsyncDb(item)
+                setLoading(false)
                 closeModal()
                 router.navigate('/')
             }
@@ -196,7 +226,7 @@ const Item = ({ item }: { item: FormData | HeaderTitle }) => {
                 {modalState.isVisible && (
                     <Modal visible={modalState.isVisible} onRequestClose={closeModal}>
                         <View style={styles.modalContent}>
-                            {deleteFormDataLoading &&  <LoadingWidget />}
+                            {isLoading &&  <LoadingWidget />}
                             <Text style={styles.modalTitle}>Are you sure?</Text>
                             <Text>This action cannot be undone. Do you want to delete this item?</Text>
                             <View style={styles.modalButtonContainer}>

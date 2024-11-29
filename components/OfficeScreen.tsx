@@ -10,6 +10,8 @@ import Svg, { Path } from 'react-native-svg';
 import type { CardProps } from 'tamagui';
 import { Card, H3, Text as TextTamagui, XStack, YStack } from 'tamagui';
 import NotificationBox from './NotificationBox';
+import { useUser } from './userContext';
+import SyncModal from './SyncingModal';
 
 
 
@@ -289,14 +291,20 @@ const OfficeScreen: FunctionComponent<OfficeScreenProps> = ({
   isConnected
 }) => {
 
+  const {pullToRefresh,syncLoading} = useUser()
 
   return (
     <View>
       <View>
       <NotificationBox />
       </View>
+      <SyncModal onRequestClose={()=>{}} visible={syncLoading} />
+
       <FlatList
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{
+          onRefresh();
+          {isConnected && pullToRefresh()}
+        }} />}
         ListFooterComponent={() => <View style={{ height: 150 }} />}
         ListHeaderComponentStyle={{
           flex: 1,
